@@ -1,0 +1,35 @@
+Source: haskell-extra
+Priority: optional
+Section: devel
+Maintainer: David Fox <ddssff@gmail.com>
+Build-Depends: debhelper (>= 4.0.0), haskell-devscripts (>=0.5.15), ghc6 (>=6.4), ghc6-prof, libghc6-network-prof, libghc6-mtl-prof, libghc6-unixutils-prof (>= 1.10), libghc6-time-dev (>= 1.1)
+Build-Depends-Indep: haddock, hugs (>= 98.200503.08)
+Standards-Version: 3.7.2.0
+
+Package: libghc6-extra-dev
+Section: libdevel
+Architecture: any
+Depends: ${haskell:Depends}, libghc6-network-dev, libghc6-mtl-dev, libghc6-unixutils-dev (>= 1.10), libghc6-time-dev (>= 1.1)
+Description: A grab-bag of modules.
+ This package contains the libraries compiled for GHC 6.
+
+Package: libghc6-extra-prof
+Section: libdevel
+Architecture: any
+Depends: ${haskell:Depends}, libghc6-network-prof, libghc6-mtl-prof, libghc6-unixutils-prof (>= 1.10), libghc6-time-dev (>= 1.1)
+Description: A grab-bag of modules.
+ This package contains the libraries compiled for GHC 6 with profiling
+ enabled.
+
+Package: libhugs-extra
+Section: libdevel
+Architecture: all
+Depends: ${haskell:Depends}
+Description:  A grab-bag of modules.
+ This package contains the libraries compiled for Hugs.
+
+Package: haskell-extra-doc
+Section: doc
+Architecture: all
+Description:  A grab-bag of modules.
+ This package contains the documentation.

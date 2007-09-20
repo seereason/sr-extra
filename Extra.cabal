@@ -1,0 +1,16 @@
+Name:           Extra
+Version:        1.0
+License:        BSD3
+License-File:	debian/copyright
+Author:         David Fox
+Homepage:       http://seereason.org/
+Build-Depends:  base, unix, regex-compat, time >= 1.1, MIME, Unixutils >= 1.10 , mtl, network
+Synopsis:       A grab bag of modules.
+ghc-options:	-fglasgow-exts -O2 -fasm
+Exposed-modules:
+	Extra.Bool, Extra.Either, Extra.Email, Extra.Files,
+	Extra.GPGSign,Extra.List, Extra.Lock, Extra.Misc, Extra.Net, Extra.SSH,
+	Extra.Time
+
+-- For more complex build options see:
+-- http://www.haskell.org/ghc/docs/latest/html/Cabal/

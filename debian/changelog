@@ -1,0 +1,5 @@
+haskell-extra (1.0) unstable; urgency=low
+
+  * Initial Debian package.
+
+ -- David Fox <ddssff@gmail.com>  Tue, 18 Sep 2007 09:11:47 -0700
