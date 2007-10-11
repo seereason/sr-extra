@@ -1,3 +1,10 @@
+haskell-extra (1.1) unstable; urgency=low
+
+  * Add read', a version of read that shows what it was trying
+    to read when it failed.
+
+ -- David Fox <ddssff@gmail.com>  Thu, 11 Oct 2007 19:31:56 +0000
+
 haskell-extra (1.0) unstable; urgency=low
 
   * Initial Debian package.

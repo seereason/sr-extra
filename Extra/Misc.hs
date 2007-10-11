@@ -28,6 +28,8 @@ module Extra.Misc
     , splitOutput
     -- ByteString
     , cd
+    -- Debugging
+    , read'
     ) where
 
 import		 Control.Exception
@@ -46,6 +48,7 @@ import		 System.IO
 import		 System.Posix.Files
 import		 System.Posix.User (getEffectiveUserID)
 import		 Text.Regex
+import		 GHC.Read(readEither)
 
 mapSnd :: (b -> c) -> (a, b) -> (a, c)
 mapSnd f (a, b) = (a, f b)
@@ -176,6 +179,12 @@ splitOutput :: [Output] -> (B.ByteString, B.ByteString, Maybe ExitCode)
 splitOutput output = (B.concat (stdoutOnly output),
                       B.concat (stderrOnly output),
                       listToMaybe (exitCodeOnly output))
+
+-- |A version of read with a more helpful error message.
+read' s =
+    case readEither s of
+      Left _ -> error $ "read - no parse: " ++ show s
+      Right x -> x
 
 {-
 type DryRunFn = IO () -> (Bool, String) -> IO ()
