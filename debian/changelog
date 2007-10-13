@@ -1,3 +1,9 @@
+haskell-extra (1.2) unstable; urgency=low
+
+  * Added some extra modules, such as Extra.Terminal
+
+ -- Jeremy Shaw <jeremy@n-heptane.com>  Thu,  4 Oct 2007 14:29:27 -0700
+
 haskell-extra (1.1) unstable; urgency=low
 
   * Add read', a version of read that shows what it was trying
