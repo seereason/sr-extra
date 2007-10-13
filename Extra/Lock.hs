@@ -4,7 +4,7 @@ module Extra.Lock
     ) where
 
 import Control.Exception
-import Control.Monad
+import Control.Monad.Trans
 import Control.Monad.RWS
 import System.Directory
 import System.IO
