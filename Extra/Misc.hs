@@ -30,6 +30,7 @@ module Extra.Misc
     , cd
     -- Debugging
     , read'
+    , readEither
     ) where
 
 import		 Control.Exception
