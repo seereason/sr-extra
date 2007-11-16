@@ -81,9 +81,7 @@ partitionM p xs =
 
 listIntersection :: Eq a => [[a]] -> [a]
 listIntersection [] = []
-listIntersection (first : rest) =
-    foldl f first rest
-    where f current next = filter (flip elem next) current
+listIntersection (first : rest) = foldr intersect first rest
 
 isSublistOf :: Eq a => [a] -> [a] -> Maybe Int
 isSublistOf sub lst =
