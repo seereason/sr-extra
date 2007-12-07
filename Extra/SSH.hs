@@ -1,75 +1,102 @@
--- |Functions to manage SSH access.
-module Extra.SSH
+module SSH
     ( sshVerify
     , sshExport
-    , sshCopy
     ) where
 
-import Control.Monad
-import Data.List
-import Data.Maybe
-import Linspire.Unix.Process
-import Network.URI
+import Control.Monad(unless)
 import System.Cmd
 import System.Directory
+import System.Posix.User
+import System.Posix.Files
 import System.Environment
+import System.Exit
 import System.IO
+import Network.URI
+import GHC.Read(readEither)
 
--- |Return True if we are able to access user\@host:port via ssh.
-sshVerify :: URI -> IO Bool
-sshVerify uri =
-    case (uriScheme uri, uriAuthority uri) of
-      ("ssh:", Just auth) ->
-          do let port = case uriPort auth of "" -> "22"; n -> show n
-             let dest = uriUserInfo auth ++ uriRegName auth
-             result <- lazyCommand ("ssh -o 'PreferredAuthentications hostbased,publickey' -p " ++ port ++ " " ++ dest ++ " pwd") []
-             return $ case exitCodeOnly result of
-                        [ExitSuccess] -> True
-                        _ -> False
-      _ -> error $ "Invalid argument to sshVerify: " ++ show uri
+sshExport :: String -> Maybe Int -> IO (Either String ())
+sshExport dest port =
+    generatePublicKey >>=
+    either (return . Left) (testAccess dest port) >>=
+    either (return . Left) (openAccess dest port)
 
--- |Set up the SSH keys to allow access to user\@host:port.  This may
--- prompt for a password on stdin.
-sshExport :: URI -> IO ()
-sshExport uri =
-    case (uriScheme uri, uriAuthority uri) of
-      ("ssh:", Just auth) ->
-          do let port = case uriPort auth of "" -> "22"; n -> show n
-                 dest = uriUserInfo auth ++ uriRegName auth
-             user <- getEnv "USER"	-- These will throw exceptions if not set
-             home <- getEnv "HOME"
-             let pubKey = case user of
-                            "root" -> "/root/.ssh/id_rsa.pub"
-                            _ -> home ++ "/.ssh/id_rsa.pub"
-             exists <- doesFileExist pubKey
-             
-             case exists of
-               False -> do let cmd = "yes '' | ssh-keygen -t rsa"
-                           hPutStrLn stderr $ "Creating public key: " ++ cmd
-                           result <- system cmd
-                           case result of
-                             ExitSuccess -> return ()
-                             _ -> error $ "Failure: " ++ cmd
-               True -> return ()
-             result <- lazyCommand ("ssh -o 'PreferredAuthentications hostbased,publickey' -p " ++ port ++ " " ++ dest ++ " pwd") []
-             case exitCodeOnly result of
-               [ExitSuccess] -> return ()
-               _ -> do let cmd = "cat '" ++ pubKey ++ "' | ssh -p " ++ port ++ " " ++ dest ++
-                                 " \"mkdir -p .ssh && chmod 700 .ssh && cat >> .ssh/authorized_keys2 && chmod 600 .ssh/authorized_keys2\""
-                       hPutStrLn stderr $ "Installing key on remote host: " ++ cmd
-                       result <- system cmd
-                       case result of
-                         ExitSuccess -> return ()
-                         _ -> error $ "Failure: " ++ cmd
-      _ -> error $ "Invalid argument to sshExport: " ++ show uri
+-- parseURI "ssh://dsf@server:22"
+-- URI {uriScheme = "ssh:", uriAuthority = Just (URIAuth {uriUserInfo = "dsf@", uriRegName = "server", uriPort = ":22"}), uriPath = "", uriQuery = "", uriFragment = ""}
 
--- |Copy the ssh configuration from $HOME to the \/root directory in a
--- changeroot.
-sshCopy :: FilePath -> IO ExitCode
-sshCopy root =
-    do exists <- doesDirectoryExist "~/.ssh"
-       home <- getEnv "HOME"
+-- |Make sure there is a public key for the local account
+generatePublicKey :: IO (Either String FilePath)
+generatePublicKey =
+    do user <- getEnv "USER"
+       home <- getUserEntryForName user >>= return . homeDirectory
+       let keypath = home ++ "/.ssh/id_rsa.pub"
+       exists <- doesFileExist keypath
        case exists of
-         True -> system ("rsync -aHxSpDt --delete " ++ home ++ "/.ssh/ " ++ root ++ "/root/.ssh && " ++
-                         "chown -R root.root " ++ root ++ "/root/.ssh")
-         False -> system "mkdir -p /root/.ssh"
+         True -> return . Right $ keypath
+         False ->
+             do hPutStrLn stderr $ "generatePublicKey " ++ " -> " ++ keypath
+                result <- system cmd
+                case result of
+                  ExitSuccess -> return . Right $ keypath
+                  ExitFailure n -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n
+    where cmd = "yes '' | ssh-keygen -t rsa; fi"
+
+-- |See if we already have access to the account.
+sshVerify :: String -> Maybe Int -> IO Bool
+sshVerify dest port =
+    do result <- system (sshTestCmd dest port)
+       return $ case result of
+                  ExitSuccess -> True		-- We do
+                  ExitFailure _ -> False	-- We do not
+    where
+      sshTestCmd dest port =
+          ("ssh -o 'PreferredAuthentications hostbased,publickey' " ++
+           (maybe "" (("-p " ++) . show) port) ++ " " ++ show dest ++ " pwd > /dev/null && exit 0")
+
+testAccess :: String -> Maybe Int -> FilePath -> IO (Either String (Maybe FilePath))
+testAccess dest port keypath =
+    do flag <- sshVerify dest port
+       case flag of
+         True -> return . Right $ Nothing
+         False -> return . Right . Just $ keypath
+
+-- |Try to set up the keys so we have access to the account
+openAccess :: String -> Maybe Int -> Maybe FilePath -> IO (Either String ())
+openAccess _ _ Nothing = return . Right $ ()
+openAccess dest port (Just keypath) =
+    do hPutStrLn stderr $ "openAccess " ++ show dest ++ " " ++ show port ++ " " ++ show keypath
+       let cmd = sshOpenCmd dest port keypath
+       result <- system cmd
+       case result of
+         ExitSuccess -> exitWith ExitSuccess
+         ExitFailure n -> error $ "Failure: " ++ show cmd ++ " -> " ++ show n
+    where
+      sshOpenCmd dest port keypath =
+          "cat " ++ keypath ++ " | " ++ "ssh " ++ (maybe "" ((++ "-p ") . show) port) ++ " " ++ show dest ++ " '" ++ sshOpenRemoteCmd ++ "'"
+      sshOpenRemoteCmd =
+          ("chmod g-w . && " ++				-- Ssh will not work if the permissions aren't just so
+           "chmod o-rwx . && " ++
+           "mkdir -p .ssh && " ++
+           "chmod 700 .ssh && " ++
+           "cat >> .ssh/authorized_keys2 && " ++	-- Add the key to the authorized key list
+           "chmod 600 .ssh/authorized_keys2")
+
+-- This used to be main.
+test =
+    getDest >>=
+    either (return . Left) (uncurry sshExport) >>=
+    either (error . show) (const . exitWith $ ExitSuccess)
+
+-- |Get the destination account info from the command line
+getDest :: IO (Either String (String, Maybe Int))
+getDest =
+    getArgs >>= checkArgs
+    where checkArgs [dest] =
+              return $ case parseURI ("ssh://" ++ dest) of
+                         Just (URI {uriAuthority = Just (URIAuth {uriUserInfo = user, uriRegName = host, uriPort = ""})}) ->
+                             Right (user ++ host, Nothing)
+                         Just (URI {uriAuthority = Just (URIAuth {uriUserInfo = user, uriRegName = host, uriPort = port})}) ->
+                             case readEither (dropWhile (== ':') port) :: Either String Int of
+                               Left s -> Left $ "Invalid destination: " ++ dest ++ " (" ++ s ++ ")"
+                               Right n -> Right (user ++ host, Just n)
+                         _ -> Left $ "Invalid destination: " ++ dest
+          checkArgs args = return . Left $ "Usage: sshexport user@host"
