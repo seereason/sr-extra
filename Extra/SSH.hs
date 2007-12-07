@@ -1,4 +1,4 @@
-module SSH
+module Extra.SSH
     ( sshVerify
     , sshExport
     ) where
