@@ -67,8 +67,8 @@ openAccess dest port (Just keypath) =
        let cmd = sshOpenCmd dest port keypath
        result <- system cmd
        case result of
-         ExitSuccess -> exitWith ExitSuccess
-         ExitFailure n -> error $ "Failure: " ++ show cmd ++ " -> " ++ show n
+         ExitSuccess -> return . Right $ ()
+         ExitFailure n -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n
     where
       sshOpenCmd dest port keypath =
           "cat " ++ keypath ++ " | " ++ "ssh " ++ (maybe "" ((++ "-p ") . show) port) ++ " " ++ show dest ++ " '" ++ sshOpenRemoteCmd ++ "'"
