@@ -1,6 +1,7 @@
 module Extra.SSH
     ( sshVerify
     , sshExport
+    , sshCopy
     ) where
 
 import Control.Monad(unless)
@@ -100,3 +101,14 @@ getDest =
                                Right n -> Right (user ++ host, Just n)
                          _ -> Left $ "Invalid destination: " ++ dest
           checkArgs args = return . Left $ "Usage: sshexport user@host"
+
+-- |Copy the ssh configuration from $HOME to the \/root directory in a
+-- changeroot.
+sshCopy :: FilePath -> IO ExitCode
+sshCopy root =
+    do exists <- doesDirectoryExist "~/.ssh"
+       home <- getEnv "HOME"
+       case exists of
+         True -> system ("rsync -aHxSpDt --delete " ++ home ++ "/.ssh/ " ++ root ++ "/root/.ssh && " ++
+                         "chown -R root.root " ++ root ++ "/root/.ssh")
+         False -> system "mkdir -p /root/.ssh"
