@@ -1,3 +1,11 @@
+haskell-extra (1.4) unstable; urgency=low
+
+  * Depend on -doc packages
+  * Do not compress .haddock file
+  * Added: Extra.Exit, Extra.HaXml, Extra.HughesPJ
+
+ -- Jeremy Shaw <jeremy.shaw@linspireinc.com>  Fri, 14 Dec 2007 13:37:53 -0800
+
 haskell-extra (1.3) unstable; urgency=low
 
   * Improved version of SSH module.

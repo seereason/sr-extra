@@ -3,6 +3,10 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+CABAL_PACKAGE = $(shell dpkg-parsechangelog | sed "1s/source: haskell-//i; q")
+DOC_PACKAGE = haskell-$(CABAL_PACKAGE)-doc
+CABAL_NAME = $(shell ls *.cabal | head -n1 | sed 's/.cabal.*//')
+
 build: build-stamp
 build-stamp:
 	dh_testdir
@@ -43,7 +47,9 @@ install-indep: build-indep
 
 	# Add here commands to install the package into debian/tmp
 	dh_haskell -i
-	make doc
+	runhaskell ./Setup.hs haddock 
+	mkdir -p debian/$(DOC_PACKAGE)/usr/share/doc/$(DOC_PACKAGE)/
+	cp -a dist/doc/html/$(CABAL_NAME) debian/$(DOC_PACKAGE)/usr/share/doc/$(DOC_PACKAGE)/html
 
 # Build architecture-independent files here.
 binary-indep: build-indep install-indep
@@ -64,7 +70,7 @@ binary-indep: build-indep install-indep
 	dh_installman -i
 	dh_link -i
 	dh_strip -i
-	dh_compress -i
+	dh_compress -i -X.haddock
 	dh_fixperms -i
 	dh_installdeb -i
 	dh_shlibdeps -i
@@ -91,7 +97,7 @@ binary-arch: build install
 	dh_installman -a
 	dh_link -a
 	dh_strip -a
-	dh_compress -a
+	dh_compress -a -X.haddock
 	dh_fixperms -a
 	dh_installdeb -a
 	dh_shlibdeps -a
