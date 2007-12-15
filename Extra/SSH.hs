@@ -15,7 +15,7 @@ import System.IO
 import Network.URI
 import GHC.Read(readEither)
 
--- |Set up access to a host.
+-- |Set up access to destination (user@host).
 sshExport :: String -> Maybe Int -> IO (Either String ())
 sshExport dest port =
     generatePublicKey >>=
@@ -42,7 +42,7 @@ generatePublicKey =
                   ExitFailure n -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n
     where cmd = "yes '' | ssh-keygen -t rsa; fi"
 
--- |See if we already have access to the account.
+-- |See if we already have access to the destination (user@host).
 sshVerify :: String -> Maybe Int -> IO Bool
 sshVerify dest port =
     do result <- system (sshTestCmd dest port)
