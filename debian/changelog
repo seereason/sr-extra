@@ -2,6 +2,7 @@ haskell-extra (1.5) unstable; urgency=low
 
   * Added Extra.Help -- functions for creating manpages and formatting
     --help text
+  * New implementation of SSH module.
 
  -- Jeremy Shaw <jeremy.shaw@linspireinc.com>  Fri, 14 Dec 2007 16:22:12 -0800
 

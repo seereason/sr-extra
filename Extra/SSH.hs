@@ -15,6 +15,7 @@ import System.IO
 import Network.URI
 import GHC.Read(readEither)
 
+-- |Set up access to a host.
 sshExport :: String -> Maybe Int -> IO (Either String ())
 sshExport dest port =
     generatePublicKey >>=
@@ -102,7 +103,7 @@ getDest =
                          _ -> Left $ "Invalid destination: " ++ dest
           checkArgs args = return . Left $ "Usage: sshexport user@host"
 
--- |Copy the ssh configuration from $HOME to the \/root directory in a
+-- |Copy the ssh configuration from $HOME to the \/root directory of a
 -- changeroot.
 sshCopy :: FilePath -> IO ExitCode
 sshCopy root =
