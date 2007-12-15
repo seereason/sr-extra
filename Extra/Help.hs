@@ -4,8 +4,8 @@ import Data.List
 import System.Console.GetOpt
 
 data Manpage a
-    = Manpage { th 		:: TH
-              , name 	  	:: String
+    = Manpage { name 	  	:: String
+              , section		:: Section
               , shortDesc 	:: String
               , synopsis	:: String
               , description	:: String
@@ -34,22 +34,11 @@ data Section
     | XWindowSystem
       deriving (Show, Read, Eq)
 
-data TH
-    = TH { title :: String
-         , section :: Section
-         , extra1 :: Maybe String
-         , extra2 :: Maybe String
-         , extra3 :: Maybe String
-         }
-
 -- TODO: add string as required escaping
 manpageToGroff :: Manpage a -> String
 manpageToGroff manpage =
     unlines (concat 
-             [[ ".TH " ++ name manpage ++ " " ++ linuxSectionNum (section (th manpage))
-               ++ (maybe "" (" " ++) (extra1 (th manpage)))
-               ++ (maybe "" (" " ++) (extra2 (th manpage)))
-               ++ (maybe "" (" " ++) (extra3 (th manpage)))
+             [[ ".TH " ++ name manpage ++ " " ++ linuxSectionNum (section manpage)
               , ".SH NAME"
               , (name manpage) ++ " \\- " ++ (shortDesc manpage)
               , ".SH SYNOPSIS"

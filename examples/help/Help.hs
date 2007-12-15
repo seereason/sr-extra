@@ -18,13 +18,8 @@ specs =
     ]
 
 testPage =
-    Manpage { th = TH { title = "foo" 
-                      , section = General
-                      , extra1 =  Nothing
-                      , extra2 = Nothing 
-                      , extra3 = Nothing
-                      }
-            , name = "foo" 
+    Manpage { name = "foo" 
+            , section = General
             , shortDesc = "a program that does foo" 
             , synopsis = "foo [options] arg1 arg2 ..."
             , description = "this is a very useful program"
