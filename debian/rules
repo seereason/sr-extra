@@ -49,7 +49,7 @@ install-indep: build-indep
 	dh_haskell -i
 	runhaskell ./Setup.hs haddock 
 	mkdir -p debian/$(DOC_PACKAGE)/usr/share/doc/$(DOC_PACKAGE)/
-	cp -a dist/doc/html/$(CABAL_NAME) debian/$(DOC_PACKAGE)/usr/share/doc/$(DOC_PACKAGE)/html
+	cp -a dist/doc/html debian/$(DOC_PACKAGE)/usr/share/doc/$(DOC_PACKAGE)/html
 
 # Build architecture-independent files here.
 binary-indep: build-indep install-indep

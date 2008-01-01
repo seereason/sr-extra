@@ -14,6 +14,8 @@ import System.Exit
 import System.IO
 import Network.URI
 import GHC.Read(readEither)
+import qualified Data.ByteString.Char8 as B
+import Linspire.Unix.Process
 
 -- |Set up access to destination (user\@host).
 sshExport :: String -> Maybe Int -> IO (Either String ())
@@ -28,19 +30,21 @@ sshExport dest port =
 -- |Make sure there is a public key for the local account
 generatePublicKey :: IO (Either String FilePath)
 generatePublicKey =
-    do user <- getEnv "USER"
-       home <- getUserEntryForName user >>= return . homeDirectory
+    do user <- getEffectiveUserID
+       home <- getUserEntryForID user >>= return . homeDirectory
+       let cmd = "yes '' | ssh-keygen -t rsa 2>&1 >/dev/null"
        let keypath = home ++ "/.ssh/id_rsa.pub"
        exists <- doesFileExist keypath
        case exists of
          True -> return . Right $ keypath
          False ->
              do hPutStrLn stderr $ "generatePublicKey " ++ " -> " ++ keypath
-                result <- system cmd
-                case result of
-                  ExitSuccess -> return . Right $ keypath
-                  ExitFailure n -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n
-    where cmd = "yes '' | ssh-keygen -t rsa; fi"
+                result <- lazyCommand cmd []
+                case exitCodeOnly result of
+                  (ExitFailure n : _) ->
+                      return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
+                                 "\n\noutput: " ++ B.unpack (B.concat (outputOnly result))
+                  _ -> return . Right $ keypath
 
 -- |See if we already have access to the destination (user\@host).
 sshVerify :: String -> Maybe Int -> IO Bool
@@ -67,10 +71,11 @@ openAccess _ _ Nothing = return . Right $ ()
 openAccess dest port (Just keypath) =
     do hPutStrLn stderr $ "openAccess " ++ show dest ++ " " ++ show port ++ " " ++ show keypath
        let cmd = sshOpenCmd dest port keypath
-       result <- system cmd
-       case result of
-         ExitSuccess -> return . Right $ ()
-         ExitFailure n -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n
+       result <- lazyCommand cmd []
+       case exitCodeOnly result of
+         (ExitFailure n : _) -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
+	                                "\n\noutput: " ++ B.unpack (B.concat (outputOnly result))
+         _ -> return . Right $ ()
     where
       sshOpenCmd dest port keypath =
           "cat " ++ keypath ++ " | " ++ "ssh " ++ (maybe "" ((++ "-p ") . show) port) ++ " " ++ show dest ++ " '" ++ sshOpenRemoteCmd ++ "'"
