@@ -1,5 +1,6 @@
 module Extra.Help.Doc
     ( manToDoc
+    , textToString
     ) where
 
 import qualified Text.PrettyPrint.HughesPJ as D
@@ -84,6 +85,7 @@ notChild (RE _) = True
 notChild Break = False
 notChild (Text' _) = False
 
+textToString :: Text -> String
 textToString (Text [Str s]) = s
 
 data Intermediate
