@@ -1,3 +1,9 @@
+haskell-extra (1.6) unstable; urgency=low
+
+  * Major (incompatible) update to Extra.Help
+
+ -- Jeremy Shaw <jeremy.shaw@linspireinc.com>  Thu, 10 Jan 2008 14:05:00 -0800
+
 haskell-extra (1.5) unstable; urgency=low
 
   * Added Extra.Help -- functions for creating manpages and formatting
