@@ -1,5 +1,6 @@
 module Extra.Help.Man where
 
+import Data.Monoid
 import System.Console.GetOpt
 
 data Man
@@ -8,6 +9,10 @@ data Man
 
 newtype Elements = Elements [Element]
       deriving (Show, Read, Eq)
+
+instance Monoid Elements where
+    mempty = Elements []
+    (Elements xs) `mappend` (Elements ys) = Elements (xs ++ ys)
 
 data Element
     = Paragraph ParagraphStyle -- label font is not changed, but body is

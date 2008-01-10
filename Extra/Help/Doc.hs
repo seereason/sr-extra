@@ -1,5 +1,6 @@
 module Extra.Help.Doc
     ( manToDoc
+    , elementsToDoc
     , textToString
     ) where
 
@@ -11,7 +12,10 @@ import Extra.Help.Man
 import Extra.Help.DSL
 
 manToDoc :: Man -> D.Doc
-manToDoc (Man mTitle (Elements body)) = iToDoc $ eToI (reduce body)
+manToDoc (Man mTitle body) = elementsToDoc body
+
+elementsToDoc :: Elements -> D.Doc
+elementsToDoc (Elements elements) = iToDoc $ eToI (reduce elements)
 
 reduce :: [Element] -> [Element]
 reduce [] = []
