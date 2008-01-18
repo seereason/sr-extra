@@ -96,7 +96,7 @@ data Manpage a
               , synopsis	:: Text
               , description	:: Text
               , options		:: Maybe [OptDescr a]
-              , extraSections   :: Maybe [(String, String)]
+              , extraSections   :: Maybe [(ShowIn, Text, Elements)]
               , files		:: Maybe [(FilePath, Elements)]
               , environment	:: Maybe [(String, Elements)]
               , diagnostics	:: Maybe Elements
@@ -104,3 +104,18 @@ data Manpage a
               , authors		:: Maybe [(String, String)]
               , seeAlso		:: Maybe [(String, Section)]
               }
+
+data ShowIn
+    = InManpage | InHelp | InBoth
+      deriving (Read, Show, Eq)
+
+
+showInManpage :: ShowIn -> Bool
+showInManpage InManpage = True
+showInManpage InBoth = True
+showInManpage _ = False
+
+showInHelp :: ShowIn -> Bool
+showInHelp InHelp = True
+showInHelp InBoth = True
+showInHelp _ = False

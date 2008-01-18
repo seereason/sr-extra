@@ -23,9 +23,9 @@ instance MkText Text where
 instance MkText Elements where
     text = Elements . (:[]) . Text' . Text . (:[]) . Str
 
+-- |lift Text to Elements
 te :: Text -> Elements
 te t = Elements [Text' t]
-
 
 class Append a where
     append :: a -> a -> a

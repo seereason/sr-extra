@@ -5,8 +5,10 @@ import Data.Monoid
 import Extra.Help.Man
 import Extra.Help.Doc
 import Extra.Help.DSL
+import Extra.Help.Groff
 import Extra.HughesPJ
 import System.Console.GetOpt
+import System.Exit
 
 manpageToMan :: Manpage a -> Man
 manpageToMan manpage =
@@ -19,6 +21,7 @@ manpageToMan manpage =
                                 , Text' $ description manpage
                                 ]) <>
                        optional optionSection (options manpage) <>
+                       optional (formatExtraSections showInManpage) (extraSections manpage) <>
                        formatFiles (files manpage) <>
                        formatEnvironment (environment manpage) <>
                        optional formatDiagnostics (diagnostics manpage) <>
@@ -92,8 +95,22 @@ formatOption (Option shortOpts longOpts argDescr optionDescr) =
       short = False
       long = True
 
+formatExtraSections :: (ShowIn -> Bool) -> [(ShowIn, Text, Elements)] -> Elements
+formatExtraSections showPredicate sections = mconcat (map (formatExtraSection showPredicate) sections)
+
+formatExtraSection :: (ShowIn -> Bool) -> (ShowIn, Text, Elements) -> Elements
+formatExtraSection showPredicate (showIn, name, body)
+    | showPredicate showIn  = section name <> body
+    | otherwise = mempty
+
 -- JAS - use Extra.HughesPJ.renderWidth to format --help text to current terminal width
 usage :: Manpage a -> IO String
 usage manpage =
-    renderWidth (elementsToDoc (te (synopsis manpage) <> (optional optionSection (options manpage))))
+    renderWidth (elementsToDoc (te (synopsis manpage) <> 
+                                (optional optionSection (options manpage)) <>
+                                (optional (formatExtraSections showInHelp) (extraSections manpage))))
 
+dumpManPage :: Manpage a -> IO ()
+dumpManPage manpage = 
+    do putStrLn =<< renderWidth (ppMan (manpageToMan manpage))
+       exitWith ExitSuccess

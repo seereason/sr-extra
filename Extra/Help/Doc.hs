@@ -2,6 +2,8 @@ module Extra.Help.Doc
     ( manToDoc
     , elementsToDoc
     , textToString
+    , reduce
+    , eToI
     ) where
 
 import qualified Text.PrettyPrint.HughesPJ as D
@@ -23,13 +25,14 @@ reduce (Font _ : es) = reduce es
 reduce (Text' t : es) =
     case reduce es of
       (Text' u : ess) -> Text' (textMerge (reduceText t) u) : ess
-      (Break : ess) -> Text' t : ess
+      (Break : ess) -> Text' (reduceText t) : ess
       es' -> Text' (reduceText t) : es'
     where
       textMerge (Text t) (Text u) = Text [Str (reduceElms (t ++ [Str " "] ++ u))]
 reduce ((Section heading) : es) = Section (reduceText heading) : reduce es
 reduce (e : es) = e : reduce es
 
+reduceText :: Text -> Text
 reduceText (Text elms) = Text [Str (reduceElms elms)]
  
 reduceElms [] = []
@@ -75,9 +78,10 @@ eToI ((Paragraph ps) : es) =
       notChild (SubSection _) = True
       notChild (Font _) = False
       notChild (RS _) = False
-      notChild (RE _) = True
+      notChild (RE _) = False
       notChild Break = False
       notChild (Text' _) = False
+eToI e = error ("eToI: unhandled element: " ++ show e)
 
 
 notChild (Paragraph _) = False
@@ -85,7 +89,7 @@ notChild (Section _) = True
 notChild (SubSection _) = True
 notChild (Font _) = False
 notChild (RS _) = False
-notChild (RE _) = True
+notChild (RE _) = False
 notChild Break = False
 notChild (Text' _) = False
 
