@@ -4,7 +4,7 @@ License:        BSD3
 -- License-File:	debian/copyright
 Author:         David Fox
 Homepage:       http://seereason.org/
-Build-Depends:  base, unix, regex-compat, time >= 1.1, MIME, Unixutils >= 1.10 , mtl, network, HaXml
+Build-Depends:  base, unix, regex-compat, time >= 1.1, MIME, Unixutils >= 1.10 , mtl, network, HaXml, pretty, directory, bytestring, process, containers, old-time, old-locale
 Synopsis:       A grab bag of modules.
 ghc-options:	-fglasgow-exts -O2 -fasm
 C-Sources:	     cbits/gwinsz.c
