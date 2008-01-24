@@ -45,8 +45,8 @@ eToI ((Text' (Text [Str s])) : es) =
     case eToI es of
       ((IText strings) : rest) -> (IText (s : strings) : rest)
       rest -> (IText [s] : rest)
-eToI (RS n : es) =
-    let (children, rest) = break notChild es
+eToI (RS n : es) = -- this is wacky, perhaps eToI needs a state variable with the current nesting depth
+    let (children, rest) = findEnd 0 [] es
     in
       (INest n (eToI children)) : (eToI rest)
     where
@@ -55,9 +55,19 @@ eToI (RS n : es) =
       notChild (SubSection _) = True
       notChild (Font _) = False
       notChild (RS _) = False
-      notChild (RE _) = True
+      notChild (RE _) = False
       notChild Break = False
       notChild (Text' _) = False
+      findEnd n children (e@(RS _) : rest) =
+          findEnd (n + 1) (e : children) rest
+      findEnd n children (e@(RE m) : rest) -- FIXME: undo specified number of levels
+          | n == 0 = ((reverse (e : children)), rest)
+          | otherwise = findEnd (n - 1) (e:children) rest
+      findEnd n children es@(e : rest)
+          | notChild e = (reverse children, es)
+          | otherwise = findEnd n (e : children) rest
+      findEnd n children [] =
+          (reverse children, [])
 eToI (RE _ : es) = eToI es
 eToI (Break : es) = eToI es
 eToI ((Section heading) : es) =
