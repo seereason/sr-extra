@@ -6,6 +6,7 @@
 CABAL_PACKAGE = $(shell dpkg-parsechangelog | sed "1s/source: haskell-//i; q")
 DOC_PACKAGE = haskell-$(CABAL_PACKAGE)-doc
 CABAL_NAME = $(shell ls *.cabal | head -n1 | sed 's/.cabal.*//')
+CABAL_VERSION = $(shell sed -n 's/^Version:[ \t]*\(.*\)[ \t]*$$/\1/p' $(CABAL_NAME).cabal)
 
 build: build-stamp
 build-stamp:
@@ -34,7 +35,8 @@ install: build
 
 	# Add here commands to install the package into debian/tmp
 	dh_haskell -a
-	rm debian/libghc6-$(CABAL_PACKAGE)-prof/usr/lib/haskell-packages/ghc6/lib/Extra-1.6/ghc-6.8.2/include/gwinsz.h
+	find . -name gwinsz.h -print
+	rm debian/libghc6-$(CABAL_PACKAGE)-prof/usr/lib/haskell-packages/ghc6/lib/$(CABAL_NAME)-$(CABAL_VERSION)/ghc-6.8.2/include/gwinsz.h
 
 build-indep: build-indep-stamp
 build-indep-stamp:
