@@ -16,7 +16,7 @@ Description: A grab-bag of modules.
 Package: libghc6-extra-prof
 Section: libdevel
 Architecture: any
-Depends: ${haskell:Depends}, libghc6-network-dev, libghc6-mtl-dev, libghc6-unixutils-prof (>= 1.10), libghc6-time-dev (>= 1.1), libghc6-mime-prof, libghc6-haxml-dev
+Depends: ${haskell:Depends}, libghc6-extra-dev, libghc6-network-prof, libghc6-mtl-prof, libghc6-unixutils-prof (>= 1.10), libghc6-time-prof (>= 1.1), libghc6-mime-prof, libghc6-haxml-dev
 Description: A grab-bag of modules.
  This package contains the libraries compiled for GHC 6 with profiling
  enabled.
@@ -24,6 +24,6 @@ Description: A grab-bag of modules.
 Package: haskell-extra-doc
 Section: doc
 Architecture: all
-Depends: ghc6-doc, libghc6-base-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, haskell-unixutils-doc, haskell-mime-doc
+Depends: ghc6-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, haskell-unixutils-doc, haskell-mime-doc
 Description:  A grab-bag of modules.
  This package contains the documentation.
