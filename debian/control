@@ -3,7 +3,7 @@ Priority: optional
 Section: devel
 Maintainer: David Fox <ddssff@gmail.com>
 Build-Depends: debhelper (>= 4.0.0), haskell-devscripts (>=0.5.15), ghc6 (>=6.4), ghc6-prof, libghc6-regex-compat-prof, libghc6-network-prof, libghc6-mtl-prof, libghc6-unixutils-prof (>= 1.10), libghc6-time-dev (>= 1.1), libghc6-time-prof (>= 1.1), libghc6-mime-prof, libghc6-haxml-dev
-Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-base-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, haskell-unixutils-doc, haskell-mime-doc, libghc6-regex-compat-doc, haxml-doc
+Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-base-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, haskell-unixutils-doc, haskell-mime-doc, haskell-regex-compat-doc, haxml-doc
 Standards-Version: 3.7.2.0
 
 Package: libghc6-extra-dev
