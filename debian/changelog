@@ -1,3 +1,9 @@
+haskell-extra (1.7.1) unstable; urgency=low
+
+  * add missing install depends on libghc6-regex-compat-*
+
+ -- Jeremy Shaw <jeremy@n-heptane.com>  Mon, 11 Feb 2008 22:46:14 -0800
+
 haskell-extra (1.7) unstable; urgency=low
 
   * Add several functions to Extra.Either
