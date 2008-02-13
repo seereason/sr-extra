@@ -1,3 +1,10 @@
+haskell-extra (1.9) unstable; urgency=low
+
+  * Added forceRemoveLink
+  * zipFile now breaks hardlinks
+
+ -- Jeremy Shaw <jeremy@n-heptane.com>  Tue, 12 Feb 2008 17:10:16 -0800
+
 haskell-extra (1.7) unstable; urgency=low
 
   * Add several functions to Extra.Either
