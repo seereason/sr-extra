@@ -17,6 +17,7 @@ module Extra.Files
     , maybeWriteFile		-- writeFileUnlessSame
     , createSymbolicLinkIfMissing
     , prepareSymbolicLink
+    , forceRemoveLink
     ) where
 
 import		 Control.Exception
@@ -30,6 +31,7 @@ import		 Linspire.Unix.Directory
 import		 Linspire.Unix.Process
 import		 System.Directory
 import		 System.IO
+import		 System.IO.Error (isDoesNotExistError)
 import		 System.Posix.Files
 
 -- | Return the list of subdirectories, omitting . and .. and ignoring
@@ -132,6 +134,8 @@ zipFile :: FilePath -> IO (Either [String] ())
 zipFile path =
     do let commands = ["gzip < '" ++ path ++ "' > '" ++ path ++ ".gz'",
                        "bzip2 < '" ++ path ++ "' > '" ++ path ++ ".bz2'"]
+       forceRemoveLink (path ++ ".gz")
+       forceRemoveLink (path ++ ".bz2")
        results <- mapM (\ cmd -> lazyCommand cmd []) commands
        case filter (/= ExitSuccess) (concat (map exitCodeOnly results)) of
          [] -> return $ Right ()
@@ -143,6 +147,10 @@ zipFile path =
             (ExitFailure n : _) ->
                 command ++ " -> " ++ show n ++ ":\n  " ++ B.unpack (B.concat (stderrOnly output))
             _ -> ""
+
+-- |like removeLink, but does not fail if link did not exist
+forceRemoveLink :: FilePath -> IO ()
+forceRemoveLink fp = removeLink fp `Prelude.catch` (\e -> unless (isDoesNotExistError e) (ioError e))
                  
 -- | Write out three versions of a file, regular, gzipped, and bzip2ed.
 writeAndZipFileWithBackup :: FilePath -> B.ByteString -> IO (Either [String] ())
