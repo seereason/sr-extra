@@ -17,7 +17,7 @@ withLock path task =
     liftIO checkLock >>= liftIO . takeLock >>= doTask task >>= liftIO . dropLock
     where
       -- Return True if file is locked by a running process, false otherwise
-      checkLock :: IO (Either LockStatus ())
+      checkLock :: IO (Either Exception ())
       checkLock = try (readFile path) >>= either (return . checkReadError) (processRunning . lines)
       checkReadError (IOException e) | isDoesNotExistError e = (Right ())
       checkReadError e = Left e
@@ -31,7 +31,7 @@ withLock path task =
       breakLock = do try (removeFile path) >>= return . either checkBreakError (const (Right ()))
       checkBreakError (IOException e) | isDoesNotExistError e = (Right ())
       checkBreakError e = Left e
-      takeLock :: Either LockStatus () -> IO (Either LockStatus ())
+      takeLock :: Either Exception () -> IO (Either Exception ())
       takeLock (Right ()) =
           -- Try to create the lock file in exclusive mode, if this
           -- succeeds then we have a lock.  Then write the process ID
