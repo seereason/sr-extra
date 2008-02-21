@@ -1,3 +1,9 @@
+haskell-extra (1.10) unstable; urgency=low
+
+  * Rewrite Lock.withLock function to catch exceptions.
+
+ -- David Fox <dsf@seereason.com>  Wed, 20 Feb 2008 21:49:02 -0800
+
 haskell-extra (1.9) unstable; urgency=low
 
   * Added forceRemoveLink

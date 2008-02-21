@@ -4,44 +4,50 @@ module Extra.Lock
     ) where
 
 import Control.Exception
-import Control.Monad.Trans
 import Control.Monad.RWS
 import System.Directory
 import System.IO
+import System.IO.Error hiding (try)
 import System.Posix.Files
 import System.Posix.IO
 import System.Posix.Unistd
 
-data LockStatus = Locked | Unlocked Exception
-
--- | Try to create a lock file containing the PID of this process, if
--- successful perform a task, drop the lock and return the result.  If
--- lock is not obtained, return Nothing.
 withLock :: (MonadIO m) => FilePath -> m a -> m (Either Exception a)
 withLock path task =
-    liftIO checkLock >> liftIO takeLock >>= doTask task >>= liftIO . dropLock
+    liftIO checkLock >>= liftIO . takeLock >>= doTask task >>= liftIO . dropLock
     where
-      -- If the lock file exists but the process is gone, break the lock
-      checkLock =
-          do exists <- doesFileExist path
+      -- Return True if file is locked by a running process, false otherwise
+      checkLock :: IO (Either LockStatus ())
+      checkLock = try (readFile path) >>= either (return . checkReadError) (processRunning . lines)
+      checkReadError (IOException e) | isDoesNotExistError e = (Right ())
+      checkReadError e = Left e
+      processRunning (pid : _) =
+          do exists <- doesDirectoryExist ("/proc/" ++ pid)
              case exists of
-               True -> liftIO (readFile path) >>= liftIO . processRunning >>= breakLock
-               False -> return ()
-          where
-            breakLock True = return ()
-            breakLock False = liftIO (hPutStrLn stderr "Removing stale lock") >> liftIO (removeFile path)
-      takeLock =
+               True -> return (Left (lockedBy pid))
+               False -> breakLock
+      processRunning [] = breakLock
+      lockedBy pid = IOException (mkIOError alreadyInUseErrorType ("Locked by " ++ pid) Nothing (Just path))
+      breakLock = do try (removeFile path) >>= return . either checkBreakError (const (Right ()))
+      checkBreakError (IOException e) | isDoesNotExistError e = (Right ())
+      checkBreakError e = Left e
+      takeLock :: Either LockStatus () -> IO (Either LockStatus ())
+      takeLock (Right ()) =
           -- Try to create the lock file in exclusive mode, if this
           -- succeeds then we have a lock.  Then write the process ID
           -- into the lock and close.
           try (openFd path ReadWrite (Just 0o600) (defaultFileFlags {exclusive = True, trunc = True})) >>=
-          either (return . Unlocked)
+          either (return . Left)
                  (\ fd -> do h <- fdToHandle fd
-                             processID >>= hPutStrLn h >> hClose h >> return Locked)
-      doTask task Locked = task >>= return . Right
-      doTask _ (Unlocked s) = return (Left s)
-      dropLock (Right a) = removeFile path >> return (Right a)
-      dropLock x = return x
+                             processID >>= hPutStrLn h >> hClose h >> return (Right ()))
+      takeLock (Left e) = return (Left e)
+      doTask task (Right ()) = task >>= return . Right
+      doTask _ (Left e) = return (Left e)
+      dropLock (Right a) = try (removeFile path) >>= return . checkDrop a
+      dropLock (Left e) = return (Left e)
+      checkDrop a (Right ()) = Right a
+      checkDrop a (Left (IOException e)) | isDoesNotExistError e = Right a
+      checkDrop _ (Left e) = Left e
 
 -- |Like withLock, but instead of giving up immediately, try n times
 -- with a wait between each.
@@ -51,12 +57,6 @@ awaitLock tries usecs path task =
     where 
       attempt n | n >= tries = return (Left (ErrorCall "Too many failures"))
       attempt n = withLock path task >>= either (\ _ -> liftIO (usleep usecs) >> attempt (n + 1)) (return . Right)
-
-processRunning :: String -> IO Bool
-processRunning text = 
-    case lines text of
-      (pid : _) -> doesDirectoryExist ("/proc/" ++ pid)
-      [] -> return False
 
 processID :: IO String
 processID = readSymbolicLink "/proc/self"
