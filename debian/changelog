@@ -1,3 +1,9 @@
+haskell-extra (1.11) unstable; urgency=low
+
+  * Added wrapper around GetOpt that supports markup
+
+ -- Jeremy Shaw <jeremy@n-heptane.com>  Fri, 22 Feb 2008 11:53:40 -0800
+
 haskell-extra (1.10) unstable; urgency=low
 
   * Rewrite Lock.withLock function to catch exceptions.

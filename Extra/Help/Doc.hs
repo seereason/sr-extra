@@ -1,20 +1,17 @@
 module Extra.Help.Doc
     ( manToDoc
     , elementsToDoc
-    , textToString
     , reduce
     , eToI
     ) where
 
 import qualified Text.PrettyPrint.HughesPJ as D
 
-import System.Console.GetOpt
-
 import Extra.Help.Man
-import Extra.Help.DSL
+import Extra.Help.Markup
 
 manToDoc :: Man -> D.Doc
-manToDoc (Man mTitle body) = elementsToDoc body
+manToDoc (Man _mTitle body) = elementsToDoc body
 
 elementsToDoc :: Elements -> D.Doc
 elementsToDoc (Elements elements) = iToDoc $ eToI (reduce elements)
@@ -31,13 +28,6 @@ reduce (Text' t : es) =
       textMerge (Text t) (Text u) = Text [Str (reduceElms (t ++ [Str " "] ++ u))]
 reduce ((Section heading) : es) = Section (reduceText heading) : reduce es
 reduce (e : es) = e : reduce es
-
-reduceText :: Text -> Text
-reduceText (Text elms) = Text [Str (reduceElms elms)]
- 
-reduceElms [] = []
-reduceElms (Str s : es) = s ++ reduceElms es
-reduceElms (Escape' (EFont _) : es) = {-" " ++ -} reduceElms es
 
 -- eToI :: [Element] -> [Intermediate]
 eToI [] = []
@@ -58,26 +48,27 @@ eToI (RS n : es) = -- this is wacky, perhaps eToI needs a state variable with th
       notChild (RE _) = False
       notChild Break = False
       notChild (Text' _) = False
+      notChild Empty = False
       findEnd n children (e@(RS _) : rest) =
           findEnd (n + 1) (e : children) rest
-      findEnd n children (e@(RE m) : rest) -- FIXME: undo specified number of levels
+      findEnd n children (e@(RE _m) : rest) -- FIXME: undo specified number of levels
           | n == 0 = ((reverse (e : children)), rest)
           | otherwise = findEnd (n - 1) (e:children) rest
       findEnd n children es@(e : rest)
           | notChild e = (reverse children, es)
           | otherwise = findEnd n (e : children) rest
-      findEnd n children [] =
+      findEnd _n children [] =
           (reverse children, [])
 eToI (RE _ : es) = eToI es
 eToI (Break : es) = eToI es
 eToI ((Section heading) : es) =
     let (children, rest) = break notChild es
     in
-      (ISection (textToString heading) (eToI children)) : (eToI rest)
+      (ISection (textToString' heading) (eToI children)) : (eToI rest)
 eToI ((SubSection heading) : es) =
     let (children, rest) = break notChild es
     in
-      (ISubSection (textToString heading) (eToI children)) : (eToI rest)
+      (ISubSection (textToString' heading) (eToI children)) : (eToI rest)
 eToI ((Paragraph ps) : es) = 
     let (children, rest) = break notChild es
     in
@@ -91,6 +82,7 @@ eToI ((Paragraph ps) : es) =
       notChild (RE _) = False
       notChild Break = False
       notChild (Text' _) = False
+      notChild Empty = False
 eToI e = error ("eToI: unhandled element: " ++ show e)
 
 
@@ -102,9 +94,7 @@ notChild (RS _) = False
 notChild (RE _) = False
 notChild Break = False
 notChild (Text' _) = False
-
-textToString :: Text -> String
-textToString (Text [Str s]) = s
+notChild Empty = False
 
 data Intermediate
     = IText [String]

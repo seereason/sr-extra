@@ -1,14 +1,18 @@
 module Extra.Help.Util where
 
+import Control.Monad
 import Data.List
 import Data.Monoid
 import Extra.Help.Man
 import Extra.Help.Doc
 import Extra.Help.DSL
 import Extra.Help.Groff
+import Extra.Help.GetOpt
+import Extra.Help.Markup
 import Extra.HughesPJ
-import System.Console.GetOpt
+import System.Environment
 import System.Exit
+import System.IO
 
 manpageToMan :: Manpage a -> Man
 manpageToMan manpage =
@@ -85,7 +89,7 @@ formatOption (Option shortOpts longOpts argDescr optionDescr) =
     tp Nothing (punctuate (text ", ") 
                 ((map (\c -> b <> text ("-" ++ [c]) <> (argString argDescr short)) shortOpts) ++
                  (map (\opt -> b <> text ("--" ++ opt) <> (argString argDescr long)) longOpts))) <>
-           (text optionDescr)
+           (te optionDescr)
     where
       argString argDescr long = 
           case argDescr of
@@ -103,14 +107,39 @@ formatExtraSection showPredicate (showIn, name, body)
     | showPredicate showIn  = section name <> body
     | otherwise = mempty
 
--- JAS - use Extra.HughesPJ.renderWidth to format --help text to current terminal width
+-- |render help text to screen, fitted to current terminal width
 usage :: Manpage a -> IO String
 usage manpage =
     renderWidth (elementsToDoc (te (synopsis manpage) <> 
                                 (optional optionSection (options manpage)) <>
                                 (optional (formatExtraSections showInHelp) (extraSections manpage))))
 
+-- |print the manpage on stdout and exit succesfully immediately
 dumpManPage :: Manpage a -> IO ()
 dumpManPage manpage = 
-    do putStrLn =<< renderWidth (ppMan (manpageToMan manpage))
+    do print (ppMan (manpageToMan manpage))
        exitWith ExitSuccess
+
+-- |wrapper around getOpt    
+getOptions :: ([a] -> Bool)
+           -> ([a] -> Bool)
+           -> (String -> Manpage a) 
+           -> ArgOrder a 
+           -> [OptDescr a] 
+           -> (([a], [String], [String]) -> Either [String] b)
+           -> IO b
+getOptions helpTest dumpPageTest manpage permute optionSpec analyze =
+    do args     <- getArgs
+       progName <- getProgName
+       let (opts, nonOpts, errors) = getOpt permute optionSpec args
+       when (helpTest opts) $ usage (manpage progName) >>= putStrLn >> exitWith ExitSuccess
+       when (dumpPageTest opts) $ dumpManPage (manpage progName)
+       case analyze (opts, nonOpts, errors) of
+         Left errors -> 
+             do hPutStrLn stderr (showErrors errors)
+                usage (manpage progName) >>= hPutStrLn stderr
+                exitFailure
+         Right r -> return r
+    where
+      showErrors = unlines 
+

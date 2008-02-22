@@ -4,6 +4,7 @@ module Extra.Help.Groff
     where
 
 import Extra.Help.Man
+import Extra.Help.Markup
 import Text.PrettyPrint.HughesPJ hiding (Str)
 
 ppMan :: Man -> Doc

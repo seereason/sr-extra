@@ -11,8 +11,8 @@ module Extra.Help.DSL
     ) where
 
 import Data.List
+import Extra.Help.Markup
 import Extra.Help.Man
-import System.Console.GetOpt
 
 class MkText a where
     text :: String -> a
