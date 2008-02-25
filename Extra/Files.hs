@@ -21,19 +21,19 @@ module Extra.Files
     , replaceFile
     ) where
 
-import		 Control.Exception
+import		 Control.Exception hiding (catch)
 import		 Control.Monad
 import qualified Data.ByteString.Char8 as B
 import		 Data.List
 import		 Data.Maybe
-import		 Extra.Bool
 import		 Extra.Misc
 import		 Linspire.Unix.Directory
 import		 Linspire.Unix.Process
 import		 System.Directory
 import		 System.IO
-import		 System.IO.Error (isDoesNotExistError)
+import		 System.IO.Error hiding (try, catch)
 import		 System.Posix.Files
+import		 System.Posix.Unistd
 
 -- | Return the list of subdirectories, omitting . and .. and ignoring
 -- symbolic links.
@@ -201,8 +201,15 @@ writeFileIfMissing mkdirs path text =
 -- | Write a file if its content is different from the given text.
 maybeWriteFile :: FilePath -> String -> IO ()
 maybeWriteFile path text =
-    try (readFile path) >>=
-    either (const (replaceFile path text)) (\ old -> if old /= text then replaceFile path text else return ())
+    try (readFile path) >>= maybeWrite
+    where
+      maybeWrite (Left (IOException e)) | isDoesNotExistError e = writeFile path text
+      maybeWrite (Left e) = error ("maybeWriteFile: " ++ show e)
+      maybeWrite (Right old) | old == text = return ()
+      maybeWrite (Right _old) = 
+          --hPutStrLn stderr ("Old text: " ++ show old) >>
+          --hPutStrLn stderr ("New text: " ++ show text) >>
+          replaceFile path text
 
 -- |Add-on for System.Posix.Files
 createSymbolicLinkIfMissing :: String -> FilePath -> IO ()
@@ -225,7 +232,18 @@ prepareSymbolicLink name path =
       orCreate False = do createSymbolicLink name path; return False
 
 -- Replace a file's contents, accounting for the possibility that the
--- old contents of the file may still be being read.
+-- old contents of the file may still be being read.  Apparently there
+-- is a race condition in the file system so we may get one or more
+-- isAlreadyBusyError exceptions before the writeFile succeeds.
 replaceFile :: FilePath -> String -> IO ()
-replaceFile path text = try (removeFile path) >> writeFile path text
---replaceFile path text = removeFile path >> last text `seq` writeFile path text
+replaceFile path text =
+    tries 100 10 f >>= either throw return
+    where
+      f :: IO ()
+      f = removeFile path `catch` (\ e -> if isDoesNotExistError e then return () else ioError e) >> writeFile path text
+
+-- Try something n times, returning the first Right or the last Left
+-- if it never succeeds.  Sleep between tries.
+tries :: Int -> Int -> (IO a) -> IO (Either Exception a)
+tries _ 1 f = try f >>= either (return . Left) (return . Right)
+tries usec count f = try f >>= either (const (usleep usec >> tries (count - 1) f)) (return . Right)

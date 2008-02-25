@@ -1,3 +1,10 @@
+haskell-extra (1.14) unstable; urgency=low
+
+  * replaceFile needs to try writing the file several times, as it
+    occasionally gets transient isAlreadyBusy errors.
+
+ -- David Fox <dsf@seereason.com>  Mon, 25 Feb 2008 15:26:02 -0800
+
 haskell-extra (1.13) unstable; urgency=low
 
   * Add a replaceFile, which removes a file and then rewrites it, and use
