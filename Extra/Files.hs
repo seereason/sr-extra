@@ -204,7 +204,7 @@ maybeWriteFile path text =
     where
       checkFile path text = readFile path >>=
                             return . (== text) >>=
-                            cond (return ()) (removeFile path >> writeFile path $! text)
+                            cond (return ()) (removeFile path >> (writeFile path $! text))
 
 -- |Add-on for System.Posix.Files
 createSymbolicLinkIfMissing :: String -> FilePath -> IO ()
