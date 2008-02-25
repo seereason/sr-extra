@@ -18,6 +18,7 @@ module Extra.Files
     , createSymbolicLinkIfMissing
     , prepareSymbolicLink
     , forceRemoveLink
+    , replaceFile
     ) where
 
 import		 Control.Exception
@@ -157,7 +158,7 @@ writeAndZipFileWithBackup :: FilePath -> B.ByteString -> IO (Either [String] ())
 writeAndZipFileWithBackup path text =
     backupFile path >>=
     either (\ e -> return (Left ["Failure renaming " ++ path ++ " -> " ++ path ++ "~: " ++ show e]))
-           (\ _ -> try (B.writeFile path $! text) >>=
+           (\ _ -> try (B.writeFile path text) >>=
                    either (\ e -> restoreBackup path >>=
                                   either (\ e -> error ("Failed to restore backup: " ++ path ++ "~ -> " ++ path ++ ": " ++ show e))
                                          (\ _ -> return (Left ["Failure writing " ++ path ++ ": " ++ show e])))
@@ -170,7 +171,7 @@ writeAndZipFile :: FilePath -> B.ByteString -> IO (Either [String] ())
 writeAndZipFile path text =
     deleteMaybe path >>=
     either (\ e -> return (Left ["Failure removing " ++ path ++ ": " ++ show e]))
-           (\ _ -> try (B.writeFile path $! text) >>=
+           (\ _ -> try (B.writeFile path text) >>=
                    either (\ e -> return (Left ["Failure writing " ++ path ++ ": " ++ show e]))
                           (\ _ -> zipFile path))
 
@@ -193,26 +194,21 @@ writeFileIfMissing mkdirs path text =
               if mkdirs then
                   createDirectoryIfMissing True (parentPath path) else
                   return ()
-              writeFile path $! text
+              replaceFile path text
         True ->
             return ()
 
 -- | Write a file if its content is different from the given text.
 maybeWriteFile :: FilePath -> String -> IO ()
 maybeWriteFile path text =
-    doesFileExist path >>= cond (checkFile path text) (writeFile path $! text)
-    where
-      checkFile path text = readFile path >>=
-                            return . (== text) >>=
-                            cond (return ()) (removeFile path >> (writeFile path $! text))
+    try (readFile path) >>=
+    either (const (replaceFile path text)) (\ old -> if old /= text then replaceFile path text else return ())
 
 -- |Add-on for System.Posix.Files
 createSymbolicLinkIfMissing :: String -> FilePath -> IO ()
 createSymbolicLinkIfMissing text path =
-    do
-      -- My.ePut ("createSymbolicLinkIfMissing \"" ++ text ++ "\" \"" ++ path ++ "\"")
-      result <- try $ getSymbolicLinkStatus path
-      either (\ _ -> createSymbolicLink text path) (\ _ -> return ()) result
+    try (getSymbolicLinkStatus path) >>=
+    either (\ _ -> createSymbolicLink text path) (\ _ -> return ())
 
 prepareSymbolicLink :: FilePath -> FilePath -> IO ()
 prepareSymbolicLink name path =
@@ -227,3 +223,9 @@ prepareSymbolicLink name path =
       orReplace False = do removeRecursiveSafely path; orCreate False
       orCreate True = return True
       orCreate False = do createSymbolicLink name path; return False
+
+-- Replace a file's contents, accounting for the possibility that the
+-- old contents of the file may still be being read.
+replaceFile :: FilePath -> String -> IO ()
+replaceFile path text = try (removeFile path) >> writeFile path text
+--replaceFile path text = removeFile path >> last text `seq` writeFile path text
