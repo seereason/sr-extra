@@ -246,4 +246,4 @@ replaceFile path text =
 -- if it never succeeds.  Sleep between tries.
 tries :: Int -> Int -> (IO a) -> IO (Either Exception a)
 tries _ 1 f = try f >>= either (return . Left) (return . Right)
-tries usec count f = try f >>= either (const (usleep usec >> tries (count - 1) f)) (return . Right)
+tries usec count f = try f >>= either (const (usleep usec >> tries usec (count - 1) f)) (return . Right)
