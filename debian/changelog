@@ -1,3 +1,10 @@
+haskell-extra (1.15) unstable; urgency=low
+
+  * Remove workaround added in 1.14, we now have a fix for GHC ticket 2122.
+    http://hackage.haskell.org/trac/ghc/ticket/2122
+
+ -- David Fox <dsf@seereason.com>  Tue, 26 Feb 2008 09:30:37 -0800
+
 haskell-extra (1.14) unstable; urgency=low
 
   * replaceFile needs to try writing the file several times, as it

@@ -237,7 +237,8 @@ prepareSymbolicLink name path =
 -- isAlreadyBusyError exceptions before the writeFile succeeds.
 replaceFile :: FilePath -> String -> IO ()
 replaceFile path text =
-    tries 100 10 f >>= either throw return
+    --tries 100 10 f	-- There is now a fix for this problem, see ghc ticket 2122.
+    f
     where
       f :: IO ()
       f = removeFile path `catch` (\ e -> if isDoesNotExistError e then return () else ioError e) >> writeFile path text
