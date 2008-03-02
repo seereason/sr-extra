@@ -1,4 +1,4 @@
-module Debian.TIO
+module Extra.TIO
     ( TIO
     , TStyle(..)
     , runTIO
