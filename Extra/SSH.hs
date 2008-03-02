@@ -15,7 +15,7 @@ import System.IO
 import Network.URI
 import GHC.Read(readEither)
 import qualified Data.ByteString.Char8 as B
-import Linspire.Unix.Process
+import System.Unix.Process
 
 -- |Set up access to destination (user\@host).
 sshExport :: String -> Maybe Int -> IO (Either String ())

@@ -27,8 +27,8 @@ import qualified Data.ByteString.Char8 as B
 import		 Data.List
 import		 Data.Maybe
 import		 Extra.Misc
-import		 Linspire.Unix.Directory
-import		 Linspire.Unix.Process
+import		 System.Unix.Directory
+import		 System.Unix.Process
 import		 System.Directory
 import		 System.IO
 import		 System.IO.Error hiding (try, catch)
