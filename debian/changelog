@@ -1,3 +1,9 @@
+haskell-extra (1.16) unstable; urgency=low
+
+  * Added TIO module
+
+ -- David Fox <dsf@seereason.com>  Sun, 02 Mar 2008 10:17:45 -0800
+
 haskell-extra (1.15) unstable; urgency=low
 
   * Remove workaround added in 1.14, we now have a fix for GHC ticket 2122.
