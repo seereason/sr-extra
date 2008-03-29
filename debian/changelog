@@ -1,3 +1,10 @@
+haskell-extra (1.17) unstable; urgency=low
+
+  * Fix packaging in response to fixes in haskell-devscripts 0.6.10,
+    it now removes .h files from the profiling packages.
+
+ -- David Fox <dsf@seereason.com>  Sat, 29 Mar 2008 08:58:33 -0700
+
 haskell-extra (1.16) unstable; urgency=low
 
   * Added TIO module
