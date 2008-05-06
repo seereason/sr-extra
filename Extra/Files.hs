@@ -23,7 +23,7 @@ module Extra.Files
 
 import		 Control.Exception hiding (catch)
 import		 Control.Monad
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as B
 import		 Data.List
 import		 Data.Maybe
 import		 Extra.Misc
@@ -137,7 +137,7 @@ zipFile path =
                        "bzip2 < '" ++ path ++ "' > '" ++ path ++ ".bz2'"]
        forceRemoveLink (path ++ ".gz")
        forceRemoveLink (path ++ ".bz2")
-       results <- mapM (\ cmd -> lazyCommand cmd []) commands
+       results <- mapM (\ cmd -> lazyCommand cmd B.empty) commands
        case filter (/= ExitSuccess) (concat (map exitCodeOnly results)) of
          [] -> return $ Right ()
          _ -> return (Left ["Failure writing and zipping " ++ path ++ ": " ++
@@ -146,7 +146,7 @@ zipFile path =
       writeMessage (command, output) =
           case exitCodeOnly output of
             (ExitFailure n : _) ->
-                command ++ " -> " ++ show n ++ ":\n  " ++ B.unpack (B.concat (stderrOnly output))
+                command ++ " -> " ++ show n ++ ":\n  " ++ B.unpack (stderrOnly output)
             _ -> ""
 
 -- |like removeLink, but does not fail if link did not exist

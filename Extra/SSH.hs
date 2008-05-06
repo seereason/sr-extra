@@ -14,7 +14,7 @@ import System.Exit
 import System.IO
 import Network.URI
 import GHC.Read(readEither)
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as B
 import System.Unix.Process
 
 -- |Set up access to destination (user\@host).
@@ -39,11 +39,11 @@ generatePublicKey =
          True -> return . Right $ keypath
          False ->
              do hPutStrLn stderr $ "generatePublicKey " ++ " -> " ++ keypath
-                result <- lazyCommand cmd []
+                result <- lazyCommand cmd B.empty
                 case exitCodeOnly result of
                   (ExitFailure n : _) ->
                       return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
-                                 "\n\noutput: " ++ B.unpack (B.concat (outputOnly result))
+                                 "\n\noutput: " ++ B.unpack (outputOnly result)
                   _ -> return . Right $ keypath
 
 -- |See if we already have access to the destination (user\@host).
@@ -71,10 +71,10 @@ openAccess _ _ Nothing = return . Right $ ()
 openAccess dest port (Just keypath) =
     do hPutStrLn stderr $ "openAccess " ++ show dest ++ " " ++ show port ++ " " ++ show keypath
        let cmd = sshOpenCmd dest port keypath
-       result <- lazyCommand cmd []
+       result <- lazyCommand cmd B.empty
        case exitCodeOnly result of
          (ExitFailure n : _) -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
-	                                "\n\noutput: " ++ B.unpack (B.concat (outputOnly result))
+	                                "\n\noutput: " ++ B.unpack (outputOnly result)
          _ -> return . Right $ ()
     where
       sshOpenCmd dest port keypath =

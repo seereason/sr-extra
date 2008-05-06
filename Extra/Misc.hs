@@ -35,7 +35,7 @@ module Extra.Misc
 
 import		 Control.Exception
 import		 Control.Monad
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as B
 import		 Data.List
 import qualified Data.Map as Map
 import		 Data.Maybe
@@ -129,12 +129,12 @@ canon path =
 -- | Run md5sum on a file and return the resulting checksum as text.
 md5sum :: FilePath -> IO (Either String String)
 md5sum path =
-    do output <- lazyCommand cmd []
+    do output <- lazyCommand cmd B.empty
        let result =
                case exitCodeOnly output of
                  [ExitFailure n] -> Left ("Error " ++ show n ++ " running '" ++ cmd ++ "'")
                  [ExitSuccess] ->
-                     case listToMaybe . words . B.unpack . B.concat . stdoutOnly $ output of
+                     case listToMaybe . words . B.unpack . stdoutOnly $ output of
                        Nothing -> Left $ "Error in output of '" ++ cmd ++ "'"
                        Just checksum -> Right checksum
                  _ -> Left "Internal error 12"
@@ -162,24 +162,22 @@ sameMd5sum a b =
 processOutput :: String -> IO (Either Int String)
 processOutput command =
     do
-      output <- lazyCommand command []
+      output <- lazyCommand command B.empty
       case exitCodeOnly output of
-        [ExitSuccess] -> return . Right . B.unpack . B.concat . stdoutOnly $ output
+        [ExitSuccess] -> return . Right . B.unpack . stdoutOnly $ output
         [ExitFailure n] -> return . Left $ n
         _ -> error "My.processOutput: Internal error 13"
 
 processOutput2 :: String -> IO (String, ExitCode)
 processOutput2 command =
     do
-      output <- lazyCommand command []
+      output <- lazyCommand command B.empty
       case exitCodeOnly output of
-        [code] -> return ((B.unpack . B.concat . stdoutOnly $ output), code)
+        [code] -> return ((B.unpack . stdoutOnly $ output), code)
         _ -> error "My.processOutput2: Internal error 14"
 
 splitOutput :: [Output] -> (B.ByteString, B.ByteString, Maybe ExitCode)
-splitOutput output = (B.concat (stdoutOnly output),
-                      B.concat (stderrOnly output),
-                      listToMaybe (exitCodeOnly output))
+splitOutput output = (stdoutOnly output, stderrOnly output, listToMaybe (exitCodeOnly output))
 
 -- |A version of read with a more helpful error message.
 read' s =

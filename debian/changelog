@@ -1,3 +1,9 @@
+haskell-extra (1.18) unstable; urgency=low
+
+  * API changes in System.Unix.Process
+
+ -- David Fox <dsf@seereason.com>  Mon, 05 May 2008 12:25:52 -0700
+
 haskell-extra (1.17) unstable; urgency=low
 
   * Fix packaging in response to fixes in haskell-devscripts 0.6.10,
