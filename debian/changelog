@@ -1,3 +1,9 @@
+haskell-extra (1.19) unstable; urgency=low
+
+  * Add a sender argument to Extra.Email.sendEmails.
+
+ -- David Fox <dsf@seereason.com>  Sat, 31 May 2008 23:15:24 +0000
+
 haskell-extra (1.18) unstable; urgency=low
 
   * API changes in System.Unix.Process
