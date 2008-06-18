@@ -1,3 +1,9 @@
+haskell-extra (1.20) unstable; urgency=low
+
+  * New debianization by cabal-debian.
+
+ -- David Fox <dsf@seereason.com>  Tue, 17 Jun 2008 17:09:21 -0700
+
 haskell-extra (1.19) unstable; urgency=low
 
   * Add a sender argument to Extra.Email.sendEmails.
