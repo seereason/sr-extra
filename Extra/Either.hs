@@ -1,7 +1,5 @@
 module Extra.Either where
 
-import Data.Maybe
-
 lefts :: [Either a b] -> [a]
 lefts xs = fst (partitionEithers xs)
 
