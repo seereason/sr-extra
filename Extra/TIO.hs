@@ -1,7 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Extra.TIO
-    ( -- * The CIO class
-      module Extra.CIO
+    ( module Extra.CIO
     -- * The TIO monad
     , TIO
     , runTIO
@@ -100,6 +99,8 @@ instance CIO TIO where
            return (verbosity style - v)
     -- |Modify the current style for this action
     setStyle styleFn = local styleFn
+    -- |Implementation of try for the TIO monad
+    tryCIO = tryTIO
 
 _test :: IO ()
 _test =
