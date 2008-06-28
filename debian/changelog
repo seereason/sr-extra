@@ -1,3 +1,11 @@
+haskell-extra (1.21) unstable; urgency=low
+
+  * Split the TIO monad into a type class named CIO and a monad named TIO.
+    All functions previously in the TIO monad can now be in any instance
+    of CIO.  An instance for IO is provided.
+
+ -- David Fox <dsf@seereason.com>  Sat, 28 Jun 2008 15:43:03 -0700
+
 haskell-extra (1.20) unstable; urgency=low
 
   * New debianization by cabal-debian.
