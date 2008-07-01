@@ -1,3 +1,10 @@
+haskell-extra (1.22) unstable; urgency=low
+
+  * Fix a sign error in the implementation of ev (effective verbosity) for
+    the regular IO monad.
+
+ -- David Fox <dsf@seereason.com>  Tue, 01 Jul 2008 10:32:43 -0700
+
 haskell-extra (1.21) unstable; urgency=low
 
   * Split the TIO monad into a type class named CIO and a monad named TIO.
