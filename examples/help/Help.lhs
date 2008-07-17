@@ -55,7 +55,7 @@ System.Console.GetOpt, except that the last argument is prefaced by
 > optionSpecs :: [OptDescr Opt]
 > optionSpecs = 
 >     [ Option ['v','V'] ["verbose"]       (NoArg Verbose)      (text "Say quite a bit.")
->     , Option ['c','C'] ["count","num"]   (ReqArg Count "NUM") (text "c is for cookie.")
+>     , Option ['c','C'] ["count","num"]   (ReqArg Count "NUM") (text <> b <> text "c" <> p <> text " is for cookie.")
 >     , Option ['r']     ["rar"]           (OptArg Rar "RAR")   (text "rar!!!")
 >     , Option ['h']	 ["help"]	   (NoArg Help)         (text "Show this help text and exit immediately.")
 >     , Option []	 ["dump-man-page"] (NoArg DumpManPage)  (text "Show manpage source and exit immediately.")
@@ -63,17 +63,17 @@ System.Console.GetOpt, except that the last argument is prefaced by
 
 > manpage :: String -> Manpage Opt
 > manpage progName =
->     Manpage { name = progName
->             , sectionNum = General
->             , shortDesc = text "a program that does foo" 
->             , synopsis = text "foo [options] arg1 arg2 ..."
->             , description = text "this is a very useful program"
->             , options = Just optionSpecs
+>     Manpage { name          = progName
+>             , sectionNum    = General
+>             , shortDesc     = text "a program that does foo" 
+>             , synopsis      = text "foo [options] arg1 arg2 ..."
+>             , description   = text "this is a very useful program"
+>             , options       = Just optionSpecs
 >             , extraSections = Nothing -- Just [("FOO","foo"), ("BAR","bar")]
->             , files = Nothing -- Just [("/etc/foo.conf", text "System wide config file.")]
->             , environment = Nothing -- Just [("FOOCONF","Alternate location of system wide config file.")]
->             , diagnostics = Just (text "This program may occasionally print diagnostic information on stderr.")
->             , bugs = Just (text "This program is bug-free.")
+>             , files         = Nothing -- Just [("/etc/foo.conf", text "System wide config file.")]
+>             , environment   = Nothing -- Just [("FOOCONF","Alternate location of system wide config file.")]
+>             , diagnostics   = Just (text "This program may occasionally print diagnostic information on stderr.")
+>             , bugs          = Just (text "This program is bug-free.")
 >             , authors = Just [ ("Jeremy Shaw","jeremy@example.org")
 >                              , ("Neko Paws","neko@example.org")
 >                              ]
@@ -84,5 +84,6 @@ System.Console.GetOpt, except that the last argument is prefaced by
 >     do (opts, nonOpts) <- getOptions (elem Help) (elem DumpManPage) manpage Permute optionSpecs analyze
 >        print (opts, nonOpts)
 >     where
->       analyze (opts,args,[]) = Right (opts, args)
+>       analyze (opts,[filename],[]) = Right (opts, filename)
+>       analyze (opts,args,[]) = Left ["Too many files or not enough."]
 >       analyze (_,_,errors)   = Left errors
