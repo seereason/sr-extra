@@ -4,7 +4,9 @@ Section: devel
 Maintainer: David Fox <dsf@seereason.com>
 Build-Depends: debhelper (>= 5.0),
                debhelper (>= 4.0.0),
+               haskell-devscripts-cdbs,
                haskell-devscripts-cdbs (>= 0.6.12-12),
+               cabal-debian,
                ghc6 (>= 6.8),
                ghc6 (>= 6.8.2-1ubuntu1+7),
                ghc6-doc,
@@ -22,10 +24,13 @@ Build-Depends: debhelper (>= 5.0),
                libghc6-mtl-doc,
                libghc6-network-prof,
                libghc6-network-doc,
-               libghc6-haxml-dev,
                haxml-doc,
-               libghc6-haxml-dev,
-               libghc6-time-dev (>= 1.1)
+               libghc6-quickcheck-prof,
+               libghc6-quickcheck-doc,
+               libghc6-hunit-prof,
+               libghc6-hunit-doc,
+               libghc6-time-dev (>= 1.1),
+               libghc6-haxml-dev
 Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-base-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, haskell-unixutils-doc, haskell-mime-doc, haskell-regex-compat-doc, haxml-doc
 Standards-Version: 3.7.2.2
 Homepage: http://seereason.org/
@@ -34,13 +39,13 @@ Package: libghc6-extra-dev
 Section: libdevel
 Architecture: any
 Depends: ${haskell:Depends},
-         libghc6-regex-compat-dev,
-         libghc6-haxml-dev,
-         libghc6-mime-dev,
-         libghc6-time-dev (>= 1.1),
-         libghc6-unixutils-dev (>= 1.10),
+         libghc6-network-dev,
          libghc6-mtl-dev,
-         libghc6-network-dev
+         libghc6-unixutils-dev (>= 1.10),
+         libghc6-time-dev (>= 1.1),
+         libghc6-mime-dev,
+         libghc6-haxml-dev,
+         libghc6-regex-compat-dev
 Description: A grab bag of modules.
   .
   This package contains the normal library files.
@@ -49,14 +54,14 @@ Package: libghc6-extra-prof
 Section: libdevel
 Architecture: any
 Depends: ${haskell:Depends},
-         libghc6-regex-compat-prof,
-         libghc6-haxml-dev,
-         libghc6-mime-prof,
-         libghc6-time-prof (>= 1.1),
-         libghc6-unixutils-prof (>= 1.10),
-         libghc6-mtl-prof,
+         libghc6-extra-dev,
          libghc6-network-prof,
-         libghc6-extra-dev
+         libghc6-mtl-prof,
+         libghc6-unixutils-prof (>= 1.10),
+         libghc6-time-prof (>= 1.1),
+         libghc6-mime-prof,
+         libghc6-haxml-dev,
+         libghc6-regex-compat-prof
 Description: A grab bag of modules.
   .
   This package contains the libraries compiled with profiling enabled.
@@ -65,14 +70,14 @@ Package: haskell-extra-doc
 Section: libdevel
 Architecture: all
 Depends: ${haskell:Depends},
-         haxml-doc,
-         haskell-regex-compat-doc,
-         haskell-mime-doc,
-         haskell-unixutils-doc,
-         libghc6-time-doc,
-         libghc6-mtl-doc,
+         ghc6-doc,
          libghc6-network-doc,
-         ghc6-doc
+         libghc6-mtl-doc,
+         libghc6-time-doc,
+         haskell-unixutils-doc,
+         haskell-mime-doc,
+         haskell-regex-compat-doc,
+         haxml-doc
 Description: A grab bag of modules.
   .
   This package contains the documentation files.
