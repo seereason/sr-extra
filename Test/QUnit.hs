@@ -4,7 +4,7 @@
 -- Copyright   :  (c) Koen Claessen, John Hughes 2001, Jeremy Shaw 2008
 -- License     :  BSD-style (see the file libraries\/base\/LICENSE)
 -- 
--- Maintainer  :  jeremy\@n-heptane.com
+-- Maintainer  :  jeremy@n-heptane.com
 -- Stability   :  experimental
 -- Portability :  portable
 --
