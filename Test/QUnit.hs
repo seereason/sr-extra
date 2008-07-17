@@ -15,6 +15,11 @@
 -- properties in the HUnit framework:
 --
 -- @
+--   import Test.HUnit
+--   import Test.HUnit.Text
+--   import Test.QuickCheck
+--   import Test.QUnit
+--
 --   runTestTT $ (\"x \/= x\" ~: property (\x -> x /= x))
 -- @
 --
