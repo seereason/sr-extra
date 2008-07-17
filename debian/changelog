@@ -1,3 +1,10 @@
+haskell-extra (1.23) unstable; urgency=low
+
+  * Added Test.QUnit
+  * Minor changes to Help example
+
+ -- Jeremy Shaw <jeremy@n-heptane.com>  Thu, 17 Jul 2008 12:54:06 -0700
+
 haskell-extra (1.22) unstable; urgency=low
 
   * Fix a sign error in the implementation of ev (effective verbosity) for
