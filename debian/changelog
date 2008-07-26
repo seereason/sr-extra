@@ -1,3 +1,9 @@
+haskell-extra (1.24) unstable; urgency=low
+
+  * Moved Extra.Help to haskell-help:Text.Help
+
+ -- Jeremy Shaw <jeremy@n-heptane.com>  Fri, 25 Jul 2008 17:59:09 -0700
+
 haskell-extra (1.23) unstable; urgency=low
 
   * Added Test.QUnit
