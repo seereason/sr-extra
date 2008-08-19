@@ -1,3 +1,9 @@
+haskell-extra (1.25) unstable; urgency=low
+
+  * Moved Extra.Email to haskell-mime
+
+ -- Jeremy Shaw <jeremy@n-heptane.com>  Tue, 19 Aug 2008 16:26:36 -0700
+
 haskell-extra (1.24) unstable; urgency=low
 
   * Moved Extra.Help to haskell-help:Text.Help

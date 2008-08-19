@@ -1,5 +1,5 @@
 Name:           Extra
-Version:        1.24
+Version:        1.25
 License:        BSD3
 -- License-File:	debian/copyright
 Author:         David Fox
@@ -11,7 +11,7 @@ C-Sources:	     cbits/gwinsz.c
 Include-Dirs:        cbits
 Install-Includes:    gwinsz.h
 Exposed-modules:
-	Extra.Bool, Extra.Either, Extra.Email, Extra.Exit, Extra.Files, Extra.HaXml
+	Extra.Bool, Extra.Either, Extra.Exit, Extra.Files, Extra.HaXml
 	Extra.GPGSign,Extra.List, Extra.HughesPJ, Extra.Lock, Extra.Misc, Extra.Net, Extra.SSH,
 	Extra.Time, Extra.Terminal, Extra.CIO, Extra.TIO, Test.QUnit
 
