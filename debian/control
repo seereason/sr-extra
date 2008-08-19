@@ -16,8 +16,6 @@ Build-Depends: debhelper (>= 5.0),
                haskell-regex-compat-doc,
                libghc6-time-prof (>= 1.1),
                libghc6-time-doc (>= 1.1),
-               libghc6-mime-prof,
-               haskell-mime-doc,
                libghc6-unixutils-prof (>= 1.10),
                haskell-unixutils-doc (>= 1.10),
                libghc6-mtl-prof,
@@ -31,7 +29,7 @@ Build-Depends: debhelper (>= 5.0),
                libghc6-hunit-doc,
                libghc6-time-dev (>= 1.1),
                libghc6-haxml-dev
-Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-base-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, haskell-unixutils-doc, haskell-mime-doc, haskell-regex-compat-doc, haxml-doc
+Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-base-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, haskell-unixutils-doc, haskell-regex-compat-doc, haxml-doc
 Standards-Version: 3.7.2.2
 Homepage: http://seereason.org/
 
@@ -43,7 +41,6 @@ Depends: ${haskell:Depends},
          libghc6-mtl-dev,
          libghc6-unixutils-dev (>= 1.10),
          libghc6-time-dev (>= 1.1),
-         libghc6-mime-dev,
          libghc6-haxml-dev,
          libghc6-regex-compat-dev
 Description: A grab bag of modules.
@@ -59,7 +56,6 @@ Depends: ${haskell:Depends},
          libghc6-mtl-prof,
          libghc6-unixutils-prof (>= 1.10),
          libghc6-time-prof (>= 1.1),
-         libghc6-mime-prof,
          libghc6-haxml-dev,
          libghc6-regex-compat-prof
 Description: A grab bag of modules.
@@ -75,7 +71,6 @@ Depends: ${haskell:Depends},
          libghc6-mtl-doc,
          libghc6-time-doc,
          haskell-unixutils-doc,
-         haskell-mime-doc,
          haskell-regex-compat-doc,
          haxml-doc
 Description: A grab bag of modules.
