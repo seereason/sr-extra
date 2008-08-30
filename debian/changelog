@@ -1,3 +1,10 @@
+haskell-extra (1.26) unstable; urgency=low
+
+  * Split "instance CIO IO" into a separate module so you can tell when
+    you are lifting CIO stuff into IO, which results in no debugging output.
+
+ -- David Fox <dsf@seereason.com>  Sat, 30 Aug 2008 07:17:08 -0700
+
 haskell-extra (1.25) unstable; urgency=low
 
   * Moved Extra.Email to haskell-mime
