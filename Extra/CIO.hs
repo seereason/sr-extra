@@ -106,17 +106,6 @@ data TStyle
              , hPrefix :: [(IO.Handle, String)]	-- ^ Per-handle prefix
              } deriving Show
 
--- |Make IO an instance of CIO.  The instance ignores all style and
--- state information.  The verbosity controlled output functions will
--- ignore any calls when v is greater than zero.  This allows you to
--- call all the Debian functions from the standard IO monad.
-instance CIO IO where
-    hPutStr h s = IO.hPutStr h s
-    hBOL h = IO.hPutStr h "\n"
-    ev v = return (- v)
-    setStyle _ f = f
-    tryCIO = try
-
 defStyle :: TStyle
 defStyle = TStyle { prefix = ": "
                   , hPrefix = []
