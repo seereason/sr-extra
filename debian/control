@@ -13,23 +13,23 @@ Build-Depends: debhelper (>= 5.0),
                haddock (>= 2.1.0),
                ghc6-prof,
                libghc6-regex-compat-prof,
-               haskell-regex-compat-doc,
+               libghc6-regex-compat-doc,
                libghc6-time-prof (>= 1.1),
                libghc6-time-doc (>= 1.1),
                libghc6-unixutils-prof (>= 1.10),
-               haskell-unixutils-doc (>= 1.10),
+               libghc6-unixutils-doc (>= 1.10),
                libghc6-mtl-prof,
                libghc6-mtl-doc,
                libghc6-network-prof,
                libghc6-network-doc,
-               haxml-doc,
+               libghc6-haxml-doc,
                libghc6-quickcheck-prof,
                libghc6-quickcheck-doc,
                libghc6-hunit-prof,
                libghc6-hunit-doc,
                libghc6-time-dev (>= 1.1),
                libghc6-haxml-dev
-Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-base-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, haskell-unixutils-doc, haskell-regex-compat-doc, haxml-doc
+Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-base-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, libghc6-unixutils-doc, libghc6-regex-compat-doc, libghc6-haxml-doc
 Standards-Version: 3.7.2.2
 Homepage: http://seereason.org/
 
@@ -66,19 +66,19 @@ Description: A grab bag of modules.
   .
   This package contains the libraries compiled with profiling enabled.
 
-Package: haskell-extra-doc
+Package: libghc6-extra-doc
 Section: libdevel
-Architecture: all
+Architecture: any
 Depends: ${haskell:Depends},
          ghc6-doc,
          libghc6-network-doc,
          libghc6-mtl-doc,
          libghc6-time-doc,
-         haskell-unixutils-doc,
-         haskell-regex-compat-doc,
+         libghc6-unixutils-doc,
+         libghc6-regex-compat-doc,
          libghc6-quickcheck-doc,
          libghc6-hunit-doc,
-         haxml-doc
+         libghc6-haxml-doc
 Description: A grab bag of modules.
   .
   This package contains the documentation files.
