@@ -22,14 +22,14 @@ Build-Depends: debhelper (>= 5.0),
                libghc6-mtl-doc,
                libghc6-network-prof,
                libghc6-network-doc,
-               libghc6-haxml-doc,
+               haxml-doc,
                libghc6-quickcheck-prof,
                libghc6-quickcheck-doc,
                libghc6-hunit-prof,
                libghc6-hunit-doc,
                libghc6-time-dev (>= 1.1),
                libghc6-haxml-dev
-Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-base-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, libghc6-unixutils-doc, libghc6-regex-compat-doc, libghc6-haxml-doc
+Build-Depends-Indep: haddock, hugs (>= 98.200503.08), ghc6-doc, libghc6-base-doc, libghc6-network-doc, libghc6-mtl-doc, libghc6-time-doc, libghc6-unixutils-doc, libghc6-regex-compat-doc, haxml-doc
 Standards-Version: 3.7.2.2
 Homepage: http://seereason.org/
 
@@ -78,7 +78,7 @@ Depends: ${haskell:Depends},
          libghc6-regex-compat-doc,
          libghc6-quickcheck-doc,
          libghc6-hunit-doc,
-         libghc6-haxml-doc
+         haxml-doc
 Description: A grab bag of modules.
   .
   This package contains the documentation files.
