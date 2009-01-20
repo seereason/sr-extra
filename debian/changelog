@@ -1,3 +1,9 @@
+haskell-extra (1.29) unstable; urgency=low
+
+  * Changes for ghc 6.10.
+
+ -- David Fox <dsf@seereason.com>  Tue, 20 Jan 2009 12:43:11 -0800
+
 haskell-extra (1.28) unstable; urgency=low
 
   * Add the URI module from AlgebraZam, which extends Network.URI to

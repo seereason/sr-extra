@@ -30,7 +30,6 @@ module Extra.Misc
     , cd
     -- Debugging
     , read'
-    , readEither
     ) where
 
 import		 Control.Exception
@@ -49,7 +48,6 @@ import		 System.IO
 import		 System.Posix.Files
 import		 System.Posix.User (getEffectiveUserID)
 import		 Text.Regex
-import		 GHC.Read(readEither)
 
 mapSnd :: (b -> c) -> (a, b) -> (a, c)
 mapSnd f (a, b) = (a, f b)
@@ -181,9 +179,9 @@ splitOutput output = (stdoutOnly output, stderrOnly output, listToMaybe (exitCod
 
 -- |A version of read with a more helpful error message.
 read' s =
-    case readEither s of
-      Left _ -> error $ "read - no parse: " ++ show s
-      Right x -> x
+    case reads s of
+      [] -> error $ "read - no parse: " ++ show s
+      ((x, s) : _) -> x
 
 {-
 type DryRunFn = IO () -> (Bool, String) -> IO ()

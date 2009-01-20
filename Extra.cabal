@@ -1,10 +1,10 @@
 Name:           Extra
-Version:        1.27
+Version:        1.29
 License:        BSD3
 -- License-File:	debian/copyright
 Author:         David Fox
 Homepage:       http://seereason.org/
-Build-Depends:  base, unix, regex-compat, time >= 1.1, Unixutils >= 1.10 , mtl, network, HaXml, pretty, directory, bytestring, process, containers, old-time, old-locale, QuickCheck, HUnit, random, filepath
+Build-Depends:  base >= 3 && < 4, unix, regex-compat, time >= 1.1, Unixutils >= 1.10 , mtl, network, HaXml, pretty, directory, bytestring, process, containers, old-time, old-locale, QuickCheck, HUnit, random, filepath
 Synopsis:       A grab bag of modules.
 ghc-options:	-fglasgow-exts -O2 -fasm -W
 C-Sources:	     cbits/gwinsz.c
