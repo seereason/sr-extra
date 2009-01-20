@@ -13,7 +13,6 @@ import System.Environment
 import System.Exit
 import System.IO
 import Network.URI
-import GHC.Read(readEither)
 import qualified Data.ByteString.Lazy.Char8 as B
 import System.Unix.Process
 
@@ -102,9 +101,9 @@ getDest =
                          Just (URI {uriAuthority = Just (URIAuth {uriUserInfo = user, uriRegName = host, uriPort = ""})}) ->
                              Right (user ++ host, Nothing)
                          Just (URI {uriAuthority = Just (URIAuth {uriUserInfo = user, uriRegName = host, uriPort = port})}) ->
-                             case readEither (dropWhile (== ':') port) :: Either String Int of
-                               Left s -> Left $ "Invalid destination: " ++ dest ++ " (" ++ s ++ ")"
-                               Right n -> Right (user ++ host, Just n)
+                             case reads (dropWhile (== ':') port) :: [(Int, String)] of
+                               [] -> Left $ "Invalid destination: " ++ dest ++ " (" ++ port ++ ")"
+                               ((n, _) : _) -> Right (user ++ host, Just n)
                          _ -> Left $ "Invalid destination: " ++ dest
           checkArgs args = return . Left $ "Usage: sshexport user@host"
 
