@@ -1,3 +1,9 @@
+haskell-extra (1.30) unstable; urgency=low
+
+  * Make IO an instance of CIO.
+
+ -- David Fox <dsf@seereason.com>  Wed, 04 Feb 2009 10:49:10 -0800
+
 haskell-extra (1.29) unstable; urgency=low
 
   * Changes for ghc 6.10.
