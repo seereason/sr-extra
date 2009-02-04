@@ -82,6 +82,13 @@ class MonadIO m => CIO m where
     -- |Implementation of try for this monad
     tryCIO :: m a -> m (Either Exception a)
 
+instance CIO IO where
+    hPutStr = IO.hPutStr
+    hBOL _ = return ()
+    ev _ = return 0
+    setStyle _ x = x
+    tryCIO = try
+
 -- |A record used to hold the output style information for a task.
 -- This The prefixes that will appear at the beginning of each line,
 -- and the desired verbosity level.  Suggested verbosity level policy:
