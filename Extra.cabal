@@ -1,5 +1,5 @@
 Name:           Extra
-Version:        1.29
+Version:        1.30
 License:        BSD3
 License-File:	COPYING
 Author:         David Fox
@@ -7,7 +7,7 @@ Category:       Unclassified
 Description:    A hodge-podge of functions and modules that do not have a better home
 Maintainer:     David Fox <david@seereason.com>
 Homepage:       http://seereason.org/
-Build-Depends:  base >= 3 && < 4, unix, regex-compat, time >= 1.1, Unixutils >= 1.10 , mtl, network, HaXml, pretty, directory, bytestring, process, containers, old-time, old-locale, QuickCheck, HUnit, random, filepath
+Build-Depends:  base >= 3 && < 4, unix, regex-compat, time >= 1.1, Unixutils >= 1.10 , mtl, network, HaXml < 1.14, pretty, directory, bytestring, process, containers, old-time, old-locale, QuickCheck < 2, HUnit, random, filepath
 Synopsis:       A grab bag of modules.
 ghc-options:	-O2 -W
 C-Sources:	     cbits/gwinsz.c

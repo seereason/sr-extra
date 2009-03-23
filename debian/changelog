@@ -1,3 +1,9 @@
+haskell-extra (1.30) unstable; urgency=low
+
+  * Added some upper bounds on HaXml and QuickCheck in .cabal
+
+ -- Jeremy Show <jeremy@seereason.com>  Mon, 23 Mar 2009 18:51:01 -0500
+
 haskell-extra (1.29) unstable; urgency=low
 
   * Changes for ghc 6.10.
