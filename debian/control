@@ -10,8 +10,8 @@ Build-Depends: debhelper (>= 5.0),
                ghc6-prof,
                libghc6-unixutils-prof (>= 1.10),
                libghc6-unixutils-doc (>= 1.10),
-               libghc6-time-prof (>= 1.11),
-               libghc6-time-doc (>= 1.11),
+               libghc6-time-prof,
+               libghc6-time-doc,
                haxml-doc,
                libghc6-haxml-dev
 Standards-Version: 3.7.2.2
