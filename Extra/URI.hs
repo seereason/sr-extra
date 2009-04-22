@@ -68,7 +68,7 @@ formatURIQuery attrs = '?' : concat (intersperse "&" (map (\ (a, b) -> a ++ "=" 
 -- the URI query.  The isUnreserved predicate is the set of characters
 -- that can appear in a URI which don't have any special meaning.
 -- Everything else gets escaped.
-escapeURIForQueryValue = escapeURIString (not . isUnreserved)
+escapeURIForQueryValue = escapeURIString isUnreserved
 
 -- Make URI an instance of Read.  This will throw an error if no
 -- prefix up to ten characters long of the argument string looks like

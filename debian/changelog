@@ -1,3 +1,9 @@
+haskell-extra (1.31) unstable; urgency=low
+
+  * Fix definition of Extra.URI.escapeURIForQueryValue (and export)
+
+ -- David Fox <dsf@seereason.com>  Wed, 22 Apr 2009 10:13:15 -0700
+
 haskell-extra (1.30) unstable; urgency=low
 
   * Added some upper bounds on HaXml and QuickCheck in .cabal
