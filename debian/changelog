@@ -1,3 +1,9 @@
+haskell-extra (1.32) unstable; urgency=low
+
+  * Added Test.QuickCheck.Properties.isIdempotent
+
+ -- Jeremy Shaw <jeremy@seereason.com>  Thu, 14 May 2009 11:22:46 -0500
+
 haskell-extra (1.31) unstable; urgency=low
 
   * Fix definition of Extra.URI.escapeURIForQueryValue (and export)
