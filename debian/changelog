@@ -1,3 +1,9 @@
+haskell-extra (1.33) unstable; urgency=low
+
+  * Removed Extra.HaXml from .cabal and debian/control to ease getting Debian library into debian
+
+ -- Jeremy Shaw <jeremy@seereason.com>  Thu, 25 Jun 2009 14:31:51 -0500
+
 haskell-extra (1.32) unstable; urgency=low
 
   * Added Test.QuickCheck.Properties.isIdempotent
