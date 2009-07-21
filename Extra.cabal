@@ -1,5 +1,5 @@
 Name:           Extra
-Version:        1.33
+Version:        1.34
 License:        BSD3
 License-File:	COPYING
 Author:         David Fox
@@ -16,7 +16,7 @@ Install-Includes:    gwinsz.h
 Exposed-modules:
 	Extra.Bool, Extra.Either, Extra.Exit, Extra.Files,
 	Extra.GPGSign,Extra.List, Extra.HughesPJ, Extra.Lock, Extra.Misc, Extra.Net, Extra.SSH,
-	Extra.Time, Extra.Terminal, Extra.CIO, Extra.TIO, Extra.IO, Extra.URI, Test.QUnit, Test.QuickCheck.Properties
+	Extra.Time, Extra.Terminal, Extra.CIO, Extra.TIO, Extra.IO, Extra.URI, Test.QUnit, Test.QuickCheck.Properties, Extra.IOThread
 Build-Type: Simple
 
 -- For more complex build options see:
