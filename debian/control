@@ -3,7 +3,7 @@ Priority: optional
 Section: devel
 Maintainer: David Fox <dsf@seereason.com>
 Build-Depends: debhelper (>= 5.0),
-               haskell-cdbs, haskell-devscripts (>= 0.6.15),
+               haskell-devscripts (>= 0.6.15),
                ghc6 (>= 6.10),
                ghc6-doc,
                haddock (>= 2.1.0),
