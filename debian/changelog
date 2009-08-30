@@ -1,3 +1,9 @@
+haskell-extra (1.35) unstable; urgency=low
+
+  * Add Extra.URIQuery.
+
+ -- David Fox <dsf@seereason.com>  Sun, 30 Aug 2009 04:25:38 -1000
+
 haskell-extra (1.34) unstable; urgency=low
 
   * Added IOTheard
