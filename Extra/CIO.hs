@@ -5,6 +5,9 @@
 -- There is an instance for the regular IO monad which doesn't use any
 -- of these features, to allow functions which do not use the TIO
 -- monad call functions in the Debian library.
+--
+-- NOTE: a copy of this library is in the Extra library as
+-- well. Please update both locations.
 module Extra.CIO 
     ( -- * The CIO class
       CIO(..)
