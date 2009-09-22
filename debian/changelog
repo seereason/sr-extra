@@ -1,3 +1,9 @@
+haskell-extra (1.36) unstable; urgency=low
+
+  * IOThread: handle case where the thread function throws an IOException
+
+ -- Jeremy Shaw <jeremy@seereason.com>  Tue, 22 Sep 2009 17:00:24 -0500
+
 haskell-extra (1.35) unstable; urgency=low
 
   * Add Extra.URIQuery.

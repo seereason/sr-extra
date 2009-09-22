@@ -8,9 +8,10 @@ module Extra.IOThread where
 import Control.Concurrent (ThreadId, forkIO)
 import Control.Concurrent.Chan (Chan,newChan, readChan, writeChan)
 import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, readMVar)
+import Control.Exception
 import Control.Monad (forever)
 
-newtype IOThread a b = IOThread (Chan (a, MVar b))
+newtype IOThread a b = IOThread (Chan (a, MVar (Either IOException b)))
 
 -- |start the IO thread.
 startIOThread :: (a -> IO b) -- ^ the IO function that does all the work
@@ -22,15 +23,19 @@ startIOThread f =
     where
       ioThread f c =
           forever $ do (a, mvar) <- readChan c
-                       b <- f a
+                       b <- try $ f a
                        putMVar mvar b
 
 -- |issue a request to the IO thread and get back the result
+-- if the thread function throws an exception 'ioRequest' will rethrow the exception.
 ioRequest :: (IOThread a b) -- ^ handle to the IOThread
           -> a -- ^ argument to the function in the IOThread
           -> IO b -- ^ value returned by the function in the IOThread
 ioRequest (IOThread chan) a =
     do resp <- newEmptyMVar 
        writeChan chan (a, resp)
-       readMVar resp
+       e <- readMVar resp
+       case e of
+         (Right r) ->  return r
+         (Left err) -> throwIO err
             
