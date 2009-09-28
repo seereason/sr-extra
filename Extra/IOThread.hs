@@ -11,7 +11,7 @@ import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, readMVar)
 import Control.Exception
 import Control.Monad (forever)
 
-newtype IOThread a b = IOThread (Chan (a, MVar (Either IOException b)))
+newtype IOThread a b = IOThread (Chan (a, MVar (Either Exception b)))
 
 -- |start the IO thread.
 startIOThread :: (a -> IO b) -- ^ the IO function that does all the work
