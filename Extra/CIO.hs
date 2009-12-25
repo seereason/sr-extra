@@ -8,6 +8,9 @@
 --
 -- NOTE: a copy of this library is in the Extra library as
 -- well. Please update both locations.
+-- 
+-- This code is provided for backwards compatibility, I don't
+-- endorse its use in new projects.
 module Extra.CIO 
     ( -- * The CIO class
       CIO(..)
@@ -64,7 +67,7 @@ module Extra.CIO
 import Prelude hiding (putStr, putChar, putStrLn)
 import qualified System.IO as IO
 import Control.Monad.Trans
-import Control.Exception
+import Control.OldException
 
 -- |Class representing ways of doing console (terminal?) output.
 class MonadIO m => CIO m where

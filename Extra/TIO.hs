@@ -1,4 +1,11 @@
 {-# LANGUAGE TypeSynonymInstances #-}
+-- |A value of type TIO represents the state of the terminal I/O
+-- system.  The 'bol' flag keeps track of whether we are at the
+-- beginning of line on the console.  This is computed in terms of
+-- what we have sent to the console, but it should be remembered that
+-- the order that stdout and stderr are sent to the console may not be
+-- the same as the order in which they show up there.  However, in
+-- practice this seems to work as one would hope.
 module Extra.TIO
     ( module Extra.CIO
     -- * The TIO monad
@@ -16,13 +23,6 @@ import Control.Monad.Reader
 import Control.Monad.Trans
 import qualified System.IO as IO
 
--- | This represents the state of the IO system.  The 'bol' flag keeps
--- track of whether we are at the beginning of line on the console.
--- This is computed in terms of what we have sent to the console, but
--- it should be remembered that the order that stdout and stderr are
--- sent to the console may not be the same as the order in which they
--- show up there.  However, in practice this seems to work as one
--- would hope.
 data TState
     = TState { cursor :: Position		-- ^ Is the console at beginning of line?
              } deriving Show
