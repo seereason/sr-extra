@@ -3,7 +3,7 @@ module Extra.Lock
     , awaitLock
     ) where
 
-import Control.Exception
+import Control.OldException
 import Control.Monad.RWS
 import System.Directory
 import System.IO

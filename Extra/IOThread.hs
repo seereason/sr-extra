@@ -8,7 +8,7 @@ module Extra.IOThread where
 import Control.Concurrent (ThreadId, forkIO)
 import Control.Concurrent.Chan (Chan,newChan, readChan, writeChan)
 import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, readMVar)
-import Control.Exception
+import Control.OldException
 import Control.Monad (forever)
 
 newtype IOThread a b = IOThread (Chan (a, MVar (Either Exception b)))

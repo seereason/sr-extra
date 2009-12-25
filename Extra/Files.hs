@@ -21,7 +21,7 @@ module Extra.Files
     , replaceFile
     ) where
 
-import		 Control.Exception hiding (catch)
+import		 Control.OldException hiding (catch)
 import		 Control.Monad
 import qualified Data.ByteString.Lazy.Char8 as B
 import		 Data.List

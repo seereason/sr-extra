@@ -17,7 +17,7 @@ module Extra.TIO
 
 import Extra.CIO
 import Prelude hiding (putStr, putChar, putStrLn)
-import Control.Exception
+import Control.OldException
 import Control.Monad.RWS
 import Control.Monad.Reader
 import Control.Monad.Trans
