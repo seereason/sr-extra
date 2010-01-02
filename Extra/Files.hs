@@ -21,9 +21,11 @@ module Extra.Files
     , replaceFile
     ) where
 
+import qualified Codec.Compression.GZip as GZip
+import qualified Codec.Compression.BZip as BZip
 import		 Control.OldException hiding (catch)
 import		 Control.Monad
-import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.ByteString.Lazy as B
 import		 Data.List
 import		 Data.Maybe
 import		 Extra.Misc
@@ -133,21 +135,21 @@ deleteMaybe path =
 -- |Create or update gzipped and bzip2-ed versions of a file.
 zipFile :: FilePath -> IO (Either [String] ())
 zipFile path =
-    do let commands = ["gzip < '" ++ path ++ "' > '" ++ path ++ ".gz'",
-                       "bzip2 < '" ++ path ++ "' > '" ++ path ++ ".bz2'"]
-       forceRemoveLink (path ++ ".gz")
-       forceRemoveLink (path ++ ".bz2")
-       results <- mapM (\ cmd -> lazyCommand cmd B.empty) commands
-       case filter (/= ExitSuccess) (concat (map exitCodeOnly results)) of
-         [] -> return $ Right ()
-         _ -> return (Left ["Failure writing and zipping " ++ path ++ ": " ++
-                            concat (map writeMessage (zip commands results))])
+    try (do forceRemoveLink gz
+            forceRemoveLink bz2
+            B.readFile path >>= B.writeFile gz . {- t1 . -} GZip.compress
+            B.readFile path >>= B.writeFile bz2 . {- t2 . -} BZip.compress) >>=
+    return . either (\ e -> Left ["Failure writing and zipping " ++ path, show e]) Right
     where
-      writeMessage (command, output) =
-          case exitCodeOnly output of
-            (ExitFailure n : _) ->
-                command ++ " -> " ++ show n ++ ":\n  " ++ B.unpack (stderrOnly output)
-            _ -> ""
+      gz = path ++ ".gz"
+      bz2 = path ++ ".bz2"
+      --t1 s = trace ("Size of " ++ gz ++ " text: " ++ show (L.length s)) s
+      --t2 s = trace ("Size of " ++ bz2 ++ " text: " ++ show (L.length s)) s
+      --writeMessage (command, output) =
+      --    case exitCodeOnly output of
+      --      (ExitFailure n : _) ->
+      --          command ++ " -> " ++ show n ++ ":\n  " ++ L.unpack (stderrOnly output)
+      --      _ -> ""
 
 -- |like removeLink, but does not fail if link did not exist
 forceRemoveLink :: FilePath -> IO ()

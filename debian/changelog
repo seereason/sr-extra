@@ -1,3 +1,9 @@
+haskell-extra (1.38) unstable; urgency=low
+
+  * Use Codec.Compression.GZip and Bzip to implement writeAndZipFileWithBackup
+
+ -- David Fox <dsf@seereason.com>  Sat, 02 Jan 2010 12:23:09 -0800
+
 haskell-extra (1.37) unstable; urgency=low
 
   * Changes for ghc 6.12.
