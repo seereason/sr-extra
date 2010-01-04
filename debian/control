@@ -16,8 +16,8 @@ Build-Depends: debhelper (>= 5.0),
                haskell-zlib-doc,
                libghc6-hunit-prof,
                libghc6-hunit-doc,
-               libghc6-quickcheck1-prof,
-               libghc6-quickcheck1-doc,
+               libghc6-quickcheck2-prof,
+               libghc6-quickcheck2-doc,
                libghc6-network-prof,
                libghc6-network-doc
 Standards-Version: 3.7.2.2

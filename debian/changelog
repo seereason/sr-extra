@@ -1,3 +1,10 @@
+haskell-extra (1.39) unstable; urgency=low
+
+  * Updated to QuickCheck 2
+  * Added Extra.Lists.lookups :: (Eq a) => a -> [(a, b)] -> [b]
+
+ -- Jeremy Shaw <jeremy@seereason.com>  Mon, 04 Jan 2010 15:36:21 -0600
+
 haskell-extra (1.38) unstable; urgency=low
 
   * Use Codec.Compression.GZip and Bzip to implement writeAndZipFileWithBackup
