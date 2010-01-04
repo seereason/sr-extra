@@ -87,3 +87,6 @@ isSublistOf :: Eq a => [a] -> [a] -> Maybe Int
 isSublistOf sub lst =
     maybe Nothing (\ s -> Just (length s - length sub))
               (find (isSuffixOf sub) (inits lst))
+
+lookups :: (Eq a) => a -> [(a, b)] -> [b]
+lookups a = map snd . filter ((a ==) . fst)
