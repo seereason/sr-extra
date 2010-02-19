@@ -8,10 +8,10 @@ module Extra.IOThread where
 import Control.Concurrent (ThreadId, forkIO)
 import Control.Concurrent.Chan (Chan,newChan, readChan, writeChan)
 import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, readMVar)
-import Control.OldException
+import Control.Exception
 import Control.Monad (forever)
 
-newtype IOThread a b = IOThread (Chan (a, MVar (Either Exception b)))
+newtype IOThread a b = IOThread (Chan (a, MVar (Either SomeException b)))
 
 -- |start the IO thread.
 startIOThread :: (a -> IO b) -- ^ the IO function that does all the work

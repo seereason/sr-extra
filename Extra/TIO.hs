@@ -17,7 +17,7 @@ module Extra.TIO
 
 import Extra.CIO
 import Prelude hiding (putStr, putChar, putStrLn)
-import Control.OldException
+import Control.Exception
 import Control.Monad.RWS
 import Control.Monad.Reader
 import Control.Monad.Trans
@@ -41,7 +41,7 @@ runTIO :: TStyle -> TIO a -> IO a
 runTIO style action = (runRWST action) style initState >>= \ (a, _, _) -> return a
 
 -- |Catch exceptions in a TIO action.
-tryTIO :: TIO a -> TIO (Either Exception a)
+--tryTIO :: TIO a -> TIO (Either Exception a)
 tryTIO task =
     do state <- get
        liftTIO (try' state) task

@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 -- |Some extra operations on files.  The functions here generally
 -- return (Right ()) on success, Left [messages] on failure, and throw
 -- an exception when a failure leaves things in an inconsistant state.
@@ -23,7 +24,7 @@ module Extra.Files
 
 import qualified Codec.Compression.GZip as GZip
 import qualified Codec.Compression.BZip as BZip
-import		 Control.OldException hiding (catch)
+import		 Control.Exception hiding (catch)
 import		 Control.Monad
 import qualified Data.ByteString.Lazy as B
 import		 Data.List
@@ -109,7 +110,7 @@ renameAlways old new =
        case deleted of
          Right () ->
              try (rename old new) >>=
-             return . either (\ e -> Left ["Couldn't rename " ++ old ++ " -> " ++ new ++ ": " ++ show e]) (\ _ -> Right ())
+             return . either (\ (e :: SomeException) -> Left ["Couldn't rename " ++ old ++ " -> " ++ new ++ ": " ++ show e]) (\ _ -> Right ())
          x -> return x
 
 -- |Change a file's name if it exists.
@@ -130,7 +131,7 @@ deleteMaybe path =
              do status <- getSymbolicLinkStatus path
 		-- To do: should we remove the directory contents?
                 let rm = if isDirectory status then removeDirectory else removeLink
-                try (rm path) >>= return . either (\ e -> Left ["Couldn't remove " ++ path ++ ": " ++ show e]) (const . Right $ ())
+                try (rm path) >>= return . either (\ (e :: SomeException) -> Left ["Couldn't remove " ++ path ++ ": " ++ show e]) (const . Right $ ())
 
 -- |Create or update gzipped and bzip2-ed versions of a file.
 zipFile :: FilePath -> IO (Either [String] ())
@@ -139,7 +140,7 @@ zipFile path =
             forceRemoveLink bz2
             B.readFile path >>= B.writeFile gz . {- t1 . -} GZip.compress
             B.readFile path >>= B.writeFile bz2 . {- t2 . -} BZip.compress) >>=
-    return . either (\ e -> Left ["Failure writing and zipping " ++ path, show e]) Right
+    return . either (\ (e :: SomeException) -> Left ["Failure writing and zipping " ++ path, show e]) Right
     where
       gz = path ++ ".gz"
       bz2 = path ++ ".bz2"
@@ -161,9 +162,10 @@ writeAndZipFileWithBackup path text =
     backupFile path >>=
     either (\ e -> return (Left ["Failure renaming " ++ path ++ " -> " ++ path ++ "~: " ++ show e]))
            (\ _ -> try (B.writeFile path text) >>=
-                   either (\ e -> restoreBackup path >>=
-                                  either (\ e -> error ("Failed to restore backup: " ++ path ++ "~ -> " ++ path ++ ": " ++ show e))
-                                         (\ _ -> return (Left ["Failure writing " ++ path ++ ": " ++ show e])))
+                   either (\ (e :: SomeException) ->
+                               restoreBackup path >>=
+                               either (\ e -> error ("Failed to restore backup: " ++ path ++ "~ -> " ++ path ++ ": " ++ show e))
+                                      (\ _ -> return (Left ["Failure writing " ++ path ++ ": " ++ show e])))
                           (\ _ -> zipFile path))
 
 -- | Write out three versions of a file, regular, gzipped, and bzip2ed.
@@ -174,7 +176,7 @@ writeAndZipFile path text =
     deleteMaybe path >>=
     either (\ e -> return (Left ["Failure removing " ++ path ++ ": " ++ show e]))
            (\ _ -> try (B.writeFile path text) >>=
-                   either (\ e -> return (Left ["Failure writing " ++ path ++ ": " ++ show e]))
+                   either (\ (e :: SomeException) -> return (Left ["Failure writing " ++ path ++ ": " ++ show e]))
                           (\ _ -> zipFile path))
 
 -- Turn a file into a backup file if it exists.
@@ -205,7 +207,7 @@ maybeWriteFile :: FilePath -> String -> IO ()
 maybeWriteFile path text =
     try (readFile path) >>= maybeWrite
     where
-      maybeWrite (Left (IOException e)) | isDoesNotExistError e = writeFile path text
+      maybeWrite (Left (e :: IOException)) | isDoesNotExistError e = writeFile path text
       maybeWrite (Left e) = error ("maybeWriteFile: " ++ show e)
       maybeWrite (Right old) | old == text = return ()
       maybeWrite (Right _old) = 
@@ -217,7 +219,7 @@ maybeWriteFile path text =
 createSymbolicLinkIfMissing :: String -> FilePath -> IO ()
 createSymbolicLinkIfMissing text path =
     try (getSymbolicLinkStatus path) >>=
-    either (\ _ -> createSymbolicLink text path) (\ _ -> return ())
+    either (\ (_ :: SomeException) -> createSymbolicLink text path) (\ _ -> return ())
 
 prepareSymbolicLink :: FilePath -> FilePath -> IO ()
 prepareSymbolicLink name path =
@@ -247,6 +249,6 @@ replaceFile path text =
 
 -- Try something n times, returning the first Right or the last Left
 -- if it never succeeds.  Sleep between tries.
-tries :: Int -> Int -> (IO a) -> IO (Either Exception a)
+--tries :: Int -> Int -> (IO a) -> IO (Either Exception a)
 tries _ 1 f = try f >>= either (return . Left) (return . Right)
-tries usec count f = try f >>= either (const (usleep usec >> tries usec (count - 1) f)) (return . Right)
+tries usec count f = try f >>= either (\ (_ :: SomeException) -> usleep usec >> tries usec (count - 1) f) (return . Right)

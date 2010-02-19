@@ -1,3 +1,9 @@
+haskell-extra (1.40) unstable; urgency=low
+
+  * Eliminate use of OldException.
+
+ -- David Fox <dsf@seereason.com>  Fri, 19 Feb 2010 09:07:48 -0800
+
 haskell-extra (1.39) unstable; urgency=low
 
   * Updated to QuickCheck 2

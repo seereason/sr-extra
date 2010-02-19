@@ -67,7 +67,7 @@ module Extra.CIO
 import Prelude hiding (putStr, putChar, putStrLn)
 import qualified System.IO as IO
 import Control.Monad.Trans
-import Control.OldException
+import Control.Exception
 
 -- |Class representing ways of doing console (terminal?) output.
 class MonadIO m => CIO m where
@@ -86,7 +86,7 @@ class MonadIO m => CIO m where
     -- |Modify the current output style.
     setStyle :: (TStyle -> TStyle) -> m a -> m a
     -- |Implementation of try for this monad
-    tryCIO :: m a -> m (Either Exception a)
+    tryCIO :: m a -> m (Either SomeException a)
 
 -- |A record used to hold the output style information for a task.
 -- This The prefixes that will appear at the beginning of each line,
