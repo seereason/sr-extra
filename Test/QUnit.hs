@@ -34,7 +34,6 @@
 -----------------------------------------------------------------------------
 module Test.QUnit (testQuickCheck) where
 
-import System.Random
 import qualified Test.HUnit as HU
 import qualified Test.QuickCheck as QC
 
@@ -63,5 +62,5 @@ testQuickCheck args prop =
        case result of
          (QC.Success _) -> return ()
          (QC.GaveUp ntest _) -> HU.assertFailure $ "Arguments exhausted after" ++ show ntest ++ (if ntest == 1 then " test." else " tests.")
-         (QC.Failure _ usedSize reason _) -> HU.assertFailure reason
+         (QC.Failure _ _usedSize reason _) -> HU.assertFailure reason
          (QC.NoExpectedFailure _) -> HU.assertFailure $ "No Expected Failure"

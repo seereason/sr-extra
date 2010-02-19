@@ -19,8 +19,6 @@ import Extra.CIO
 import Prelude hiding (putStr, putChar, putStrLn)
 import Control.Exception
 import Control.Monad.RWS
-import Control.Monad.Reader
-import Control.Monad.Trans
 import qualified System.IO as IO
 
 data TState
@@ -87,7 +85,7 @@ instance CIO TIO where
     -- | A "virtual" newline, this puts us into the EOL state.  From
     -- this state, a newline will be inserted before the next output,
     -- unless that output itself begins with a newline.
-    hBOL h =
+    hBOL _h =
         do state <- get
            put (state {cursor = if cursor state == BOL then BOL else EOL})
     -- |Return the "effective verbosity", or perhaps the effective

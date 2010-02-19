@@ -31,12 +31,9 @@ import		 Data.List
 import		 Data.Maybe
 import		 Extra.Misc
 import		 System.Unix.Directory
-import		 System.Unix.Process
 import		 System.Directory
-import		 System.IO
 import		 System.IO.Error hiding (try, catch)
 import		 System.Posix.Files
-import		 System.Posix.Unistd
 
 -- | Return the list of subdirectories, omitting . and .. and ignoring
 -- symbolic links.
@@ -250,5 +247,7 @@ replaceFile path text =
 -- Try something n times, returning the first Right or the last Left
 -- if it never succeeds.  Sleep between tries.
 --tries :: Int -> Int -> (IO a) -> IO (Either Exception a)
+{-
 tries _ 1 f = try f >>= either (return . Left) (return . Right)
 tries usec count f = try f >>= either (\ (_ :: SomeException) -> usleep usec >> tries usec (count - 1) f) (return . Right)
+-}

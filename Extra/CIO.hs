@@ -62,6 +62,12 @@ module Extra.CIO
     , vHBOL
     , vBOL
     , vEBOL
+
+    , hColor
+    , blue
+    , green
+    , red
+    , magenta
     ) where
 
 import Prelude hiding (putStr, putChar, putStrLn)

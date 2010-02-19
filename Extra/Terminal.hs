@@ -3,7 +3,6 @@
 -- Copyright Jeremy Shaw 2007
 module Extra.Terminal where
 
-import Control.Monad
 import System.Posix.Env
 import Foreign.C.Types
 

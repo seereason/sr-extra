@@ -33,7 +33,6 @@ module Extra.Misc
     ) where
 
 import		 Control.Exception
-import		 Control.Monad
 import qualified Data.ByteString.Lazy.Char8 as B
 import		 Data.List
 import qualified Data.Map as Map
@@ -43,8 +42,6 @@ import		 Extra.List
 import		 System.FilePath
 import		 System.Unix.Process
 import		 System.Directory
-import		 System.Exit
-import		 System.IO
 import		 System.Posix.Files
 import		 System.Posix.User (getEffectiveUserID)
 import		 Text.Regex
@@ -181,7 +178,7 @@ splitOutput output = (stdoutOnly output, stderrOnly output, listToMaybe (exitCod
 read' s =
     case reads s of
       [] -> error $ "read - no parse: " ++ show s
-      ((x, s) : _) -> x
+      ((x, _s) : _) -> x
 
 {-
 type DryRunFn = IO () -> (Bool, String) -> IO ()

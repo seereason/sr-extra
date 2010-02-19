@@ -4,15 +4,12 @@ module Extra.SSH
     , sshCopy
     ) where
 
-import Control.Monad(unless)
 import System.Cmd
 import System.Directory
 import System.Posix.User
-import System.Posix.Files
 import System.Environment
 import System.Exit
 import System.IO
-import Network.URI
 import qualified Data.ByteString.Lazy.Char8 as B
 import System.Unix.Process
 
@@ -87,6 +84,7 @@ openAccess dest port (Just keypath) =
            "chmod 600 .ssh/authorized_keys2")
 
 -- This used to be main.
+{-
 test =
     getDest >>=
     either (return . Left) (uncurry sshExport) >>=
@@ -106,6 +104,7 @@ getDest =
                                ((n, _) : _) -> Right (user ++ host, Just n)
                          _ -> Left $ "Invalid destination: " ++ dest
           checkArgs args = return . Left $ "Usage: sshexport user@host"
+-}
 
 -- |Copy the ssh configuration from $HOME to the \/root directory of a
 -- changeroot.
