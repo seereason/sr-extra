@@ -60,7 +60,7 @@ testQuickCheck args prop =
     HU.TestCase $
     do result <- QC.quickCheckWithResult args prop
        case result of
-         (QC.Success _) -> return ()
-         (QC.GaveUp ntest _) -> HU.assertFailure $ "Arguments exhausted after" ++ show ntest ++ (if ntest == 1 then " test." else " tests.")
-         (QC.Failure _ _usedSize reason _) -> HU.assertFailure reason
-         (QC.NoExpectedFailure _) -> HU.assertFailure $ "No Expected Failure"
+         (QC.Success _ _ _) -> return ()
+         (QC.GaveUp ntest _ _) -> HU.assertFailure $ "Arguments exhausted after" ++ show ntest ++ (if ntest == 1 then " test." else " tests.")
+         (QC.Failure _ _ _ _usedSize reason _ _) -> HU.assertFailure reason
+         (QC.NoExpectedFailure _ _ _) -> HU.assertFailure $ "No Expected Failure"
