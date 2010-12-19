@@ -19,7 +19,9 @@ Build-Depends: debhelper (>= 5.0),
                libghc6-quickcheck2-prof,
                libghc6-quickcheck2-doc,
                libghc6-network-prof,
-               libghc6-network-doc
+               libghc6-network-doc,
+               libghc6-regex-compat-prof,
+               libghc6-regex-compat-doc
 Standards-Version: 3.7.2.2
 Homepage: http://seereason.org/
 
