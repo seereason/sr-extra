@@ -1,3 +1,9 @@
+haskell-extra (1.41) unstable; urgency=low
+
+  * Changes for unixutils 1.30.
+
+ -- David Fox <dsf@seereason.com>  Sun, 26 Dec 2010 09:08:01 -0800
+
 haskell-extra (1.40) unstable; urgency=low
 
   * Eliminate use of OldException.
