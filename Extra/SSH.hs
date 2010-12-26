@@ -36,7 +36,7 @@ generatePublicKey =
          False ->
              do hPutStrLn stderr $ "generatePublicKey " ++ " -> " ++ keypath
                 result <- lazyCommand cmd B.empty
-                case exitCodeOnly result of
+                case exitCodesOnly result of
                   (ExitFailure n : _) ->
                       return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
                                  "\n\noutput: " ++ B.unpack (outputOnly result)
@@ -68,7 +68,7 @@ openAccess dest port (Just keypath) =
     do hPutStrLn stderr $ "openAccess " ++ show dest ++ " " ++ show port ++ " " ++ show keypath
        let cmd = sshOpenCmd dest port keypath
        result <- lazyCommand cmd B.empty
-       case exitCodeOnly result of
+       case exitCodesOnly result of
          (ExitFailure n : _) -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
 	                                "\n\noutput: " ++ B.unpack (outputOnly result)
          _ -> return . Right $ ()

@@ -126,7 +126,7 @@ md5sum :: FilePath -> IO (Either String String)
 md5sum path =
     do output <- lazyCommand cmd B.empty
        let result =
-               case exitCodeOnly output of
+               case exitCodesOnly output of
                  [ExitFailure n] -> Left ("Error " ++ show n ++ " running '" ++ cmd ++ "'")
                  [ExitSuccess] ->
                      case listToMaybe . words . B.unpack . stdoutOnly $ output of
@@ -158,7 +158,7 @@ processOutput :: String -> IO (Either Int String)
 processOutput command =
     do
       output <- lazyCommand command B.empty
-      case exitCodeOnly output of
+      case exitCodesOnly output of
         [ExitSuccess] -> return . Right . B.unpack . stdoutOnly $ output
         [ExitFailure n] -> return . Left $ n
         _ -> error "My.processOutput: Internal error 13"
@@ -167,12 +167,12 @@ processOutput2 :: String -> IO (String, ExitCode)
 processOutput2 command =
     do
       output <- lazyCommand command B.empty
-      case exitCodeOnly output of
+      case exitCodesOnly output of
         [code] -> return ((B.unpack . stdoutOnly $ output), code)
         _ -> error "My.processOutput2: Internal error 14"
 
 splitOutput :: [Output] -> (B.ByteString, B.ByteString, Maybe ExitCode)
-splitOutput output = (stdoutOnly output, stderrOnly output, listToMaybe (exitCodeOnly output))
+splitOutput output = (stdoutOnly output, stderrOnly output, listToMaybe (exitCodesOnly output))
 
 -- |A version of read with a more helpful error message.
 read' s =
