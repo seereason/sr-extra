@@ -23,8 +23,8 @@ module Extra.Misc
     , sameMd5sum
     , tarDir
     -- * Processes
-    , Extra.Misc.processOutput
-    , processOutput2
+    -- , Extra.Misc.processOutput
+    -- , processOutput2
     , splitOutput
     -- ByteString
     , cd
@@ -126,13 +126,12 @@ md5sum :: FilePath -> IO (Either String String)
 md5sum path =
     do output <- lazyCommand cmd B.empty
        let result =
-               case exitCodesOnly output of
-                 [ExitFailure n] -> Left ("Error " ++ show n ++ " running '" ++ cmd ++ "'")
-                 [ExitSuccess] ->
+               case exitCodeOnly output of
+                 ExitFailure n -> Left ("Error " ++ show n ++ " running '" ++ cmd ++ "'")
+                 ExitSuccess ->
                      case listToMaybe . words . B.unpack . stdoutOnly $ output of
                        Nothing -> Left $ "Error in output of '" ++ cmd ++ "'"
                        Just checksum -> Right checksum
-                 _ -> Left "Internal error 12"
        return result
     where
       cmd = "md5sum " ++ path
@@ -153,26 +152,26 @@ sameMd5sum a b =
       bsum <- md5sum b
       return (asum == bsum)
 
+{-
 -- | Backwards compatibility functions.
 processOutput :: String -> IO (Either Int String)
 processOutput command =
     do
       output <- lazyCommand command B.empty
-      case exitCodesOnly output of
-        [ExitSuccess] -> return . Right . B.unpack . stdoutOnly $ output
-        [ExitFailure n] -> return . Left $ n
+      case exitCodeOnly output of
+        ExitSuccess -> return . Right . B.unpack . stdoutOnly $ output
+        ExitFailure n -> return . Left $ n
         _ -> error "My.processOutput: Internal error 13"
 
 processOutput2 :: String -> IO (String, ExitCode)
 processOutput2 command =
     do
       output <- lazyCommand command B.empty
-      case exitCodesOnly output of
-        [code] -> return ((B.unpack . stdoutOnly $ output), code)
-        _ -> error "My.processOutput2: Internal error 14"
+      return ((B.unpack . stdoutOnly $ output), exitCodeOnly output)
+-}
 
-splitOutput :: [Output] -> (B.ByteString, B.ByteString, Maybe ExitCode)
-splitOutput output = (stdoutOnly output, stderrOnly output, listToMaybe (exitCodesOnly output))
+splitOutput :: [Output] -> (B.ByteString, B.ByteString, ExitCode)
+splitOutput output = (stdoutOnly output, stderrOnly output, exitCodeOnly output)
 
 -- |A version of read with a more helpful error message.
 read' s =
@@ -269,8 +268,10 @@ checkSuperUser = getEffectiveUserID >>= return . (== 0)
 -- | Given a tarball, return the name of the top directory.
 tarDir :: FilePath -> IO (Maybe String)
 tarDir path =
-    Extra.Misc.processOutput cmd >>=
-      return . either (const Nothing) (dir . lines)
+    lazyCommand cmd B.empty >>= \ output ->
+    case exitCodeOnly output of
+      ExitSuccess -> return . dir . lines . B.unpack . stdoutOnly $ output
+      _ -> return Nothing
     where
       cmd = "tar tfz '" ++ path ++ "'"
       dir [] = Nothing

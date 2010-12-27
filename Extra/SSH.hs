@@ -36,10 +36,10 @@ generatePublicKey =
          False ->
              do hPutStrLn stderr $ "generatePublicKey " ++ " -> " ++ keypath
                 result <- lazyCommand cmd B.empty
-                case exitCodesOnly result of
-                  (ExitFailure n : _) ->
+                case exitCodeOnly result of
+                  ExitFailure n ->
                       return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
-                                 "\n\noutput: " ++ B.unpack (outputOnly result)
+                                      "\n\noutput: " ++ B.unpack (outputOnly result)
                   _ -> return . Right $ keypath
 
 -- |See if we already have access to the destination (user\@host).
@@ -68,9 +68,9 @@ openAccess dest port (Just keypath) =
     do hPutStrLn stderr $ "openAccess " ++ show dest ++ " " ++ show port ++ " " ++ show keypath
        let cmd = sshOpenCmd dest port keypath
        result <- lazyCommand cmd B.empty
-       case exitCodesOnly result of
-         (ExitFailure n : _) -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
-	                                "\n\noutput: " ++ B.unpack (outputOnly result)
+       case exitCodeOnly result of
+         ExitFailure n -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
+	                                  "\n\noutput: " ++ B.unpack (outputOnly result)
          _ -> return . Right $ ()
     where
       sshOpenCmd dest port keypath =

@@ -1,3 +1,9 @@
+haskell-extra (1.42) unstable; urgency=low
+
+  * Changes for unixutils 1.31.
+
+ -- David Fox <dsf@seereason.com>  Mon, 27 Dec 2010 05:29:43 -0800
+
 haskell-extra (1.41) unstable; urgency=low
 
   * Changes for unixutils 1.30.
