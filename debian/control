@@ -4,52 +4,52 @@ Section: devel
 Maintainer: David Fox <dsf@seereason.com>
 Build-Depends: debhelper (>= 5.0),
                haskell-devscripts (>= 0.6.15), hscolour,
-               ghc6 (>= 6.10),
-               ghc6-doc,
-               ghc6 (>= 6.12) | haddock (>= 2.1.0),
-               ghc6-prof,
-               libghc6-unixutils-prof (>= 1.32),
-               libghc6-unixutils-doc (>= 1.32),
-               libghc6-bzlib-prof,
-               libghc6-bzlib-doc,
-               libghc6-zlib-prof,
+               ghc (>= 6.10),
+               ghc-doc,
+               ghc (>= 6.12) | haddock (>= 2.1.0),
+               ghc-prof,
+               libghc-unixutils-prof (>= 1.32),
+               libghc-unixutils-doc (>= 1.32),
+               libghc-bzlib-prof,
+               libghc-bzlib-doc,
+               libghc-zlib-prof,
                haskell-zlib-doc,
-               libghc6-hunit-prof,
-               libghc6-hunit-doc,
-               libghc6-quickcheck2-prof,
-               libghc6-quickcheck2-doc,
-               libghc6-network-prof,
-               libghc6-network-doc,
-               libghc6-regex-compat-prof,
-               libghc6-regex-compat-doc
+               libghc-hunit-prof,
+               libghc-hunit-doc,
+               libghc-quickcheck2-prof,
+               libghc-quickcheck2-doc,
+               libghc-network-prof,
+               libghc-network-doc,
+               libghc-regex-compat-prof,
+               libghc-regex-compat-doc
 Standards-Version: 3.7.2.2
 Homepage: http://seereason.org/
 
-Package: libghc6-extra-dev
+Package: libghc-extra-dev
 Section: libdevel
 Architecture: any
 Depends: ${haskell:Depends},
-         libghc6-unixutils-dev (>= 1.32)
+         libghc-unixutils-dev (>= 1.32)
 Description: A grab bag of modules.
   .
   This package contains the normal library files.
 
-Package: libghc6-extra-prof
+Package: libghc-extra-prof
 Section: libdevel
 Architecture: any
 Depends: ${haskell:Depends},
-         libghc6-extra-dev,
-         libghc6-unixutils-prof (>= 1.32)
+         libghc-extra-dev,
+         libghc-unixutils-prof (>= 1.32)
 Description: A grab bag of modules.
   .
   This package contains the libraries compiled with profiling enabled.
 
-Package: libghc6-extra-doc
+Package: libghc-extra-doc
 Section: libdevel
 Architecture: any
 Depends: ${haskell:Depends},
-         ghc6-doc,
-         libghc6-unixutils-doc
+         ghc-doc,
+         libghc-unixutils-doc
 Description: A grab bag of modules.
   .
   This package contains the documentation files.
