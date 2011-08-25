@@ -20,6 +20,8 @@ Build-Depends: debhelper (>= 5.0),
                libghc-quickcheck2-doc,
                libghc-network-prof,
                libghc-network-doc,
+               libghc-random-prof,
+               libghc-random-doc,
                libghc-regex-compat-prof,
                libghc-regex-compat-doc
 Standards-Version: 3.7.2.2
