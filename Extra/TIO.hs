@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
 -- |A value of type TIO represents the state of the terminal I/O
 -- system.  The 'bol' flag keeps track of whether we are at the
 -- beginning of line on the console.  This is computed in terms of
