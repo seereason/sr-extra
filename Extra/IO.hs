@@ -1,4 +1,4 @@
-module Extra.IO where
+module Extra.IO {-# DEPRECATED "CIO is deprecated" #-} where
 
 import Extra.CIO
 import qualified System.IO as IO

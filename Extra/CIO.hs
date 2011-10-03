@@ -11,7 +11,7 @@
 -- 
 -- This code is provided for backwards compatibility, I don't
 -- endorse its use in new projects.
-module Extra.CIO 
+module Extra.CIO  {-# DEPRECATED "Use System.Unix.QIO in Unixutils." #-}
     ( -- * The CIO class
       CIO(..)
 

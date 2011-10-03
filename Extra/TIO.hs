@@ -6,7 +6,7 @@
 -- the order that stdout and stderr are sent to the console may not be
 -- the same as the order in which they show up there.  However, in
 -- practice this seems to work as one would hope.
-module Extra.TIO
+module Extra.TIO {-# DEPRECATED "This is not in use AFAIK." #-}
     ( module Extra.CIO
     -- * The TIO monad
     , TIO

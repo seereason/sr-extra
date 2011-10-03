@@ -34,6 +34,7 @@ module Extra.Misc
 
 import		 Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.Digest.Pure.MD5
 import		 Data.List
 import qualified Data.Map as Map
 import		 Data.Maybe
@@ -121,9 +122,11 @@ canon path =
       merge (x : xs) = x : merge xs
       merge [] = []
 
+{-# DEPRECATED md5sum "Use Data.ByteString.Lazy.Char8.readFile path >>= return . show . Data.Digest.Pure.MD5.md5" #-}
 -- | Run md5sum on a file and return the resulting checksum as text.
-md5sum :: FilePath -> IO (Either String String)
-md5sum path =
+md5sum :: FilePath -> IO String
+md5sum path = B.readFile path >>= return . show . Data.Digest.Pure.MD5.md5
+{-
     do output <- lazyCommand cmd B.empty
        let result =
                case exitCodeOnly output of
@@ -135,6 +138,7 @@ md5sum path =
        return result
     where
       cmd = "md5sum " ++ path
+-}
 
 -- | Predicate to decide if two files have the same inode.
 sameInode :: FilePath -> FilePath -> IO Bool

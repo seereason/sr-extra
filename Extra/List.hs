@@ -16,6 +16,7 @@ module Extra.List
 import Control.Monad
 import Data.List
 
+{-# DEPRECATED consperse "Use intercalate" #-}
 consperse :: [a] -> [[a]] -> [a]
 -- ^ The mighty consperse function - e.g. consperse "," ["a", "b"] -> "a,b"
 -- consperse = MissingH.List.join
