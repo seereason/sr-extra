@@ -1,5 +1,7 @@
 module Extra.Either where
 
+import Data.Either (partitionEithers, rights)
+
 isRight (Right _) = True
 isRight (Left _) = False
 
