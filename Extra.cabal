@@ -7,7 +7,7 @@ Category:       Unclassified
 Description:    A hodge-podge of functions and modules that do not have a better home
 Maintainer:     David Fox <david@seereason.com>
 Homepage:       http://src.seereason.com/haskell-extra
-Build-Depends:  base < 5, unix, regex-compat, time >= 1.1, Unixutils >= 1.32 , mtl, network, pretty, directory, bytestring, process, containers, old-time, old-locale, QuickCheck >= 2 && < 3, HUnit, random, filepath, zlib, bzlib
+Build-Depends:  base < 5, unix, regex-compat, time >= 1.1, Unixutils >= 1.32 , mtl, network, pretty, directory, bytestring, process, containers, old-time, old-locale, QuickCheck >= 2 && < 3, HUnit, random, filepath, zlib, bzlib, PureMD5
 Synopsis:       A grab bag of modules.
 ghc-options:	-O2 -W
 C-Sources:	     cbits/gwinsz.c
