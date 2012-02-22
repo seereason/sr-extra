@@ -6,49 +6,44 @@ module Extra.Lock
 
 import Control.Exception
 import Control.Monad.RWS
+import Prelude hiding (catch)
 import System.Directory
 import System.IO
-import System.IO.Error hiding (try)
+import System.IO.Error hiding (try, catch)
 import System.Posix.Files
 import System.Posix.IO
 import System.Posix.Unistd
 
---withLock :: (MonadIO m) => FilePath -> m a -> m (Either Exception a)
+withLock :: (MonadIO m) => FilePath -> m a -> m a
 withLock path task =
-    liftIO checkLock >>= liftIO . takeLock >>= doTask task >>= liftIO . dropLock
+    liftIO (checkLock >> takeLock) >> task >>= \ result -> liftIO dropLock >> return result
     where
       -- Return True if file is locked by a running process, false otherwise
       --checkLock :: IO (Either Exception ())
-      checkLock = try (readFile path) >>= either (return . checkReadError) (processRunning . lines)
-      checkReadError (e :: IOException) | isDoesNotExistError e = (Right ())
-      checkReadError e = Left e
+      checkLock = readFile path `catch` checkReadError >>= processRunning . lines
+      checkReadError :: IOError -> IO String
+      checkReadError e | isDoesNotExistError e = return ""
+      checkReadError e = throw e
+      processRunning :: [String] -> IO ()
       processRunning (pid : _) =
           do exists <- doesDirectoryExist ("/proc/" ++ pid)
              case exists of
-               True -> return (Left (lockedBy pid))
+               True -> throw (lockedBy pid path)
                False -> breakLock
       processRunning [] = breakLock
-      lockedBy pid = mkIOError alreadyInUseErrorType ("Locked by " ++ pid) Nothing (Just path)
-      breakLock = do try (removeFile path) >>= return . either checkBreakError (const (Right ()))
-      checkBreakError (e :: IOException) | isDoesNotExistError e = (Right ())
-      checkBreakError e = Left e
-      --takeLock :: Either Exception () -> IO (Either Exception ())
-      takeLock (Right ()) =
+      breakLock = removeFile path `catch` checkBreakError
+      checkBreakError (e :: IOException) | isDoesNotExistError e = return ()
+      checkBreakError e = throw e
+      takeLock :: IO ()
+      takeLock =
           -- Try to create the lock file in exclusive mode, if this
           -- succeeds then we have a lock.  Then write the process ID
           -- into the lock and close.
-          try (openFd path ReadWrite (Just 0o600) (defaultFileFlags {exclusive = True, trunc = True})) >>=
-          either (return . Left)
-                 (\ fd -> do h <- fdToHandle fd
-                             processID >>= hPutStrLn h >> hClose h >> return (Right ()))
-      takeLock (Left e) = return (Left e)
-      doTask task (Right ()) = task >>= return . Right
-      doTask _ (Left e) = return (Left e)
-      dropLock (Right a) = try (removeFile path) >>= return . checkDrop a
-      dropLock (Left e) = return (Left e)
-      checkDrop a (Right ()) = Right a
-      checkDrop a (Left (e :: IOException)) | isDoesNotExistError e = Right a
-      checkDrop _ (Left e) = Left e
+          openFd path ReadWrite (Just 0o600) (defaultFileFlags {exclusive = True, trunc = True}) >>=
+          fdToHandle >>= \ h -> processID >>= hPutStrLn h >> hClose h
+      dropLock = removeFile path `catch` checkDrop
+      checkDrop (e :: IOException) | isDoesNotExistError e = return ()
+      checkDrop e = throw e
 
 -- |Like withLock, but instead of giving up immediately, try n times
 -- with a wait between each.
@@ -56,8 +51,13 @@ withLock path task =
 awaitLock tries usecs path task =
     attempt 0
     where 
-      attempt n | n >= tries = return (Left (ErrorCall "Too many failures"))
-      attempt n = withLock path task >>= either (\ _ -> liftIO (usleep usecs) >> attempt (n + 1)) (return . Right)
+      attempt n | n >= tries = error "awaitLock: too many failures"
+      attempt n = withLock path task `catch` checkLockError
+          where
+            checkLockError e | isAlreadyInUseError e = liftIO (usleep usecs) >> attempt (n + 1)
+            checkLockError e = throw e
 
 processID :: IO String
 processID = readSymbolicLink "/proc/self"
+
+lockedBy pid path = mkIOError alreadyInUseErrorType ("Locked by " ++ pid) Nothing (Just path)

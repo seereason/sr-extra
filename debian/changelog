@@ -1,3 +1,11 @@
+haskell-extra (1.43) unstable; urgency=low
+
+  * Changed signatures of withLock and awaitLock functions.  They used to
+    return m (Either Exception a), now they just return m a and re-throw
+    the exception if it occurs.
+
+ -- David Fox <dsf@seereason.com>  Wed, 22 Feb 2012 09:02:02 -0800
+
 haskell-extra (1.42) unstable; urgency=low
 
   * Changes for unixutils 1.31.
