@@ -41,7 +41,7 @@ import		 Data.Maybe
 import qualified Data.Set as Set
 import		 Extra.List
 import		 System.FilePath
-import		 System.Unix.Process
+import		 System.Unix.LazyProcess
 import		 System.Directory
 import		 System.Posix.Files
 import		 System.Posix.User (getEffectiveUserID)
