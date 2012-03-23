@@ -11,7 +11,7 @@ import System.Environment
 import System.Exit
 import System.IO
 import qualified Data.ByteString.Lazy.Char8 as B
-import System.Unix.Process
+import System.Unix.LazyProcess
 
 -- |Set up access to destination (user\@host).
 sshExport :: String -> Maybe Int -> IO (Either String ())
