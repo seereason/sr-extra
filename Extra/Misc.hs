@@ -40,8 +40,10 @@ import qualified Data.Map as Map
 import		 Data.Maybe
 import qualified Data.Set as Set
 import		 Extra.List
+import           System.Exit
 import		 System.FilePath
 import		 System.Unix.LazyProcess
+import		 System.Unix.Outputs
 import		 System.Directory
 import		 System.Posix.Files
 import		 System.Posix.User (getEffectiveUserID)
