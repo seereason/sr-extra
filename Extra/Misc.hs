@@ -47,6 +47,8 @@ import		 System.Unix.Outputs
 import		 System.Directory
 import		 System.Posix.Files
 import		 System.Posix.User (getEffectiveUserID)
+import           System.Unix.Progress (lazyCommand, Output)
+import           System.Unix.Progress.Outputs (stdoutOnly, stderrOnly, exitCodeOnly)
 import		 Text.Regex
 
 mapSnd :: (b -> c) -> (a, b) -> (a, c)
