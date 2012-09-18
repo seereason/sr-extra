@@ -89,6 +89,3 @@ instance Read URI where
                                (a : _) -> a
                 goodURIs = takeWhile isJust moreURIs
                 (badURIs, moreURIs) = span isNothing allURIs
-
-instance Ord URI where
-    compare a b = compare (uriToString id a "") (uriToString id b "")
