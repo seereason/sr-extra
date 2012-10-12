@@ -1,6 +1,6 @@
 module Extra.SSH
     ( sshVerify
-    , sshExport
+    , sshExportDeprecated
     , sshCopy
     ) where
 
@@ -15,8 +15,8 @@ import System.Unix.Progress (lazyCommand)
 import System.Unix.Progress.Outputs (outputOnly, exitCodeOnly)
 
 -- |Set up access to destination (user\@host).
-sshExport :: String -> Maybe Int -> IO (Either String ())
-sshExport dest port =
+sshExportDeprecated :: String -> Maybe Int -> IO (Either String ())
+sshExportDeprecated dest port =
     generatePublicKey >>=
     either (return . Left) (testAccess dest port) >>=
     either (return . Left) (openAccess dest port)

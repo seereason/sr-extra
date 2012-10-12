@@ -1,3 +1,10 @@
+haskell-extra (1.44) unstable; urgency=low
+
+  * Rename sshExport -> sshExportDeprecated.  This function does ugly
+    things to your SSH keys.
+
+ -- David Fox <dsf@seereason.com>  Fri, 12 Oct 2012 10:02:41 -0700
+
 haskell-extra (1.43) unstable; urgency=low
 
   * Changed signatures of withLock and awaitLock functions.  They used to
