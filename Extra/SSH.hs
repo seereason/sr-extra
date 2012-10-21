@@ -4,6 +4,7 @@ module Extra.SSH
     , sshCopy
     ) where
 
+import Data.Maybe (mapMaybe)
 import System.Cmd
 import System.Directory
 import System.Posix.User
@@ -11,8 +12,8 @@ import System.Environment
 import System.Exit
 import System.IO
 import qualified Data.ByteString.Lazy.Char8 as B
-import System.Unix.Progress (lazyCommand)
-import System.Unix.Progress.Outputs (outputOnly, exitCodeOnly)
+import System.Process (CmdSpec(ShellCommand))
+import System.Process.Read (Output, readProcessChunks, foldOutput)
 
 -- |Set up access to destination (user\@host).
 sshExportDeprecated :: String -> Maybe Int -> IO (Either String ())
@@ -36,12 +37,18 @@ generatePublicKey =
          True -> return . Right $ keypath
          False ->
              do hPutStrLn stderr $ "generatePublicKey " ++ " -> " ++ keypath
-                result <- lazyCommand cmd B.empty
+                result <- readProcessChunks id (ShellCommand cmd) B.empty
                 case exitCodeOnly result of
                   ExitFailure n ->
                       return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
                                       "\n\noutput: " ++ B.unpack (outputOnly result)
                   _ -> return . Right $ keypath
+
+outputOnly :: [Output B.ByteString] -> B.ByteString
+outputOnly = B.concat . mapMaybe (foldOutput (const Nothing) Just Just (const Nothing))
+
+exitCodeOnly :: [Output B.ByteString] -> ExitCode
+exitCodeOnly = head . mapMaybe (foldOutput Just (const Nothing) (const Nothing) (const Nothing))
 
 -- |See if we already have access to the destination (user\@host).
 sshVerify :: String -> Maybe Int -> IO Bool
@@ -68,7 +75,7 @@ openAccess _ _ Nothing = return . Right $ ()
 openAccess dest port (Just keypath) =
     do hPutStrLn stderr $ "openAccess " ++ show dest ++ " " ++ show port ++ " " ++ show keypath
        let cmd = sshOpenCmd dest port keypath
-       result <- lazyCommand cmd B.empty
+       result <- readProcessChunks id (ShellCommand cmd) B.empty
        case exitCodeOnly result of
          ExitFailure n -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
 	                                  "\n\noutput: " ++ B.unpack (outputOnly result)
