@@ -24,7 +24,7 @@ module Extra.Files
 
 import qualified Codec.Compression.GZip as GZip
 import qualified Codec.Compression.BZip as BZip
-import		 Control.Exception hiding (catch)
+import		 Control.Exception
 import		 Control.Monad
 import qualified Data.ByteString.Lazy as B
 import		 Data.List
@@ -151,7 +151,7 @@ zipFile path =
 
 -- |like removeLink, but does not fail if link did not exist
 forceRemoveLink :: FilePath -> IO ()
-forceRemoveLink fp = removeLink fp `Prelude.catch` (\e -> unless (isDoesNotExistError e) (ioError e))
+forceRemoveLink fp = removeLink fp `catch` (\e -> unless (isDoesNotExistError e) (ioError e))
                  
 -- | Write out three versions of a file, regular, gzipped, and bzip2ed.
 writeAndZipFileWithBackup :: FilePath -> B.ByteString -> IO (Either [String] ())

@@ -12,7 +12,7 @@ import System.Environment
 import System.Exit
 import System.IO
 import qualified Data.ByteString.Lazy.Char8 as B
-import System.Process (CmdSpec(ShellCommand))
+import System.Process (CmdSpec(ShellCommand), shell)
 import System.Process.Read (Output, readProcessChunks, foldOutput)
 
 -- |Set up access to destination (user\@host).
@@ -37,7 +37,7 @@ generatePublicKey =
          True -> return . Right $ keypath
          False ->
              do hPutStrLn stderr $ "generatePublicKey " ++ " -> " ++ keypath
-                result <- readProcessChunks id (ShellCommand cmd) B.empty
+                result <- readProcessChunks (shell cmd) B.empty
                 case exitCodeOnly result of
                   ExitFailure n ->
                       return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
@@ -75,7 +75,7 @@ openAccess _ _ Nothing = return . Right $ ()
 openAccess dest port (Just keypath) =
     do hPutStrLn stderr $ "openAccess " ++ show dest ++ " " ++ show port ++ " " ++ show keypath
        let cmd = sshOpenCmd dest port keypath
-       result <- readProcessChunks id (ShellCommand cmd) B.empty
+       result <- readProcessChunks (shell cmd) B.empty
        case exitCodeOnly result of
          ExitFailure n -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
 	                                  "\n\noutput: " ++ B.unpack (outputOnly result)

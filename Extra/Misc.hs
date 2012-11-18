@@ -39,7 +39,9 @@ import		 System.Directory
 import		 System.Posix.Files
 import		 System.Posix.User (getEffectiveUserID)
 import           System.Process (CmdSpec(RawCommand))
-import           System.Process.Read (readProcessChunks, Output, keepStdout, keepStderr, keepResult)
+import           System.Process.Read (readProcessChunks, Output)
+import System.Process(proc)
+import System.Process.Progress (keepStdout, keepStderr, keepResult)
 import		 Text.Regex
 
 mapSnd :: (b -> c) -> (a, b) -> (a, c)
@@ -132,7 +134,7 @@ checkSuperUser = getEffectiveUserID >>= return . (== 0)
 -- | Given a tarball, return the name of the top directory.
 tarDir :: FilePath -> IO (Maybe String)
 tarDir path =
-    readProcessChunks id (RawCommand "tar" ["tfz", path]) B.empty >>= \ output ->
+    readProcessChunks (proc "tar" ["tfz", path]) B.empty >>= \ output ->
     case keepResult output of
       [ExitSuccess] -> return . dir . lines . B.unpack . B.concat . keepStdout $ output
       _ -> return Nothing
