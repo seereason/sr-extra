@@ -1,3 +1,9 @@
+haskell-extra (1.46) unstable; urgency=low
+
+  * Need to expose module Extra.CIO so the library will load.
+
+ -- David Fox <dsf@seereason.com>  Mon, 19 Nov 2012 08:25:47 -0800
+
 haskell-extra (1.45) unstable; urgency=low
 
   * Remove dependency on process-extra and process-progress

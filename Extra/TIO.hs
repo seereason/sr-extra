@@ -15,7 +15,6 @@ module Extra.TIO {-# DEPRECATED "This is not in use AFAIK." #-}
     --, liftTIO
     ) where
 
-import Extra.CIO
 import Prelude hiding (putStr, putChar, putStrLn)
 import Control.Exception
 import Control.Monad.RWS

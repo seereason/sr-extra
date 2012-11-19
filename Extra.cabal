@@ -1,5 +1,5 @@
 Name:           Extra
-Version:        1.45
+Version:        1.46
 License:        BSD3
 License-File:	COPYING
 Author:         David Fox
@@ -36,6 +36,7 @@ Include-Dirs:        cbits
 Install-Includes:    gwinsz.h
 Exposed-modules:
     Extra.Bool,
+    Extra.CIO,
     Extra.Either,
     Extra.Exit,
     Extra.Files,
