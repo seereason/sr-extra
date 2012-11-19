@@ -4,17 +4,13 @@ module Extra.SSH
     , sshCopy
     ) where
 
-import Data.Maybe (mapMaybe)
 import System.Cmd
 import System.Directory
 import System.Posix.User
 import System.Environment
 import System.Exit
 import System.IO
-import qualified Data.ByteString.Lazy.Char8 as B
-import System.Process (CmdSpec(ShellCommand), shell)
-import System.Process.Read (Output, readProcessChunks, foldOutput)
-
+import System.Process (readProcessWithExitCode, showCommandForUser)
 -- |Set up access to destination (user\@host).
 sshExportDeprecated :: String -> Maybe Int -> IO (Either String ())
 sshExportDeprecated dest port =
@@ -37,18 +33,11 @@ generatePublicKey =
          True -> return . Right $ keypath
          False ->
              do hPutStrLn stderr $ "generatePublicKey " ++ " -> " ++ keypath
-                result <- readProcessChunks (shell cmd) B.empty
-                case exitCodeOnly result of
+                code <- system cmd
+                case code of
                   ExitFailure n ->
-                      return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
-                                      "\n\noutput: " ++ B.unpack (outputOnly result)
+                      return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n
                   _ -> return . Right $ keypath
-
-outputOnly :: [Output B.ByteString] -> B.ByteString
-outputOnly = B.concat . mapMaybe (foldOutput (const Nothing) Just Just (const Nothing))
-
-exitCodeOnly :: [Output B.ByteString] -> ExitCode
-exitCodeOnly = head . mapMaybe (foldOutput Just (const Nothing) (const Nothing) (const Nothing))
 
 -- |See if we already have access to the destination (user\@host).
 sshVerify :: String -> Maybe Int -> IO Bool
@@ -69,20 +58,19 @@ testAccess dest port keypath =
          True -> return . Right $ Nothing
          False -> return . Right . Just $ keypath
 
--- |Try to set up the keys so we have access to the account
+-- |Try to set up the keys so we have access to the account.  I don't
+-- think we use this any more, and I don't think you should either.
 openAccess :: String -> Maybe Int -> Maybe FilePath -> IO (Either String ())
 openAccess _ _ Nothing = return . Right $ ()
 openAccess dest port (Just keypath) =
     do hPutStrLn stderr $ "openAccess " ++ show dest ++ " " ++ show port ++ " " ++ show keypath
-       let cmd = sshOpenCmd dest port keypath
-       result <- readProcessChunks (shell cmd) B.empty
-       case exitCodeOnly result of
-         ExitFailure n -> return . Left $ "Failure: " ++ show cmd ++ " -> " ++ show n ++
-	                                  "\n\noutput: " ++ B.unpack (outputOnly result)
+       let args = maybe [] (\ x -> ["-p", show x]) port  ++ [show dest, sshOpenRemoteCmd]
+       (code, out, err) <- readFile keypath >>= readProcessWithExitCode "ssh" args
+       case code of
+         ExitFailure n -> return . Left $ "Failure: " ++ showCommandForUser "ssh" args ++ " -> " ++ show n ++
+	                                  "\n\nstdout: " ++ out ++ "\n\nstderr: " ++ err
          _ -> return . Right $ ()
     where
-      sshOpenCmd dest port keypath =
-          "cat " ++ keypath ++ " | " ++ "ssh " ++ (maybe "" ((++ "-p ") . show) port) ++ " " ++ show dest ++ " '" ++ sshOpenRemoteCmd ++ "'"
       sshOpenRemoteCmd =
           ("chmod g-w . && " ++				-- Ssh will not work if the permissions aren't just so
            "chmod o-rwx . && " ++

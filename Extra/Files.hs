@@ -151,7 +151,7 @@ zipFile path =
 
 -- |like removeLink, but does not fail if link did not exist
 forceRemoveLink :: FilePath -> IO ()
-forceRemoveLink fp = removeLink fp `catch` (\e -> unless (isDoesNotExistError e) (ioError e))
+forceRemoveLink fp = removeLink fp `Control.Exception.catch` (\e -> unless (isDoesNotExistError e) (ioError e))
                  
 -- | Write out three versions of a file, regular, gzipped, and bzip2ed.
 writeAndZipFileWithBackup :: FilePath -> B.ByteString -> IO (Either [String] ())
@@ -242,7 +242,7 @@ replaceFile path text =
     f
     where
       f :: IO ()
-      f = removeFile path `catch` (\ e -> if isDoesNotExistError e then return () else ioError e) >> writeFile path text
+      f = removeFile path `Control.Exception.catch` (\ e -> if isDoesNotExistError e then return () else ioError e) >> writeFile path text
 
 -- Try something n times, returning the first Right or the last Left
 -- if it never succeeds.  Sleep between tries.

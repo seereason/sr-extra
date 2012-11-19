@@ -18,7 +18,7 @@ module Extra.Misc
     , sameMd5sum
     , tarDir
     -- * Processes
-    , splitOutput
+    -- , splitOutput
     -- * ByteString
     , cd
     -- * Debugging
@@ -38,10 +38,8 @@ import		 System.FilePath
 import		 System.Directory
 import		 System.Posix.Files
 import		 System.Posix.User (getEffectiveUserID)
-import           System.Process (CmdSpec(RawCommand))
-import           System.Process.Read (readProcessChunks, Output)
-import System.Process(proc)
-import System.Process.Progress (keepStdout, keepStderr, keepResult)
+import           System.Process (readProcessWithExitCode)
+-- import System.Process.Progress (keepStdout, keepStderr, keepResult)
 import		 Text.Regex
 
 mapSnd :: (b -> c) -> (a, b) -> (a, c)
@@ -119,8 +117,10 @@ sameMd5sum a b =
       bsum <- md5sum b
       return (asum == bsum)
 
+{-
 splitOutput :: [Output B.ByteString] -> (B.ByteString, B.ByteString, [ExitCode])
 splitOutput output = (B.concat (keepStdout output), B.concat (keepStderr output), keepResult output)
+-}
 
 -- |A version of read with a more helpful error message.
 read' s =
@@ -134,9 +134,9 @@ checkSuperUser = getEffectiveUserID >>= return . (== 0)
 -- | Given a tarball, return the name of the top directory.
 tarDir :: FilePath -> IO (Maybe String)
 tarDir path =
-    readProcessChunks (proc "tar" ["tfz", path]) B.empty >>= \ output ->
-    case keepResult output of
-      [ExitSuccess] -> return . dir . lines . B.unpack . B.concat . keepStdout $ output
+    readProcessWithExitCode "tar" ["tfz", path] "" >>= \ (code, out, _) ->
+    case code of
+      ExitSuccess -> return . dir . lines $ out
       _ -> return Nothing
     where
       dir [] = Nothing
