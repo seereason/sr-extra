@@ -22,7 +22,7 @@ Build-Depends:
     pretty,
     process,
     pureMD5,
-    QuickCheck >= 2.6 && < 3,
+    QuickCheck >= 2 && < 3,
     random,
     regex-compat,
     time >= 1.1,
