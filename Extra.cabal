@@ -1,5 +1,5 @@
 Name:           Extra
-Version:        1.46.1
+Version:        1.46.2
 License:        BSD3
 License-File:	COPYING
 Author:         David Fox
@@ -7,7 +7,15 @@ Category:       Unclassified
 Description:    A hodge-podge of functions and modules that do not have a better home
 Maintainer:     David Fox <david@seereason.com>
 Homepage:       http://src.seereason.com/haskell-extra
-Build-Depends:
+Synopsis:       A grab bag of modules.
+Build-Type:     Simple
+Cabal-Version:  >= 1.2
+flag network-uri
+ Description: Get Network.URI from the network-uri package
+ Default: True
+
+Library
+  Build-Depends:
     base < 5,
     bytestring,
     bzlib,
@@ -16,7 +24,6 @@ Build-Depends:
     filepath,
     HUnit,
     mtl,
-    network >= 2.4,
     old-locale,
     old-time,
     pretty,
@@ -29,12 +36,15 @@ Build-Depends:
     unix,
     Unixutils >= 1.51,
     zlib
-Synopsis:       A grab bag of modules.
-ghc-options:	-O2 -W
-C-Sources:	     cbits/gwinsz.c
-Include-Dirs:        cbits
-Install-Includes:    gwinsz.h
-Exposed-modules:
+  if flag(network-uri)
+    Build-Depends: network-uri >= 2.6
+  else
+    Build-Depends: network >= 2.4
+  ghc-options:	-O2 -W
+  C-Sources:	     cbits/gwinsz.c
+  Include-Dirs:        cbits
+  Install-Includes:    gwinsz.h
+  Exposed-modules:
     Extra.Bool,
     Extra.CIO,
     Extra.Either,
@@ -55,7 +65,3 @@ Exposed-modules:
     Test.QUnit,
     Test.QuickCheck.Properties,
     Extra.IOThread
-Build-Type: Simple
-
--- For more complex build options see:
--- http://www.haskell.org/ghc/docs/latest/html/Cabal/

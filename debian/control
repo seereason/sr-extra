@@ -2,32 +2,47 @@ Source: haskell-extra
 Priority: optional
 Section: devel
 Maintainer: David Fox <dsf@seereason.com>
-Build-Depends: debhelper (>= 5.0),
-               haskell-devscripts (>= 0.6.15), hscolour,
-               ghc (>= 6.10),
-               ghc-doc,
-               ghc (>= 6.12) | haddock (>= 2.1.0),
-               ghc-prof,
-               libghc-unixutils-prof (>= 1.51),
-               libghc-unixutils-doc (>= 1.51),
-               libghc-bzlib-prof,
-               libghc-bzlib-doc,
-               libghc-zlib-prof,
-               libghc-zlib-doc,
-               libghc-hunit-prof,
-               libghc-hunit-doc,
-               libghc-puremd5-prof,
-               libghc-puremd5-doc,
-               libghc-quickcheck2-prof,
-               libghc-quickcheck2-doc,
-               libghc-network-prof (>= 2.4),
-               libghc-network-doc (>= 2.4),
-               libghc-random-prof,
-               libghc-random-doc,
-               libghc-regex-compat-prof,
-               libghc-regex-compat-doc
 Standards-Version: 3.7.2.2
-Homepage: http://seereason.org/
+Homepage: http://src.seereason.com/haskell-extra
+Build-Depends: debhelper (>= 7.0)
+               , haskell-devscripts (>= 0.8)
+               , cdbs
+               , ghc
+               , ghc-prof
+               , libghc-hunit-dev
+               , libghc-hunit-prof
+               , libghc-quickcheck2-dev (>= 2)
+               , libghc-quickcheck2-dev (<< 3)
+               , libghc-quickcheck2-prof (>= 2)
+               , libghc-quickcheck2-prof (<< 3)
+               , libghc-unixutils-dev (>= 1.51)
+               , libghc-unixutils-prof (>= 1.51)
+               , libghc-bzlib-dev
+               , libghc-bzlib-prof
+               , libghc-mtl-dev
+               , libghc-mtl-prof
+               , libghc-network-uri-dev (>= 2.6)
+               , libghc-network-uri-prof (>= 2.6)
+               , libghc-puremd5-dev
+               , libghc-puremd5-prof
+               , libghc-random-dev
+               , libghc-random-prof
+               , libghc-regex-compat-dev
+               , libghc-regex-compat-prof
+               , libghc-zlib-dev
+               , libghc-zlib-prof
+Build-Depends-Indep: ghc-doc
+                     , libghc-hunit-doc
+                     , libghc-quickcheck2-doc (>= 2)
+                     , libghc-quickcheck2-doc (<< 3)
+                     , libghc-unixutils-doc (>= 1.51)
+                     , libghc-bzlib-doc
+                     , libghc-mtl-doc
+                     , libghc-network-uri-doc (>= 2.6)
+                     , libghc-puremd5-doc
+                     , libghc-random-doc
+                     , libghc-regex-compat-doc
+                     , libghc-zlib-doc
 
 Package: libghc-extra-dev
 Section: libdevel
