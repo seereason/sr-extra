@@ -1,3 +1,9 @@
+haskell-sr-extra (1.46.3) unstable; urgency=low
+
+  * Rename package and move repository to github.
+
+ -- David Fox <dsf@seereason.com>  Wed, 25 Mar 2015 05:36:48 -0700
+
 haskell-extra (1.46.2) unstable; urgency=low
 
   * Support new network-uri package.
