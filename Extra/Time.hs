@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Extra.Time
     ( formatDebianDate
     , myTimeDiffToString
@@ -6,8 +7,13 @@ module Extra.Time
 import Control.Exception
 import Data.List
 import Data.Time
-import System.Locale
-import System.Time
+#if MIN_VERSION_time(1,5,0)
+import qualified System.Locale as Old (defaultTimeLocale)
+import qualified System.Time as Old (formatTimeDiff, tdPicosec)
+#else
+import System.Locale as Old
+import System.Time as Old
+#endif
 import Text.Printf
 
 {- This function is so complicated because there seems to be no way
@@ -53,7 +59,7 @@ myTimeDiffToString diff =
         _ | isPrefixOf "00:" s -> drop 3 s
         _ -> s
     where
-      s = formatTimeDiff defaultTimeLocale "%T" diff
+      s = Old.formatTimeDiff Old.defaultTimeLocale "%T" diff
       ms = ps2ms ps
       ps2ms ps = quot (ps + 500000000) 1000000000
-      ps = tdPicosec diff
+      ps = Old.tdPicosec diff
