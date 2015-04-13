@@ -1,12 +1,12 @@
 Name:           sr-extra
-Version:        1.46.3
+Version:        1.46.3.1
 License:        BSD3
 License-File:	COPYING
 Author:         David Fox
 Category:       Unclassified
 Description:    A hodge-podge of functions and modules that do not have a better home
-Maintainer:     David Fox <david@seereason.com>
-Homepage:       http://src.seereason.com/haskell-extra
+Maintainer:     David Fox <dsf@seereason.com>
+Homepage:       https://github.com/seereason/sr-extra
 Synopsis:       A grab bag of modules.
 Build-Type:     Simple
 Cabal-Version:  >= 1.2
