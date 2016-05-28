@@ -33,7 +33,7 @@ import		 Extra.Misc
 import		 System.Unix.Directory
 import		 System.Directory
 import		 System.IO.Error hiding (try, catch)
-import		 System.Posix.Files
+import		 System.Posix.Files as SPF
 
 -- | Return the list of subdirectories, omitting . and .. and ignoring
 -- symbolic links.
@@ -43,7 +43,7 @@ getSubDirectories path =
     return . filter (not . (flip elem) [".", ".."]) >>=
     filterM isRealDirectory
     where
-      isRealDirectory name = getSymbolicLinkStatus (path ++ "/" ++ name) >>= return . not . isSymbolicLink
+      isRealDirectory name = getSymbolicLinkStatus (path ++ "/" ++ name) >>= return . not . SPF.isSymbolicLink
 
 -- |Atomically install a list of files.  Returns a list of what went
 -- wrong on failure.  Will throw an error if it fails and is unable to
@@ -224,7 +224,7 @@ prepareSymbolicLink name path =
     where
       checkExists = doesDirectoryExist path >>= orCreate
       checkType False = return False
-      checkType True = getSymbolicLinkStatus path >>= return . isSymbolicLink >>= orReplace
+      checkType True = getSymbolicLinkStatus path >>= return . SPF.isSymbolicLink >>= orReplace
       checkContent False = return ()
       checkContent True = readSymbolicLink path >>= return . (== name) >>= orReplace >> return ()
       orReplace True = return True
