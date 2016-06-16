@@ -2,7 +2,7 @@ module Extra.HughesPJ where
 
 import Data.Maybe
 import Extra.Terminal
-import Text.PrettyPrint.HughesPJ
+import Text.PrettyPrint
 
 -- |render a Doc using the current terminal width
 renderWidth :: Doc -> IO String       

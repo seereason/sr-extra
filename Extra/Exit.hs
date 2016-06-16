@@ -4,7 +4,7 @@ import Extra.HughesPJ
 import System.Environment
 import System.Exit
 import System.IO
-import Text.PrettyPrint.HughesPJ
+import Text.PrettyPrint
 
 -- |exitFailure with nicely formatted help text on stderr
 exitWithHelp :: (String -> Doc) -- ^ generate help text, the argument is the result of getProgName

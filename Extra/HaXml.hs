@@ -1,6 +1,6 @@
 module Extra.HaXml where
 
-import Text.PrettyPrint.HughesPJ
+import Text.PrettyPrint
 import Text.XML.HaXml
 import Text.XML.HaXml.Pretty
 
