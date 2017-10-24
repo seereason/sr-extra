@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.46.3.2
+Version:        1.47
 License:        BSD3
 License-File:	COPYING
 Author:         David Fox
@@ -8,7 +8,7 @@ Description:    A hodge-podge of functions and modules that do not have a better
 Maintainer:     David Fox <dsf@seereason.com>
 Homepage:       https://github.com/seereason/sr-extra
 Synopsis:       A grab bag of modules.
-Build-Type:     Simple
+nBuild-Type:     Simple
 Cabal-Version:  >= 1.2
 flag network-uri
  Description: Get Network.URI from the network-uri package
@@ -19,8 +19,10 @@ Library
     base < 5,
     bytestring,
     bzlib,
+    cereal,
     containers,
     directory,
+    fgl,
     filepath,
     HUnit,
     mtl,
@@ -32,9 +34,15 @@ Library
     QuickCheck >= 2 && < 3,
     random,
     regex-compat,
+    safecopy,
+    template-haskell,
+    text,
+    th-lift,
+    th-lift-instances,
     time >= 1.1,
     unix,
     Unixutils >= 1.51,
+    userid,
     zlib
   if flag(network-uri)
     Build-Depends: network-uri >= 2.6
@@ -56,6 +64,7 @@ Library
     Extra.Lock,
     Extra.Misc,
     Extra.Net,
+    Extra.Orphans,
     Extra.SSH,
     Extra.Time,
     Extra.Terminal,
