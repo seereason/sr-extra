@@ -12,13 +12,14 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy.Encoding as TLE
+import Data.Typeable (Typeable)
 import Data.Time (UTCTime(..), Day(ModifiedJulianDay), toModifiedJulianDay, DiffTime)
 import Data.UserId (UserId(..))
 import Instances.TH.Lift ()
 import Language.Haskell.TH (Loc(..))
 import Language.Haskell.TH.Lift (deriveLift)
 
-instance SafeCopy (Proxy t) where
+instance Typeable t => SafeCopy (Proxy t) where
       putCopy Proxy = contain (do { return () })
       getCopy = contain (label "Data.Proxy.Proxy:" (pure Proxy))
       version = 0
