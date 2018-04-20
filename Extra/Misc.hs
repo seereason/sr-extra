@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Extra.Misc
     (
     -- * String functions
@@ -7,7 +9,7 @@ module Extra.Misc
     , mapSnd
     -- * FilePath functions
     , parentPath
-    , canon
+    -- , canon
     -- * Map and Set functions
     , listMap
     , listDiff
@@ -40,7 +42,7 @@ import		 System.Posix.Files
 import		 System.Posix.User (getEffectiveUserID)
 import           System.Process (readProcessWithExitCode)
 -- import System.Process.Progress (keepStdout, keepStderr, keepResult)
-import		 Text.Regex
+-- import		 Text.Regex
 
 mapSnd :: (b -> c) -> (a, b) -> (a, c)
 mapSnd f (a, b) = (a, f b)
@@ -82,6 +84,7 @@ listMap pairs =
 listDiff :: Ord a => [a] -> [a] -> [a]
 listDiff a b = Set.toList (Set.difference (Set.fromList a) (Set.fromList b))
 
+#if 0
 -- | Weak attempt at canonicalizing a file path.
 canon :: FilePath -> FilePath
 canon path =
@@ -95,6 +98,7 @@ canon path =
       merge (x : "." : xs) = (merge (x : xs))
       merge (x : xs) = x : merge xs
       merge [] = []
+#endif
 
 {-# DEPRECATED md5sum "Use Data.ByteString.Lazy.Char8.readFile path >>= return . show . Data.Digest.Pure.MD5.md5" #-}
 -- | Run md5sum on a file and return the resulting checksum as text.

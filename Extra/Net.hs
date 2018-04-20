@@ -1,7 +1,8 @@
-module Extra.Net
-    ( webServerDirectoryContents
-    ) where
+{-# LANGUAGE CPP #-}
 
+module Extra.Net where
+
+#if 0
 import qualified Data.ByteString.Lazy.Char8 as L
 import		 Data.Maybe
 import		 Text.Regex
@@ -18,3 +19,4 @@ webServerDirectoryContents text =
       re = mkRegex "( <A HREF|<a href)=\"([^/][^\"]*)/\""
       second (Just [_, b]) = Just b
       second _ = Nothing
+#endif

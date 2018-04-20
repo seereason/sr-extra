@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.47
+Version:        1.48
 License:        BSD3
 License-File:	COPYING
 Author:         David Fox
@@ -8,7 +8,7 @@ Description:    A hodge-podge of functions and modules that do not have a better
 Maintainer:     David Fox <dsf@seereason.com>
 Homepage:       https://github.com/seereason/sr-extra
 Synopsis:       A grab bag of modules.
-nBuild-Type:     Simple
+Build-Type:     Simple
 Cabal-Version:  >= 1.2
 flag network-uri
  Description: Get Network.URI from the network-uri package
@@ -33,7 +33,6 @@ Library
     pureMD5,
     QuickCheck >= 2 && < 3,
     random,
-    regex-compat,
     safecopy,
     template-haskell,
     text,
