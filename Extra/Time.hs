@@ -1,19 +1,12 @@
 {-# LANGUAGE CPP #-}
 module Extra.Time
     ( formatDebianDate
-    , myTimeDiffToString
+    -- , myTimeDiffToString
     ) where
 
 import Control.Exception
 import Data.List
 import Data.Time
-#if MIN_VERSION_time(1,5,0)
-import qualified System.Locale as Old (defaultTimeLocale)
-import qualified System.Time as Old (formatTimeDiff, tdPicosec)
-#else
-import System.Locale as Old
-import System.Time as Old
-#endif
 import Text.Printf
 
 {- This function is so complicated because there seems to be no way
@@ -51,6 +44,8 @@ _test=
           testsecond = 15.29
           teststring = "Tue, 19 Dec 2006 17:19:15 UTC"
 
+#if 0
+-- | Retired due to use of old-time.
 myTimeDiffToString diff =
     do
       case () of
@@ -63,3 +58,4 @@ myTimeDiffToString diff =
       ms = ps2ms ps
       ps2ms ps = quot (ps + 500000000) 1000000000
       ps = Old.tdPicosec diff
+#endif

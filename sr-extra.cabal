@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.48
+Version:        1.49
 License:        BSD3
 License-File:	COPYING
 Author:         David Fox
@@ -26,8 +26,6 @@ Library
     filepath,
     HUnit,
     mtl,
-    old-locale,
-    old-time,
     pretty,
     process,
     pureMD5,
