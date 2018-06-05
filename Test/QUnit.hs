@@ -64,3 +64,4 @@ testQuickCheck args prop =
          QC.GaveUp{} -> let ntest = QC.numTests result in HU.assertFailure $ "Arguments exhausted after" ++ show ntest ++ (if ntest == 1 then " test." else " tests.")
          QC.Failure{} -> let reason = QC.reason result in HU.assertFailure reason
          QC.NoExpectedFailure{} -> HU.assertFailure $ "No Expected Failure"
+         QC.InsufficientCoverage{} -> HU.assertFailure $ "Insufficient Coverage"

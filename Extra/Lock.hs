@@ -6,10 +6,9 @@ module Extra.Lock
 
 import Control.Exception
 import Control.Monad.RWS
-import Prelude hiding (catch)
 import System.Directory
 import System.IO
-import System.IO.Error hiding (try, catch)
+import System.IO.Error
 import System.Posix.Files
 import System.Posix.IO
 import System.Posix.Unistd

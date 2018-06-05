@@ -27,22 +27,22 @@ module Extra.Misc
     , read'
     ) where
 
-import		 Control.Exception
+import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Digest.Pure.MD5
-import		 Data.List
+import           Data.List
 import qualified Data.Map as Map
-import		 Data.Maybe
+import           Data.Maybe
 import qualified Data.Set as Set
-import		 Extra.List
+import           Extra.List
 import           System.Exit
-import		 System.FilePath
-import		 System.Directory
-import		 System.Posix.Files
-import		 System.Posix.User (getEffectiveUserID)
+import           System.FilePath
+import           System.Directory
+import           System.Posix.Files
+import           System.Posix.User (getEffectiveUserID)
 import           System.Process (readProcessWithExitCode)
 -- import System.Process.Progress (keepStdout, keepStderr, keepResult)
--- import		 Text.Regex
+-- import                Text.Regex
 
 mapSnd :: (b -> c) -> (a, b) -> (a, c)
 mapSnd f (a, b) = (a, f b)
@@ -64,10 +64,10 @@ justify :: String -> Int -> [[String]]
 justify s n =
     foldr doWord [[]] (words s)
     where doWord w [] = [[w]]
-	  doWord w (ws : etc) = 
-	      if length (concat (intersperse " " (w:ws))) <= n then
-		 (w : ws) : etc else
-		 [w] : ws : etc
+          doWord w (ws : etc) =
+              if length (concat (intersperse " " (w:ws))) <= n then
+                 (w : ws) : etc else
+                 [w] : ws : etc
 
 -- |dirname
 parentPath :: FilePath -> FilePath
@@ -150,8 +150,8 @@ tarDir path =
                          (s : _) -> Just s
 
 cd :: FilePath -> IO a -> IO a
-cd name m = 
-    bracket 
+cd name m =
+    bracket
         (do cwd <- getCurrentDirectory
             setCurrentDirectory name
             return cwd)

@@ -5,7 +5,7 @@
 -- An example of an inconsistant state would be if we got a failure
 -- when writing out a file, but were unable to restore the original
 -- file to its original position.
-module Extra.Files 
+module Extra.Files
     ( getSubDirectories
     , renameAlways
     , renameMissing
@@ -15,7 +15,7 @@ module Extra.Files
     , writeAndZipFile
     , backupFile
     , writeFileIfMissing
-    , maybeWriteFile		-- writeFileUnlessSame
+    , maybeWriteFile            -- writeFileUnlessSame
     , createSymbolicLinkIfMissing
     , prepareSymbolicLink
     , forceRemoveLink
@@ -24,16 +24,16 @@ module Extra.Files
 
 import qualified Codec.Compression.GZip as GZip
 import qualified Codec.Compression.BZip as BZip
-import		 Control.Exception
-import		 Control.Monad
+import           Control.Exception
+import           Control.Monad
 import qualified Data.ByteString.Lazy as B
-import		 Data.List
-import		 Data.Maybe
-import		 Extra.Misc
-import		 System.Unix.Directory
-import		 System.Directory
-import		 System.IO.Error hiding (try, catch)
-import		 System.Posix.Files as SPF
+import           Data.List
+import           Data.Maybe
+import           Extra.Misc
+import           System.Unix.Directory
+import           System.Directory
+import           System.IO.Error
+import           System.Posix.Files as SPF
 
 -- | Return the list of subdirectories, omitting . and .. and ignoring
 -- symbolic links.
@@ -52,7 +52,7 @@ installFiles :: [(FilePath, FilePath)] -> IO (Either [String] ())
 installFiles pairs =
     do backedUp <- mapM (uncurry renameAlways) (zip originalFiles backupFiles)
        case lefts backedUp of
-         [] -> 
+         [] ->
              do renamed <- mapM (uncurry renameAlways) (zip replacementFiles originalFiles)
                 case lefts renamed of
                   [] -> return $ Right ()
@@ -63,9 +63,9 @@ installFiles pairs =
                       -- files back into place.
                       do restored <- mapM (uncurry renameAlways) (zip backupFiles originalFiles)
                          case lefts restored of
-	                   -- We succeeded in failing.
+                           -- We succeeded in failing.
                            [] -> return . Left . concat . lefts $ renamed
-	                   -- Restore failed.  Throw an exception.
+                           -- Restore failed.  Throw an exception.
                            _ -> error ("installFiles: Couldn't restore original files after write failure:" ++
                                        concat (map message (zip3 replacementFiles originalFiles renamed)) ++
                                        concat (map message (zip3 originalFiles backupFiles restored)))
@@ -75,9 +75,9 @@ installFiles pairs =
              -- Restore the backup for any missing original files.
              do restored <- mapM (uncurry renameMissing) (zip backupFiles originalFiles)
                 case lefts restored of
-	          -- We succeeded in failing.
+                  -- We succeeded in failing.
                   [] -> return . Left . concat . lefts $ backedUp
-		  -- Restore failed.  Throw an exception.
+                  -- Restore failed.  Throw an exception.
                   _ -> error ("installFiles: Couldn't restore original files after write failure: " ++
                               concat (map message (zip3 originalFiles backupFiles backedUp)) ++
                               concat (map message (zip3 backupFiles originalFiles restored)))
@@ -126,7 +126,7 @@ deleteMaybe path =
          False -> return $ Right ()
          True ->
              do status <- getSymbolicLinkStatus path
-		-- To do: should we remove the directory contents?
+                -- To do: should we remove the directory contents?
                 let rm = if isDirectory status then removeDirectory else removeLink
                 try (rm path) >>= return . either (\ (e :: SomeException) -> Left ["Couldn't remove " ++ path ++ ": " ++ show e]) (const . Right $ ())
 
@@ -152,7 +152,7 @@ zipFile path =
 -- |like removeLink, but does not fail if link did not exist
 forceRemoveLink :: FilePath -> IO ()
 forceRemoveLink fp = removeLink fp `Control.Exception.catch` (\e -> unless (isDoesNotExistError e) (ioError e))
-                 
+
 -- | Write out three versions of a file, regular, gzipped, and bzip2ed.
 writeAndZipFileWithBackup :: FilePath -> B.ByteString -> IO (Either [String] ())
 writeAndZipFileWithBackup path text =
@@ -207,7 +207,7 @@ maybeWriteFile path text =
       maybeWrite (Left (e :: IOException)) | isDoesNotExistError e = writeFile path text
       maybeWrite (Left e) = error ("maybeWriteFile: " ++ show e)
       maybeWrite (Right old) | old == text = return ()
-      maybeWrite (Right _old) = 
+      maybeWrite (Right _old) =
           --hPutStrLn stderr ("Old text: " ++ show old) >>
           --hPutStrLn stderr ("New text: " ++ show text) >>
           replaceFile path text
@@ -238,7 +238,7 @@ prepareSymbolicLink name path =
 -- isAlreadyBusyError exceptions before the writeFile succeeds.
 replaceFile :: FilePath -> String -> IO ()
 replaceFile path text =
-    --tries 100 10 f	-- There is now a fix for this problem, see ghc ticket 2122.
+    --tries 100 10 f    -- There is now a fix for this problem, see ghc ticket 2122.
     f
     where
       f :: IO ()

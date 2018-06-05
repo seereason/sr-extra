@@ -4,13 +4,12 @@ module Extra.SSH
     , sshCopy
     ) where
 
-import System.Cmd
 import System.Directory
 import System.Posix.User
 import System.Environment
 import System.Exit
 import System.IO
-import System.Process (readProcessWithExitCode, showCommandForUser)
+import System.Process (readProcessWithExitCode, showCommandForUser, system)
 -- |Set up access to destination (user\@host).
 sshExportDeprecated :: String -> Maybe Int -> IO (Either String ())
 sshExportDeprecated dest port =
@@ -44,8 +43,8 @@ sshVerify :: String -> Maybe Int -> IO Bool
 sshVerify dest port =
     do result <- system (sshTestCmd dest port)
        return $ case result of
-                  ExitSuccess -> True		-- We do
-                  ExitFailure _ -> False	-- We do not
+                  ExitSuccess -> True           -- We do
+                  ExitFailure _ -> False        -- We do not
     where
       sshTestCmd dest port =
           ("ssh -o 'PreferredAuthentications hostbased,publickey' " ++
@@ -68,15 +67,15 @@ openAccess dest port (Just keypath) =
        (code, out, err) <- readFile keypath >>= readProcessWithExitCode "ssh" args
        case code of
          ExitFailure n -> return . Left $ "Failure: " ++ showCommandForUser "ssh" args ++ " -> " ++ show n ++
-	                                  "\n\nstdout: " ++ out ++ "\n\nstderr: " ++ err
+                                          "\n\nstdout: " ++ out ++ "\n\nstderr: " ++ err
          _ -> return . Right $ ()
     where
       sshOpenRemoteCmd =
-          ("chmod g-w . && " ++				-- Ssh will not work if the permissions aren't just so
+          ("chmod g-w . && " ++                         -- Ssh will not work if the permissions aren't just so
            "chmod o-rwx . && " ++
            "mkdir -p .ssh && " ++
            "chmod 700 .ssh && " ++
-           "cat >> .ssh/authorized_keys2 && " ++	-- Add the key to the authorized key list
+           "cat >> .ssh/authorized_keys2 && " ++        -- Add the key to the authorized key list
            "chmod 600 .ssh/authorized_keys2")
 
 -- This used to be main.

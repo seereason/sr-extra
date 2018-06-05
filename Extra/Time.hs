@@ -5,9 +5,7 @@ module Extra.Time
     ) where
 
 import Control.Exception
-import Data.List
 import Data.Time
-import Text.Printf
 
 {- This function is so complicated because there seems to be no way
    to get the Data.Time to format seconds without the fractional part,
