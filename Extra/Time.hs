@@ -78,4 +78,4 @@ instance Arbitrary Zulu where arbitrary = Zulu <$> arbitrary
 -- instance FormatTime Zulu
 
 instance Show Zulu where
-    show (Zulu t) = "Zulu (read " ++ show (show t) ++ " :: UTCTime)"
+    show (Zulu t) = "Zulu (read " ++ show (show t) ++ ")"
