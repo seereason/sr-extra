@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, DeriveDataTypeable, DeriveGeneric, TemplateHaskell #-}
+{-# LANGUAGE CPP, DeriveAnyClass, DeriveDataTypeable, DeriveGeneric, TemplateHaskell #-}
 module Extra.Time
     ( formatDebianDate
     -- , myTimeDiffToString
@@ -14,7 +14,6 @@ import Data.Time.Format
 import Data.Time.Format
 import Extra.Orphans ()
 import GHC.Generics
-import Data.THUnify.Serialize (deriveSerialize)
 import Test.QuickCheck
 
 {- This function is so complicated because there seems to be no way
@@ -70,10 +69,9 @@ myTimeDiffToString diff =
 
 -- | A version of UTCTime with a Show instance that returns a Haskell
 -- expression.
-newtype Zulu = Zulu {_unZulu :: UTCTime} deriving (Eq, Ord, Data)
+newtype Zulu = Zulu {_unZulu :: UTCTime} deriving (Eq, Ord, Data, Generic, Serialize)
 
 $(deriveSafeCopy 1 'base ''Zulu)
-$(deriveSerialize [t|Zulu|])
 
 instance Arbitrary Zulu where arbitrary = Zulu <$> arbitrary
 -- instance ParseTime Zulu
