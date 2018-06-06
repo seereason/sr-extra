@@ -4,10 +4,17 @@ License:        BSD3
 License-File:   COPYING
 Author:         David Fox
 Category:       Unclassified
-Description:    A hodge-podge of functions and modules that do not have a better home
+Synopsis:       Module limbo
+Description:
+  A hodge-podge of functions, modules, and instances.  These
+  generally end up here because
+     1. they are needed in two unrelated packages,
+     2. they belong in some upstream module,
+     3. they can't be moved to an upstream module because
+        they would add dependencies, or
+     4. they are deprecated but still in use
 Maintainer:     David Fox <dsf@seereason.com>
 Homepage:       https://github.com/seereason/sr-extra
-Synopsis:       A grab bag of modules.
 Build-Type:     Simple
 Cabal-Version:  >= 1.2
 flag network-uri
@@ -25,6 +32,7 @@ Library
     fgl,
     filepath,
     HUnit,
+    lens,
     mtl,
     pretty,
     process,

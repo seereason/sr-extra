@@ -2,16 +2,15 @@
 module Extra.Time
     ( formatDebianDate
     -- , myTimeDiffToString
-    , Zulu(..)
+    , Zulu(..), utcTime
     ) where
 
 import Control.Exception
+import Control.Lens (makeLenses)
 import Data.Data (Data)
 import Data.SafeCopy (base, deriveSafeCopy)
 import Data.Serialize
 import Data.Time
-import Data.Time.Format
-import Data.Time.Format
 import Extra.Orphans ()
 import GHC.Generics
 import Test.QuickCheck
@@ -69,8 +68,9 @@ myTimeDiffToString diff =
 
 -- | A version of UTCTime with a Show instance that returns a Haskell
 -- expression.
-newtype Zulu = Zulu {_unZulu :: UTCTime} deriving (Eq, Ord, Data, Generic, Serialize)
+newtype Zulu = Zulu {_utcTime :: UTCTime} deriving (Eq, Ord, Data, Generic, Serialize)
 
+$(makeLenses ''Zulu)
 $(deriveSafeCopy 1 'base ''Zulu)
 
 instance Arbitrary Zulu where arbitrary = Zulu <$> arbitrary
