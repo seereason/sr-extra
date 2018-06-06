@@ -1,11 +1,21 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP, DeriveDataTypeable, DeriveGeneric, TemplateHaskell #-}
 module Extra.Time
     ( formatDebianDate
     -- , myTimeDiffToString
+    , Zulu(..)
     ) where
 
 import Control.Exception
+import Data.Data (Data)
+import Data.SafeCopy (base, deriveSafeCopy)
+import Data.Serialize
 import Data.Time
+import Data.Time.Format
+import Data.Time.Format
+import Extra.Orphans ()
+import GHC.Generics
+import Data.THUnify.Serialize (deriveSerialize)
+import Test.QuickCheck
 
 {- This function is so complicated because there seems to be no way
    to get the Data.Time to format seconds without the fractional part,
@@ -57,3 +67,17 @@ myTimeDiffToString diff =
       ps2ms ps = quot (ps + 500000000) 1000000000
       ps = Old.tdPicosec diff
 #endif
+
+-- | A version of UTCTime with a Show instance that returns a Haskell
+-- expression.
+newtype Zulu = Zulu {_unZulu :: UTCTime} deriving (Eq, Ord, Data)
+
+$(deriveSafeCopy 1 'base ''Zulu)
+$(deriveSerialize [t|Zulu|])
+
+instance Arbitrary Zulu where arbitrary = Zulu <$> arbitrary
+-- instance ParseTime Zulu
+-- instance FormatTime Zulu
+
+instance Show Zulu where
+    show (Zulu t) = "Zulu (read " ++ show (show t) ++ " :: UTCTime)"
