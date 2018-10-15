@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.51
+Version:        1.52
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -22,6 +22,7 @@ flag network-uri
  Default: True
 
 Library
+  GHC-Options: -Wall -O -Wredundant-constraints
   Build-Depends:
     base < 5,
     bytestring,

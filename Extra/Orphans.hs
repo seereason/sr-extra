@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS -Wno-orphans #-}
 
 module Extra.Orphans where
 
@@ -13,7 +14,6 @@ import Data.Text as T hiding (intercalate)
 import Data.Text.Lazy as LT hiding (intercalate)
 import Data.Text.Encoding as TE
 import Data.Text.Lazy.Encoding as TLE
-import Data.Typeable (Typeable)
 import Data.Time (UTCTime(..), Day(ModifiedJulianDay), TimeOfDay(..), timeOfDayToTime, toModifiedJulianDay, DiffTime)
 import Data.UserId (UserId(..))
 import Data.UUID.Orphans ()
@@ -28,7 +28,7 @@ import Network.URI (URI(..), URIAuth(..), uriToString)
 import System.IO.Unsafe (unsafePerformIO)
 import Test.QuickCheck (Arbitrary(arbitrary), choose, elements, Gen, listOf, listOf1, resize)
 
-instance Typeable t => SafeCopy (Proxy t) where
+instance SafeCopy (Proxy t) where
       putCopy Proxy = contain (do { return () })
       getCopy = contain (label "Data.Proxy.Proxy:" (pure Proxy))
       version = 0
