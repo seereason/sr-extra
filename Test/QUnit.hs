@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE CPP, FlexibleInstances, TypeSynonymInstances #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Test.QUnit
@@ -64,6 +64,6 @@ testQuickCheck args prop =
          QC.GaveUp{} -> let ntest = QC.numTests result in HU.assertFailure $ "Arguments exhausted after" ++ show ntest ++ (if ntest == 1 then " test." else " tests.")
          QC.Failure{} -> let reason = QC.reason result in HU.assertFailure reason
          QC.NoExpectedFailure{} -> HU.assertFailure $ "No Expected Failure"
-#if !MIN_VERSION_QuickCheck(2,11.0)
+#if !MIN_VERSION_QuickCheck(2,11,0)
          QC.InsufficientCoverage{} -> HU.assertFailure $ "Insufficient Coverage"
 #endif
