@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.52
+Version:        1.53
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -65,6 +65,7 @@ Library
   Exposed-modules:
     Extra.Bool,
     Extra.Either,
+    Extra.Except,
     Extra.Exit,
     Extra.Files,
     Extra.GPGSign,
