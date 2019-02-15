@@ -11,8 +11,8 @@ module Extra.Except
       tryError
     , HasIOException(fromIOException)
     , MonadIOError
-    , tryIOError
     , liftIOError
+    , tryIOError
     -- * Re-exports
     , module Control.Monad.Except
     ) where
@@ -20,6 +20,7 @@ module Extra.Except
 import Control.Exception ({-evaluate,-} Exception, IOException, SomeException(..), try)
 import Control.Monad.Except
 import Data.Data (typeOf)
+
 -- | Apply a function to whatever @Exception@ type is inside a
 -- @SomeException@.
 withException :: forall r. (forall e. Exception e => e -> r) -> SomeException -> r
