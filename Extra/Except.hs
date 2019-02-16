@@ -7,12 +7,14 @@ module Extra.Except
     ( -- * Control.Exception extensions
       withException
     , displaySomeExceptionType
-    , -- * Control.Monad.Except extensions
-      tryError
+      -- * Control.Monad.Except extensions
+    , tryError
+    , withError -- , mapError'
     , HasIOException(fromIOException)
     , MonadIOError
     , liftIOError
     , tryIOError
+    , HasLoc(withLoc)
     -- * Re-exports
     , module Control.Monad.Except
     ) where
@@ -20,6 +22,7 @@ module Extra.Except
 import Control.Exception ({-evaluate,-} Exception, IOException, SomeException(..), try)
 import Control.Monad.Except
 import Data.Data (typeOf)
+import Language.Haskell.TH.Syntax (Loc)
 
 -- | Apply a function to whatever @Exception@ type is inside a
 -- @SomeException@.
@@ -33,6 +36,9 @@ displaySomeExceptionType = withException (show . typeOf)
 -- | MonadError analog to the 'try' function.
 tryError :: MonadError e m => m a -> m (Either e a)
 tryError action = (Right <$> action) `catchError` (pure . Left)
+
+withError :: (MonadError e m, MonadError e' m) => (e -> e') -> m a -> m a
+withError f action = tryError action >>= either (throwError . f) return
 
 -- | This class includes an instance for IOException itself, so we
 -- don't know whether the exception has been caught.  Because there is
@@ -65,3 +71,7 @@ liftIOError action = liftIO (try action) >>= either (throwError . fromIOExceptio
 -- | Lift an IO operation and catch any IOException
 tryIOError :: MonadIOError e m => IO a -> m (Either e a)
 tryIOError = tryError . liftIOError
+
+-- | Modify an exception to include a source code location:
+-- e.g. @withError (withLoc $here) $ tryError action@.
+class HasLoc e where withLoc :: Loc -> e -> e
