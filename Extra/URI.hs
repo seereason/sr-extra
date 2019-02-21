@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -- |Make URI an instance of Read and Ord, and add functions to
 -- manipulate the uriQuery.
 module Extra.URI
