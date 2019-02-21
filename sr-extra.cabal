@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.53
+Version:        1.54
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -27,16 +27,20 @@ Library
     base < 5,
     bytestring,
     bzlib,
+    Cabal,
     cereal,
     containers,
     directory,
+    exceptions,
     fgl,
     filepath,
     HUnit,
     lens,
+    ListLike,
     mtl,
     pretty,
     process,
+    process-extras,
     pureMD5,
     QuickCheck >= 2 && < 3,
     random,
@@ -45,6 +49,7 @@ Library
     text,
     th-lift,
     th-lift-instances,
+    th-orphans,
     time >= 1.1,
     unix,
     Unixutils >= 1.51,
@@ -63,6 +68,7 @@ Library
   Exposed-modules:
     Extra.Bool,
     Extra.Either,
+    Extra.EnvPath,
     Extra.Except,
     Extra.Exit,
     Extra.Files,
@@ -73,11 +79,15 @@ Library
     Extra.Misc,
     Extra.Net,
     Extra.Orphans,
+    Extra.Pretty,
+    Extra.Process,
     Extra.SSH,
+    Extra.TH,
     Extra.Time,
     Extra.Terminal,
     Extra.URI,
     Extra.URIQuery,
+    Extra.Verbosity,
     Test.QUnit,
     Test.QuickCheck.Properties,
     Extra.IOThread

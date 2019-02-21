@@ -21,9 +21,9 @@ startIOThread f =
        tid <- forkIO $ ioThread f c
        return (tid, IOThread c)
     where
-      ioThread f c =
+      ioThread f' c =
           forever $ do (a, mvar) <- readChan c
-                       b <- try $ f a
+                       b <- try $ f' a
                        putMVar mvar b
 
 -- |issue a request to the IO thread and get back the result

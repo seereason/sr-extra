@@ -43,13 +43,13 @@ cartesianProduct [] = []
 cartesianProduct [xs] = map (: []) xs
 cartesianProduct (xs : yss) =
     distribute xs (cartesianProduct yss)
-    where distribute xs yss = concat (map (\ x -> map (x :) yss) xs)
+    where distribute xs' yss' = concat (map (\ x -> map (x :) yss') xs')
 
 -- |FIXME: implement for a string
 wordsBy :: Eq a => (a -> Bool) -> [a] -> [[a]]
 wordsBy p s = 
     case (break p s) of
-      (s, []) -> [s]
+      (s', []) -> [s']
       (h, t) -> h : wordsBy p (drop 1 t)
 
 -- |Like maybe, but with empty vs. non-empty list
@@ -61,18 +61,18 @@ empty _ f l = f l
 -- over f.  This is like "sortBy (\ a b -> compare (f a) (f b))"
 -- except that f is applied O(n) times instead of O(n log n)
 sortByMapped :: (a -> b) -> (b -> b -> Ordering) -> [a] -> [a]
-sortByMapped f compare list =
+sortByMapped f cmp list =
     map fst sorted
     where
-      sorted = sortBy (\ (_, x) (_, y) -> compare x y) pairs
+      sorted = sortBy (\ (_, x) (_, y) -> cmp x y) pairs
       pairs = zip list (map f list)
 
 -- |Monadic version of sortByMapped
 sortByMappedM :: (a -> IO b) -> (b -> b -> Ordering) -> [a] -> IO [a]
-sortByMappedM f compare list =
+sortByMappedM f cmp list =
     do
       pairs <- mapM f list >>= return . (zip list)
-      let sorted = sortBy (\ (_, x) (_, y) -> compare x y) pairs
+      let sorted = sortBy (\ (_, x) (_, y) -> cmp x y) pairs
       return (map fst sorted)
 
 partitionM :: (Monad m) => (a -> m Bool) -> [a] -> m ([a], [a])

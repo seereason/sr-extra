@@ -1,3 +1,10 @@
+haskell-sr-extra (1.54) unstable; urgency=medium
+
+  * Add Extra.EnvPath, Extra.Process, Extra.TH, and Extra.Verbosity,
+    from debian-repo.  Copy Debian.Pretty from debian.
+
+ -- David Fox <dsf@seereason.com>  Thu, 21 Feb 2019 10:36:41 -0800
+
 haskell-sr-extra (1.53) unstable; urgency=medium
 
   * Add Extra.Except, with tryError and friends.

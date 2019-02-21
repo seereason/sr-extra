@@ -20,7 +20,7 @@ type PGPKey'' = String
 
 sign :: PGPKey'' -> FilePath -> IO FilePath
 sign keyname path =
-    do (_, _,err,pid) <- runInteractiveProcess cmd args workingDir env
+    do (_, _,err,pid) <- runInteractiveProcess cmd args workingDir Nothing
        status <- waitForProcess pid
        case status of
          ExitSuccess -> return outputPath
@@ -39,7 +39,6 @@ sign keyname path =
                 ]
          outputPath = path ++ ".gpg"
          workingDir = Nothing -- Just (dirName path)
-         env = Nothing
 
 data PGPKey = Key String | Default deriving Show
 
@@ -48,7 +47,7 @@ pgpSignFiles root key files = cd root $ mapM (pgpSignFile key) files
 
 pgpSignFile :: PGPKey -> FilePath -> IO Bool
 pgpSignFile keyname path =
-    do (_, _,err,pid) <- runInteractiveProcess cmd args workingDir env
+    do (_, _,err,pid) <- runInteractiveProcess cmd args workingDir Nothing
        status <- waitForProcess pid
        case status of
          ExitSuccess -> return True
@@ -69,4 +68,3 @@ pgpSignFile keyname path =
          defaultKey = case keyname of Key name -> ["--default-key", name]; Default -> []
          outputPath = path ++ ".gpg"
          workingDir = Nothing -- Just (dirName path)
-         env = Nothing

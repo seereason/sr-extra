@@ -159,11 +159,11 @@ writeAndZipFileWithBackup path text =
     backupFile path >>=
     either (\ e -> return (Left ["Failure renaming " ++ path ++ " -> " ++ path ++ "~: " ++ show e]))
            (\ _ -> try (B.writeFile path text) >>=
-                   either (\ (e :: SomeException) ->
+                   either (\(e :: SomeException) ->
                                restoreBackup path >>=
-                               either (\ e -> error ("Failed to restore backup: " ++ path ++ "~ -> " ++ path ++ ": " ++ show e))
+                               either (\ex -> error ("Failed to restore backup: " ++ path ++ "~ -> " ++ path ++ ": " ++ show ex))
                                       (\ _ -> return (Left ["Failure writing " ++ path ++ ": " ++ show e])))
-                          (\ _ -> zipFile path))
+                          (\_ -> zipFile path))
 
 -- | Write out three versions of a file, regular, gzipped, and bzip2ed.
 -- This new version assumes the files are written to temporary locations,

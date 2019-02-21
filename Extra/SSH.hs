@@ -41,12 +41,12 @@ generatePublicKey =
 -- |See if we already have access to the destination (user\@host).
 sshVerify :: String -> Maybe Int -> IO Bool
 sshVerify dest port =
-    do result <- system (sshTestCmd dest port)
+    do result <- system sshTestCmd
        return $ case result of
                   ExitSuccess -> True           -- We do
                   ExitFailure _ -> False        -- We do not
     where
-      sshTestCmd dest port =
+      sshTestCmd =
           ("ssh -o 'PreferredAuthentications hostbased,publickey' " ++
            (maybe "" (("-p " ++) . show) port) ++ " " ++ show dest ++ " pwd > /dev/null && exit 0")
 

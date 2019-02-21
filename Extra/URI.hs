@@ -18,9 +18,9 @@ import Control.Arrow(second)
 
 -- |Create a relative URI with the given query.
 relURI :: FilePath -> [(String, String)] -> URI
-relURI path pairs = URI {uriScheme = "",
+relURI upath pairs = URI {uriScheme = "",
                    uriAuthority = Nothing,
-                   uriPath = path,
+                   uriPath = upath,
                    uriQuery = formatURIQuery pairs,
                    uriFragment = ""}
 
@@ -70,6 +70,7 @@ formatURIQuery attrs = '?' : concat (intersperse "&" (map (\ (a, b) -> a ++ "=" 
 -- Everything else gets escaped.
 escapeURIForQueryValue = escapeURIString isUnreserved
 
+#if 0
 -- Make URI an instance of Read.  This will throw an error if no
 -- prefix up to ten characters long of the argument string looks like
 -- a URI.  If such a prefix is found, it will continue trying longer
@@ -89,3 +90,4 @@ instance Read URI where
                                (a : _) -> a
                 goodURIs = takeWhile isJust moreURIs
                 (badURIs, moreURIs) = span isNothing allURIs
+#endif
