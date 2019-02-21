@@ -6,6 +6,7 @@
 module Extra.TH
     ( here
     , Loc
+    , prettyLocs
     ) where
 
 import Data.List (intersperse)

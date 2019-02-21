@@ -42,11 +42,10 @@ import Data.Text (unpack)
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time (diffUTCTime, getCurrentTime, NominalDiffTime)
 import Data.Typeable (typeOf)
-import Distribution.Pretty (prettyShow)
 import Extra.Except (liftIOError, MonadIOError, withError, withException, HasLoc(withLoc))
 import Extra.EnvPath (HasEnvRoot(envRootLens), rootPath)
 import Extra.Verbosity (ePutStrLn)
-import Extra.TH (here)
+import Extra.TH (here, prettyLocs)
 import GHC.IO.Exception (IOErrorType(OtherError))
 import Language.Haskell.TH.Syntax (Loc)
 import Prelude hiding (break, head, null, tail)
@@ -263,7 +262,7 @@ runQE2 locs p input =
 showCommand' :: (MonadIO m{-, HasOSKey r, MonadReader r m-}) => [Loc] -> String -> CreateProcess -> m ()
 showCommand' locs prefix p = do
   -- key <- view osKey
-  ePutStrLn (prefix ++ showCreateProcessForUser p ++ " (" ++ {-"in " ++ show key ++ ", " ++-} "called from " ++ prettyShow ($here : locs) ++ ")")
+  ePutStrLn (prefix ++ showCreateProcessForUser p ++ " (" ++ {-"in " ++ show key ++ ", " ++-} "called from " ++ show (prettyLocs ($here : locs)) ++ ")")
 
 run2 ::
     forall a c e m. (MonadError e m, ListLikeProcessIO a c, MonadIO m, MonadCatch m)
@@ -275,7 +274,7 @@ run2 ::
 run2 locs opts p input = do
   start " -> " p
   (result :: (ExitCode, a, a)) <- catch (liftIO (readCreateProcessLazy p input) >>= overOutput >>= return . collectOutput)
-                                        (\se -> withException (\e -> liftIO (hPutStrLn stderr ("(at " ++ prettyShow ($here : locs) ++ ": " ++ show e ++ ") :: " ++ show (typeOf e)))) se >> throw se)
+                                        (\se -> withException (\e -> liftIO (hPutStrLn stderr ("(at " ++ show (prettyLocs ($here : locs)) ++ ": " ++ show e ++ ") :: " ++ show (typeOf e)))) se >> throw se)
   finish " <- " p result
   liftIO $ evaluate result
     where
