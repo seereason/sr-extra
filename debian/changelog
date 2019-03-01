@@ -1,3 +1,10 @@
+haskell-sr-extra (1.55) unstable; urgency=medium
+
+  * Restrict the signature of withError
+  * Add mapError
+
+ -- David Fox <dsf@seereason.com>  Sat, 23 Feb 2019 06:28:05 -0800
+
 haskell-sr-extra (1.54) unstable; urgency=medium
 
   * Add Extra.EnvPath, Extra.Process, Extra.TH, and Extra.Verbosity,

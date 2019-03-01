@@ -1,20 +1,11 @@
 module Extra.Either where
 
-import Data.Either (partitionEithers, rights)
-
-isRight (Right _) = True
-isRight (Left _) = False
-
-isLeft = not . isRight
+import Data.Either
 
 -- |Turn a list of eithers into an either of lists
 concatEithers :: [Either a b] -> Either [a] [b]
 concatEithers xs =
-    case partitionEithers xs of 
+    case partitionEithers xs of
       ([], rs) -> Right rs
       (ls, _) -> Left ls
-
-{-# DEPRECATED rightOnly "Use rights" #-}
-rightOnly = rights
-{-# DEPRECATED eitherFromList "Use concatEithers" #-}
-eitherFromList = concatEithers
+{-# DEPRECATED concatEithers "This is terrible.  Delete your account." #-}

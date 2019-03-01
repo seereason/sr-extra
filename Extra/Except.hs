@@ -9,13 +9,14 @@ module Extra.Except
     , displaySomeExceptionType
       -- * Control.Monad.Except extensions
     , tryError
-    , withError -- , mapError'
+    , withError
+    , mapError
     , HasIOException(fromIOException)
     , MonadIOError
     , liftIOError
     , tryIOError
     , HasLoc(withLoc)
-    -- * Re-exports
+
     , module Control.Monad.Except
     ) where
 
@@ -25,11 +26,18 @@ import Data.Data (typeOf)
 import Language.Haskell.TH.Syntax (Loc)
 
 -- | Apply a function to whatever @Exception@ type is inside a
--- @SomeException@.
+-- @SomeException@:
+--
+-- >>> catch (readFile "/tmp/nonexistant") (withException (return . show . typeOf))
+-- "IOException"
 withException :: forall r. (forall e. Exception e => e -> r) -> SomeException -> r
 withException f (SomeException e) = f e
 
--- | Use 'withException' to obtain the exception's type name.
+-- | Use 'withException' to obtain the exception's type name (similar
+-- to 'Control.Exception.displayException')
+--
+-- >>> catch (readFile "/tmp/nonexistant") (return . displaySomeExceptionType)
+-- "IOException"
 displaySomeExceptionType :: SomeException -> String
 displaySomeExceptionType = withException (show . typeOf)
 
@@ -37,38 +45,54 @@ displaySomeExceptionType = withException (show . typeOf)
 tryError :: MonadError e m => m a -> m (Either e a)
 tryError action = (Right <$> action) `catchError` (pure . Left)
 
-withError :: (MonadError e m, MonadError e' m) => (e -> e') -> m a -> m a
+-- | Modify the value (but not the type) of an error
+withError :: MonadError e m => (e -> e) -> m a -> m a
 withError f action = tryError action >>= either (throwError . f) return
 
--- | This class includes an instance for IOException itself, so we
--- don't know whether the exception has been caught.  Because there is
--- an instance @MonadError IOException IO@, do NOT declare
--- @@
---   instance HasIOException IOException where fromIOException = id
--- @@
--- or the HasIOException constraint won't guarantee that we are
--- catching these exceptions.  DO create instances like
--- @@
---   data ProcessError
---       = IOException Text
---       | CommandFailure ExitCode
---       deriving (Data, Eq, Ord, Show, Generic, Serialize)
+-- | MonadError analogue of the 'mapExceptT' function.
+mapError :: (MonadError e m, MonadError e' n) => (m (Either e a) -> n (Either e' b)) -> m a -> n b
+mapError f action = f (tryError action) >>= liftEither
+
+-- | In order to guarantee IOException is caught, do NOT include the
+-- standard 'HasIOException' instance
 --
---  instance HasIOException ProcessError where fromIOException = IOException . pack . show
--- @@
+-- > instance HasIOException IOException where fromIOException = id
+--
+-- Because there is an @instance MonadError IOException IO@ in
+-- @Control.Monad.Except@, "thrown" IOexceptions are not be caught by
+-- 'runExceptT':
+--
+-- >>> runExceptT (liftIO (readFile "/etc/nonexistant") :: ExceptT IOException IO String)
+-- *** Exception: /etc/nonexistant: openFile: does not exist (No such file or directory)
+--
+--  (*** means the exception reached the top level.)  However, if we
+-- use 'liftIOError' to implement a version of 'readFile' that has a
+-- 'MonadIOError' constraint:
+--
+-- >>> let readFile' path = liftIOError (readFile path)
+-- >>> :type readFile'
+-- readFile' :: MonadIOError e m => FilePath -> m String
+--
+-- and then create a suitable error type
+--
+-- >>> newtype Error = Error IOException deriving Show
+-- >>> instance HasIOException Error where fromIOException = Error
+--
+-- Now the thrown 'IOException' will always be caught and lifted into
+-- the 'MonadError':
+--
+-- >>> runExceptT (readFile' "/etc/nonexistant" :: ExceptT Error IO String)
+-- Left (Error /etc/nonexistant: openFile: does not exist (No such file or directory))
 class HasIOException e where fromIOException :: IOException -> e
 
 -- | Constraints required by 'liftIOError' or 'tryIOError'
 type MonadIOError e m = (MonadIO m, HasIOException e, MonadError e m)
 
--- So , which means
--- that with constraints @MonadIO m, MonadError e m@ it might be that
--- @m ~ IO@.  We want a signature for LiftEIO that excludes this
--- possibility so we know we have caught the "real" 'Exception'.
+-- | Catch any thrown 'IOException' and use the 'HasIOException' to
+-- lift it into an error monad.
 liftIOError :: MonadIOError e m => IO a -> m a
 liftIOError action = liftIO (try action) >>= either (throwError . fromIOException) return
 
--- | Lift an IO operation and catch any IOException
 tryIOError :: MonadIOError e m => IO a -> m (Either e a)
 tryIOError = tryError . liftIOError
 
