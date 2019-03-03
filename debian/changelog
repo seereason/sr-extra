@@ -1,3 +1,9 @@
+haskell-sr-extra (1.56) unstable; urgency=medium
+
+  * Add addConstraints and removeConstraints to Extra.TH.
+
+ -- David Fox <dsf@seereason.com>  Sun, 03 Mar 2019 12:43:54 -0800
+
 haskell-sr-extra (1.55) unstable; urgency=medium
 
   * Restrict the signature of withError
