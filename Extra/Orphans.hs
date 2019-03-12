@@ -58,6 +58,10 @@ instance Serialize LT.Text where
 
 deriving instance Serialize Loc
 
+$(deriveSerialize [t|URI|])
+$(deriveSerialize [t|URIAuth|])
+$(deriveSerialize [t|UUID|])
+
 $(deriveLift ''UserId)
 
 $(deriveLift ''G.Gr)
