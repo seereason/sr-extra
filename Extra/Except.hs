@@ -11,6 +11,7 @@ module Extra.Except
     , tryError
     , withError
     , mapError
+    , handleError
     , HasIOException(fromIOException)
     , MonadIOError
     , liftIOError
@@ -48,6 +49,9 @@ tryError action = (Right <$> action) `catchError` (pure . Left)
 -- | Modify the value (but not the type) of an error
 withError :: MonadError e m => (e -> e) -> m a -> m a
 withError f action = tryError action >>= either (throwError . f) return
+
+handleError :: MonadError e m => (e -> m a) -> m a -> m a
+handleError = flip catchError
 
 -- | MonadError analogue of the 'mapExceptT' function.
 mapError :: (MonadError e m, MonadError e' n) => (m (Either e a) -> n (Either e' b)) -> m a -> n b

@@ -8,10 +8,11 @@ module Extra.Orphans where
 import Data.Graph.Inductive as G
 import Data.List (intercalate)
 import Data.Proxy (Proxy(Proxy))
-import Data.SafeCopy (base, contain, SafeCopy(errorTypeName, getCopy, kind, putCopy, version))
+import Data.SafeCopy (base, contain, deriveSafeCopy,
+                      SafeCopy(errorTypeName, getCopy, kind, putCopy, version))
 import Data.Serialize (label, Serialize(..))
-import Data.Text as T hiding (intercalate)
-import Data.Text.Lazy as LT hiding (intercalate)
+import Data.Text as T hiding (concat, intercalate)
+import Data.Text.Lazy as LT hiding (concat, intercalate)
 import Data.Text.Encoding as TE
 import Data.Text.Lazy.Encoding as TLE
 import Data.Time (UTCTime(..), Day(ModifiedJulianDay), TimeOfDay(..), timeOfDayToTime, toModifiedJulianDay, DiffTime)
@@ -22,7 +23,7 @@ import Data.UUID.V4 as UUID (nextRandom)
 import Data.UUID.Orphans ()
 import Instances.TH.Lift ()
 import Language.Haskell.TH (Loc(..), Ppr(ppr))
-import Language.Haskell.TH.Lift (deriveLift)
+import Language.Haskell.TH.Lift (deriveLift, deriveLiftMany)
 import Language.Haskell.TH.PprLib (ptext)
 import Network.URI (URI(..), URIAuth(..), uriToString)
 import System.IO.Unsafe (unsafePerformIO)
@@ -129,3 +130,10 @@ instance Arbitrary URIPair where
 
 instance Arbitrary URI where
     arbitrary = genCanonicalURI >>= genNormalURI
+
+$(concat <$>
+  sequence
+  [ deriveSafeCopy 0 'base ''URI
+  , deriveSafeCopy 0 'base ''URIAuth
+  , deriveLiftMany [''URI, ''URIAuth] ])
+
