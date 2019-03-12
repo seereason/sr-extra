@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS -Wno-orphans #-}
@@ -8,7 +9,7 @@ module Extra.Orphans where
 import Data.Graph.Inductive as G
 import Data.List (intercalate)
 import Data.Proxy (Proxy(Proxy))
-import Data.SafeCopy (base, contain, deriveSafeCopy,
+import Data.SafeCopy (base, contain, deriveSafeCopy, safeGet, safePut,
                       SafeCopy(errorTypeName, getCopy, kind, putCopy, version))
 import Data.Serialize (label, Serialize(..))
 import Data.Text as T hiding (concat, intercalate)
@@ -21,6 +22,7 @@ import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.V4 as UUID (nextRandom)
 import Data.UUID.Orphans ()
+import GHC.Generics (Generic)
 import Instances.TH.Lift ()
 import Language.Haskell.TH (Loc(..), Ppr(ppr))
 import Language.Haskell.TH.Lift (deriveLift, deriveLiftMany)
@@ -58,9 +60,16 @@ instance Serialize LT.Text where
 
 deriving instance Serialize Loc
 
-$(deriveSerialize [t|URI|])
-$(deriveSerialize [t|URIAuth|])
-$(deriveSerialize [t|UUID|])
+-- Use the SafeCopy methods to implement Serialize.  This is a pretty
+-- neat trick, it automatically does SafeCopy migration on any
+-- deserialize of a type with this implementation.
+instance Serialize UUID where
+    get = safeGet
+    put = safePut
+
+deriving instance Serialize URI
+deriving instance Generic URIAuth
+deriving instance Serialize URIAuth
 
 $(deriveLift ''UserId)
 
