@@ -11,7 +11,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Extra.Verbosity2
-    ( message, quietly, noisily, indented )
+    ( HasMessageInfo(..), message, quietly, noisily, indented )
     where
 
 import Control.Lens (_2, _3, (.=), (%=), at, Lens', lens, makeLenses, non, over, Traversal', use, view)
