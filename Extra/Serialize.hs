@@ -4,7 +4,8 @@
 {-# LANGUAGE CPP, TemplateHaskell #-}
 
 module Extra.Serialize
-    ( deriveSerializeViaSafeCopy
+    ( Serialize(..)
+    , deriveSerializeViaSafeCopy
     ) where
 
 import Data.SafeCopy (safeGet, safePut)
