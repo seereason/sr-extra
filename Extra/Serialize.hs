@@ -4,7 +4,7 @@
 {-# LANGUAGE CPP, TemplateHaskell #-}
 
 module Extra.Serialize
-    ( deriveSerialize
+    ( deriveSerializeViaSafeCopy
     ) where
 
 import Data.SafeCopy (safeGet, safePut)
@@ -16,8 +16,8 @@ import Language.Haskell.TH (Dec, TypeQ, Q)
 -- SafeCopy instance, because it means values will be migrated as necessary
 -- whenever they are decoded - even in the local storage of a web browser.
 -- Thus, zero downtime upgrades!
-deriveSerialize :: TypeQ -> Q [Dec]
-deriveSerialize typ =
+deriveSerializeViaSafeCopy :: TypeQ -> Q [Dec]
+deriveSerializeViaSafeCopy typ =
     [d|instance {-SafeCopy $typ =>-} Serialize $typ where
           get = safeGet
           put = safePut|]
