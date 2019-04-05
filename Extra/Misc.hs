@@ -14,35 +14,33 @@ module Extra.Misc
     , listMap
     , listDiff
     -- * System.Posix
-    , checkSuperUser
     , md5sum
-    , sameInode
     , sameMd5sum
-    , tarDir
-    -- * Processes
-    -- , splitOutput
-    -- * ByteString
-    , cd
-    -- * Debugging
     , read'
+#if !__GHCJS__
+    , sameInode
+    , cd
+    , checkSuperUser
+    , tarDir
+#endif
     ) where
 
-import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Digest.Pure.MD5
 import           Data.List
 import qualified Data.Map as Map
 import           Data.Maybe
 import qualified Data.Set as Set
-import           Extra.List
-import           System.Exit
 import           System.FilePath
+#if !__GHCJS__
+import           Control.Exception
+import           Extra.List (wordsBy)
 import           System.Directory
+import           System.Exit
 import           System.Posix.Files
 import           System.Posix.User (getEffectiveUserID)
 import           System.Process (readProcessWithExitCode)
--- import System.Process.Progress (keepStdout, keepStderr, keepResult)
--- import                Text.Regex
+#endif
 
 mapSnd :: (b -> c) -> (a, b) -> (a, c)
 mapSnd f (a, b) = (a, f b)
@@ -105,6 +103,7 @@ canon path =
 md5sum :: FilePath -> IO String
 md5sum path = B.readFile path >>= return . show . Data.Digest.Pure.MD5.md5
 
+#if !__GHCJS__
 -- | Predicate to decide if two files have the same inode.
 sameInode :: FilePath -> FilePath -> IO Bool
 sameInode a b =
@@ -112,6 +111,7 @@ sameInode a b =
       aStatus <- getFileStatus a
       bStatus <- getFileStatus b
       return (deviceID aStatus == deviceID bStatus && fileID aStatus == fileID bStatus)
+#endif
 
 -- | Predicate to decide if two files have the same md5 checksum.
 sameMd5sum :: FilePath -> FilePath -> IO Bool
@@ -127,11 +127,13 @@ splitOutput output = (B.concat (keepStdout output), B.concat (keepStderr output)
 -}
 
 -- |A version of read with a more helpful error message.
+read' :: Read p => String -> p
 read' s =
     case reads s of
       [] -> error $ "read - no parse: " ++ show s
       ((x, _s) : _) -> x
 
+#if !__GHCJS__
 checkSuperUser :: IO Bool
 checkSuperUser = getEffectiveUserID >>= return . (== 0)
 
@@ -157,3 +159,4 @@ cd name m =
             return cwd)
         (\oldwd -> do setCurrentDirectory oldwd)
         (const m)
+#endif

@@ -13,7 +13,9 @@ import Data.Serialize
 import Data.Time
 import Extra.Orphans ()
 import GHC.Generics
+#if !__GHCJS__
 import Test.QuickCheck
+#endif
 
 {- This function is so complicated because there seems to be no way
    to get the Data.Time to format seconds without the fractional part,
@@ -73,7 +75,9 @@ newtype Zulu = Zulu {_utcTime :: UTCTime} deriving (Eq, Ord, Data, Generic, Seri
 $(makeLenses ''Zulu)
 $(deriveSafeCopy 1 'base ''Zulu)
 
+#if !__GHCJS__
 instance Arbitrary Zulu where arbitrary = Zulu <$> arbitrary
+#endif
 -- instance ParseTime Zulu
 -- instance FormatTime Zulu
 
