@@ -10,8 +10,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Extra.Verbosity2
-    ( HasMessageInfo(..), message, quietly, noisily, indented )
+module Extra.Debug
+    ( HasMessageInfo(..)
+    , Verbosity(..)
+    , message, quietly, noisily, indented
+    , R(..))
     where
 
 import Control.Lens (_2, _3, (.=), (%=), at, Lens', lens, makeLenses, non, over, Traversal', use, view)
@@ -75,3 +78,16 @@ quietly n = local (over verbosity (\i -> i - n))
 -- | Perform the action with increased verbosity
 noisily :: (HasMessageInfo r, MonadReader r m) => Int -> m a -> m a
 noisily n = local (over verbosity (+ n))
+
+-- | A type with a HasMessageInfo instance to use in the Reader or RWS monad.
+data R
+    = R
+      { _verbosityR :: Int
+      , _prefixR :: String
+      }
+
+$(makeLenses ''R)
+
+instance HasMessageInfo R where
+    verbosity = verbosityR
+    prefix = prefixR

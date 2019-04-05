@@ -64,6 +64,7 @@ Library
   Install-Includes:    gwinsz.h
   Exposed-modules:
     Extra.Bool,
+    Extra.Debug,
     Extra.Either,
     Extra.EnvPath,
     Extra.Except,
@@ -84,7 +85,6 @@ Library
     Extra.URI,
     Extra.URIQuery,
     Extra.Verbosity,
-    Extra.Verbosity2,
     Extra.IOThread
   if !impl(ghcjs)
     Build-Depends:

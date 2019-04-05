@@ -5,17 +5,23 @@
 --  * display' is now prettyText
 --  * ppDisplay is now ppShow
 --  * ppDisplay' is now ppText
+
 {-# LANGUAGE DeriveFunctor, FlexibleContexts, FlexibleInstances, OverloadedStrings, TypeSynonymInstances #-}
+
 module Extra.Pretty
     ( PP(PP, unPP)
     , prettyText
     , ppPrint
+    , pprPair
+    , pprSet
     , ppShow
     , ppText
-    , pprint1
+    , pprint1, pprint1'
+    , pprintW
     , friendlyNames
     -- * Re-export
     , prettyShow
+    , renderW
     ) where
 
 import Data.Data (Data)
