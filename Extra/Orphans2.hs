@@ -18,7 +18,9 @@ import Data.ListLike as LL
 import Data.Map as Map (Map, toList)
 import Data.SafeCopy (base, deriveSafeCopy)
 import Data.Set as Set (Set, toList)
+#if !__GHCJS__
 import Debug.Show (V(V))
+#endif
 import Language.Haskell.TH
 import Language.Haskell.TH.PprLib (Doc, hcat, ptext, vcat)
 import Language.Haskell.TH.Syntax (ModName, NameFlavour, OccName, PkgName)
