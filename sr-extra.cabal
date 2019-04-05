@@ -83,6 +83,7 @@ Library
     Extra.Orphans,
     Extra.Pretty,
     Extra.Process,
+    Extra.Serialize,
     Extra.SSH,
     Extra.TH,
     Extra.Time,

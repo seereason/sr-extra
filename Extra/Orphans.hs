@@ -25,7 +25,9 @@ import Data.UUID.Orphans ()
 import GHC.Generics (Generic)
 import Instances.TH.Lift ()
 import Language.Haskell.TH (Loc(..), Ppr(ppr))
-import Language.Haskell.TH.Lift (deriveLift, deriveLiftMany)
+import Language.Haskell.TH.Lift -- (deriveLift, deriveLiftMany)
+import Language.Haskell.TH
+import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.PprLib (ptext)
 import Network.URI (URI(..), URIAuth(..), uriToString)
 import System.IO.Unsafe (unsafePerformIO)
@@ -71,7 +73,8 @@ deriving instance Serialize URI
 deriving instance Generic URIAuth
 deriving instance Serialize URIAuth
 
-$(deriveLift ''UserId)
+-- $(deriveLift ''UserId)
+instance Lift UserId where lift (UserId x0) = [|UserId $(lift x0)|]
 
 $(deriveLift ''G.Gr)
 $(deriveLift ''G.NodeMap)
