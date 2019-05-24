@@ -7,7 +7,10 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Extra.Serialize
-    ( HasDecodeError(fromDecodeError)
+    ( deserializePrism
+    , serializeGetter
+    , DecodeError(..)
+    , HasDecodeError(fromDecodeError)
     , Serialize(..)
     , Serialize.encode
     , deriveSerializeViaSafeCopy
@@ -15,6 +18,7 @@ module Extra.Serialize
     ) where
 
 import Control.Exception (ErrorCall(ErrorCall))
+import Control.Lens (Getter, Prism', prism, re)
 import Control.Monad.Catch (catch, MonadCatch, try)
 import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString (ByteString)
@@ -24,6 +28,14 @@ import Data.Serialize (Serialize)
 import Data.Serialize (Serialize(..))
 import qualified Data.Serialize as Serialize
 import Language.Haskell.TH (Dec, TypeQ, Q)
+
+-- | Serialize/deserialize prism.
+deserializePrism :: forall a. Serialize a => Prism' ByteString a
+deserializePrism = prism Serialize.encode (\s -> either (\_ -> Left s) Right (Serialize.decode s :: Either String a))
+
+-- | Inverting a prism turns it into a getter.
+serializeGetter :: forall a. Serialize a => Getter a ByteString
+serializeGetter = re deserializePrism
 
 -- | It turns out that this is a fortuitous choice for any type with a
 -- SafeCopy instance, because it means values will be migrated as necessary
