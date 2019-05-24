@@ -1,16 +1,28 @@
 -- | A Serialize instance based on safecopy.  This means that migrations
 -- will be performed upon deserialization, which can be nice.
 
-{-# LANGUAGE CPP, TemplateHaskell #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Extra.Serialize
-    ( Serialize(..)
+    ( HasDecodeError(fromDecodeError)
+    , Serialize(..)
+    , Serialize.encode
     , deriveSerializeViaSafeCopy
+    , decodeM
     ) where
 
+import Control.Exception (ErrorCall(ErrorCall))
+import Control.Monad.Catch (catch, MonadCatch, try)
+import Control.Monad.Except (MonadError, throwError)
+import Data.ByteString (ByteString)
+import Data.Data (Proxy(Proxy), Typeable, typeRep)
 import Data.SafeCopy (safeGet, safePut)
+import Data.Serialize (Serialize)
 import Data.Serialize (Serialize(..))
--- import Data.THUnify.SerializeViaSafeCopy
+import qualified Data.Serialize as Serialize
 import Language.Haskell.TH (Dec, TypeQ, Q)
 
 -- | It turns out that this is a fortuitous choice for any type with a
@@ -22,3 +34,26 @@ deriveSerializeViaSafeCopy typ =
     [d|instance {-SafeCopy $typ =>-} Serialize $typ where
           get = safeGet
           put = safePut|]
+
+data DecodeError =
+    DecodeError String
+  | ErrorCall' ErrorCall
+
+class HasDecodeError e where fromDecodeError :: DecodeError -> e
+instance HasDecodeError DecodeError where fromDecodeError = id
+
+-- | Use this for decoding exclusively.  Remove build dependencies on
+-- cereal to avoid stray use of its decode.
+decodeM ::
+  forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
+  => ByteString
+  -> m a
+decodeM b = go `catch` handle
+  where
+    go = case Serialize.decode b of
+           Left s -> throwError (fromDecodeError (DecodeError (annotate s)))
+           Right a -> return a
+    handle :: ErrorCall -> m a
+    handle (ErrorCall s) = throwError $ fromDecodeError $ ErrorCall' $ ErrorCall $ annotate s
+    annotate :: String -> String
+    annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
