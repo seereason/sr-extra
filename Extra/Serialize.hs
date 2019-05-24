@@ -2,16 +2,18 @@
 -- will be performed upon deserialization, which can be nice.
 
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Extra.Serialize
-    ( deserializePrism
+    ( module Serialize
+    , deserializePrism
     , serializeGetter
     , DecodeError(..)
     , HasDecodeError(fromDecodeError)
-    , Serialize(..)
     , Serialize.encode
     , deriveSerializeViaSafeCopy
     , decodeM
@@ -19,25 +21,24 @@ module Extra.Serialize
     , decode'
     ) where
 
-import Control.Exception (ErrorCall(ErrorCall), evaluate, )
+import Control.Exception (ErrorCall(..), evaluate, )
 import Control.Lens (Getter, _Left, over, Prism', prism, re)
 import Control.Monad.Catch (catch, MonadCatch, try)
 import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString (ByteString)
-import Data.Data (Proxy(Proxy), Typeable, typeRep)
-import Data.SafeCopy (safeGet, safePut)
-import Data.Serialize (Serialize)
-import Data.Serialize (Serialize(..))
-import qualified Data.Serialize as Serialize
+import Data.Data (Data, Proxy(Proxy), Typeable, typeRep)
+import Data.SafeCopy (base, deriveSafeCopy, safeGet, safePut)
+import qualified Data.Serialize as Serialize hiding (decode)
+import qualified Data.Serialize (decode)
 import Language.Haskell.TH (Dec, TypeQ, Q)
 import System.IO.Unsafe (unsafePerformIO)
 
 -- | Serialize/deserialize prism.
-deserializePrism :: forall a. Serialize a => Prism' ByteString a
-deserializePrism = prism Serialize.encode (\s -> either (\_ -> Left s) Right (Serialize.decode s :: Either String a))
+deserializePrism :: forall a. Serialize.Serialize a => Prism' ByteString a
+deserializePrism = prism Serialize.encode (\s -> either (\_ -> Left s) Right (Data.Serialize.decode s :: Either String a))
 
 -- | Inverting a prism turns it into a getter.
-serializeGetter :: forall a. Serialize a => Getter a ByteString
+serializeGetter :: forall a. Serialize.Serialize a => Getter a ByteString
 serializeGetter = re deserializePrism
 
 -- | It turns out that this is a fortuitous choice for any type with a
@@ -46,13 +47,16 @@ serializeGetter = re deserializePrism
 -- Thus, zero downtime upgrades!
 deriveSerializeViaSafeCopy :: TypeQ -> Q [Dec]
 deriveSerializeViaSafeCopy typ =
-    [d|instance {-SafeCopy $typ =>-} Serialize $typ where
+    [d|instance {-SafeCopy $typ =>-} Serialize.Serialize $typ where
           get = safeGet
           put = safePut|]
+
+deriving instance Data ErrorCall
 
 data DecodeError =
     DecodeError String
   | ErrorCall' ErrorCall
+  deriving (Show, Data, Eq, Ord)
 
 class HasDecodeError e where fromDecodeError :: DecodeError -> e
 instance HasDecodeError DecodeError where fromDecodeError = id
@@ -60,13 +64,13 @@ instance HasDecodeError DecodeError where fromDecodeError = id
 -- | Use this for decoding exclusively.  Remove build dependencies on
 -- cereal to avoid stray use of its decode.
 decodeM ::
-  forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
+  forall e m a. (Serialize.Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
   => ByteString
   -> m a
 decodeM b = go `catch` handle
   where
-    go = case Serialize.decode b of
-           Left s -> throwError (fromDecodeError (DecodeError (annotate s)))
+    go = case decode b of
+           Left s -> throwError (fromDecodeError (DecodeError s))
            Right a -> return a
     handle :: ErrorCall -> m a
     handle (ErrorCall s) = throwError $ fromDecodeError $ ErrorCall' $ ErrorCall $ annotate s
@@ -74,7 +78,7 @@ decodeM b = go `catch` handle
     annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
 
 -- | Modify the message returned on decode failure
-decode :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
+decode :: forall a. (Serialize.Serialize a, Typeable a) => ByteString -> Either String a
 decode b =
   over _Left annotate (decode b :: Either String a)
   where
@@ -82,7 +86,7 @@ decode b =
     annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
 
 -- | Modify the message returned on decode failure
-decode' :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
+decode' :: forall a. (Serialize.Serialize a, Typeable a) => ByteString -> Either String a
 decode' b =
   unsafePerformIO (evaluate (decode b :: Either String a) `catch` handle)
   where
@@ -90,3 +94,9 @@ decode' b =
     handle (ErrorCall s) = return $ Left $ annotate s
     annotate :: String -> String
     annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
+
+$(concat <$>
+  sequence
+  [ deriveSafeCopy 1 'base ''ErrorCall
+  , deriveSafeCopy 1 'base ''DecodeError
+  ])
