@@ -15,10 +15,12 @@ module Extra.Serialize
     , Serialize.encode
     , deriveSerializeViaSafeCopy
     , decodeM
+    , decode
+    , decode'
     ) where
 
-import Control.Exception (ErrorCall(ErrorCall))
-import Control.Lens (Getter, Prism', prism, re)
+import Control.Exception (ErrorCall(ErrorCall), evaluate, )
+import Control.Lens (Getter, _Left, over, Prism', prism, re)
 import Control.Monad.Catch (catch, MonadCatch, try)
 import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString (ByteString)
@@ -28,6 +30,7 @@ import Data.Serialize (Serialize)
 import Data.Serialize (Serialize(..))
 import qualified Data.Serialize as Serialize
 import Language.Haskell.TH (Dec, TypeQ, Q)
+import System.IO.Unsafe (unsafePerformIO)
 
 -- | Serialize/deserialize prism.
 deserializePrism :: forall a. Serialize a => Prism' ByteString a
@@ -67,5 +70,23 @@ decodeM b = go `catch` handle
            Right a -> return a
     handle :: ErrorCall -> m a
     handle (ErrorCall s) = throwError $ fromDecodeError $ ErrorCall' $ ErrorCall $ annotate s
+    annotate :: String -> String
+    annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
+
+-- | Modify the message returned on decode failure
+decode :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
+decode b =
+  over _Left annotate (decode b :: Either String a)
+  where
+    annotate :: String -> String
+    annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
+
+-- | Modify the message returned on decode failure
+decode' :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
+decode' b =
+  unsafePerformIO (evaluate (decode b :: Either String a) `catch` handle)
+  where
+    handle :: ErrorCall -> IO (Either String a)
+    handle (ErrorCall s) = return $ Left $ annotate s
     annotate :: String -> String
     annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
