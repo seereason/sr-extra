@@ -1,5 +1,7 @@
--- | A Serialize instance based on safecopy.  This means that migrations
--- will be performed upon deserialization, which can be nice.
+-- | This module exports a template haskell function to create
+-- Serialize instances based on the SafeCopy instance, and an
+-- alternative decode function that puts the decode type in the error
+-- message.  It also re-exports all other Data.Serialize symbols
 
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
@@ -9,16 +11,15 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Extra.Serialize
-    ( module Serialize
+    ( module Data.Serialize
     , deserializePrism
     , serializeGetter
     , DecodeError(..)
     , HasDecodeError(fromDecodeError)
-    , Serialize.encode
     , deriveSerializeViaSafeCopy
-    , decodeM
     , decode
     , decode'
+    , decodeM
     ) where
 
 import Control.Exception (ErrorCall(..), evaluate, )
@@ -28,26 +29,26 @@ import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString (ByteString)
 import Data.Data (Data, Proxy(Proxy), Typeable, typeRep)
 import Data.SafeCopy (base, deriveSafeCopy, safeGet, safePut)
-import qualified Data.Serialize as Serialize hiding (decode)
-import qualified Data.Serialize (decode)
+import Data.Serialize hiding (decode)
+import qualified Data.Serialize as Serialize (decode)
 import Language.Haskell.TH (Dec, TypeQ, Q)
 import System.IO.Unsafe (unsafePerformIO)
 
 -- | Serialize/deserialize prism.
-deserializePrism :: forall a. Serialize.Serialize a => Prism' ByteString a
-deserializePrism = prism Serialize.encode (\s -> either (\_ -> Left s) Right (Data.Serialize.decode s :: Either String a))
+deserializePrism :: forall a. Serialize a => Prism' ByteString a
+deserializePrism = prism encode (\s -> either (\_ -> Left s) Right (Serialize.decode s :: Either String a))
 
 -- | Inverting a prism turns it into a getter.
-serializeGetter :: forall a. Serialize.Serialize a => Getter a ByteString
+serializeGetter :: forall a. Serialize a => Getter a ByteString
 serializeGetter = re deserializePrism
 
--- | It turns out that this is a fortuitous choice for any type with a
--- SafeCopy instance, because it means values will be migrated as necessary
--- whenever they are decoded - even in the local storage of a web browser.
--- Thus, zero downtime upgrades!
+-- | A Serialize instance based on safecopy.  This means that
+-- migrations will be performed upon deserialization, which is handy
+-- if the value is stored in the browser's local storage.  Thus, zero
+-- downtime upgrades!
 deriveSerializeViaSafeCopy :: TypeQ -> Q [Dec]
 deriveSerializeViaSafeCopy typ =
-    [d|instance {-SafeCopy $typ =>-} Serialize.Serialize $typ where
+    [d|instance {-SafeCopy $typ =>-} Serialize $typ where
           get = safeGet
           put = safePut|]
 
@@ -64,7 +65,7 @@ instance HasDecodeError DecodeError where fromDecodeError = id
 -- | Use this for decoding exclusively.  Remove build dependencies on
 -- cereal to avoid stray use of its decode.
 decodeM ::
-  forall e m a. (Serialize.Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
+  forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
   => ByteString
   -> m a
 decodeM b = go `catch` handle
@@ -78,15 +79,17 @@ decodeM b = go `catch` handle
     annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
 
 -- | Modify the message returned on decode failure
-decode :: forall a. (Serialize.Serialize a, Typeable a) => ByteString -> Either String a
+decode :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
 decode b =
   over _Left annotate (decode b :: Either String a)
   where
     annotate :: String -> String
     annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
 
--- | Modify the message returned on decode failure
-decode' :: forall a. (Serialize.Serialize a, Typeable a) => ByteString -> Either String a
+-- | Catch any thrown ErrorCall and modify its message.  I'm not sure
+-- whether this actually happens, but it seems to be.  Could be an
+-- error call outside the serialize package.
+decode' :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
 decode' b =
   unsafePerformIO (evaluate (decode b :: Either String a) `catch` handle)
   where
