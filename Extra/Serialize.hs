@@ -20,6 +20,7 @@ module Extra.Serialize
     , decode
     , decode'
     , decodeM
+    , decodeM'
     ) where
 
 import Control.Exception (ErrorCall(..), evaluate, )
@@ -61,13 +62,30 @@ instance HasDecodeError DecodeError where fromDecodeError = id
 
 -- | Monadic version of decode.
 decodeM ::
+  forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m)
+  => ByteString
+  -> m a
+decodeM b =
+  case decode b of
+    Left s -> throwError (fromDecodeError (DecodeError b s))
+    Right a -> return a
+  where
+    annotate :: String -> String
+    annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
+
+-- | Like 'decodeM', but also catches any ErrorCall thrown and lifts
+-- it into the MonadError instance.  I'm not sure whether this can
+-- actually happen.  What I'm seeing is probably an error call from
+-- outside the serialize package, in which case this (and decode') are
+-- pointless.
+decodeM' ::
   forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
   => ByteString
   -> m a
-decodeM b = go `catch` handle
+decodeM' b = go `catch` handle
   where
     go = case decode b of
-           Left s -> throwError (fromDecodeError (DecodeError s))
+           Left s -> throwError (fromDecodeError (DecodeError b s))
            Right a -> return a
     handle :: ErrorCall -> m a
     handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError b $ annotate s
@@ -83,10 +101,8 @@ decode b =
     annotate :: String -> String
     annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
 
--- | Catch any thrown ErrorCall and modify its message.  I'm not sure
--- whether this actually happens, but it seems to be.  But it could be
--- an error call from outside the serialize package, in which case
--- this is pointless.
+-- | Version of decode that catches any thrown ErrorCall and modifies
+-- its message.
 decode' :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
 decode' b =
   unsafePerformIO (evaluate (decode b :: Either String a) `catch` handle)
