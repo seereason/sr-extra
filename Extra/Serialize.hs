@@ -54,16 +54,12 @@ deriveSerializeViaSafeCopy typ =
 
 deriving instance Data ErrorCall
 
-data DecodeError =
-    DecodeError String
-  | ErrorCall' ErrorCall
-  deriving (Show, Data, Eq, Ord)
+data DecodeError = DecodeError ByteString String deriving (Show, Data, Eq, Ord)
 
 class HasDecodeError e where fromDecodeError :: DecodeError -> e
 instance HasDecodeError DecodeError where fromDecodeError = id
 
--- | Use this for decoding exclusively.  Remove build dependencies on
--- cereal to avoid stray use of its decode.
+-- | Monadic version of decode.
 decodeM ::
   forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
   => ByteString
@@ -74,11 +70,12 @@ decodeM b = go `catch` handle
            Left s -> throwError (fromDecodeError (DecodeError s))
            Right a -> return a
     handle :: ErrorCall -> m a
-    handle (ErrorCall s) = throwError $ fromDecodeError $ ErrorCall' $ ErrorCall $ annotate s
+    handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError b $ annotate s
     annotate :: String -> String
     annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
 
--- | Modify the message returned on decode failure
+-- | Like 'Serialize.decode' but annotates the error string with the
+-- decode type, adds constraint @Typeable a@.
 decode :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
 decode b =
   over _Left annotate (decode b :: Either String a)
@@ -87,8 +84,9 @@ decode b =
     annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
 
 -- | Catch any thrown ErrorCall and modify its message.  I'm not sure
--- whether this actually happens, but it seems to be.  Could be an
--- error call outside the serialize package.
+-- whether this actually happens, but it seems to be.  But it could be
+-- an error call from outside the serialize package, in which case
+-- this is pointless.
 decode' :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
 decode' b =
   unsafePerformIO (evaluate (decode b :: Either String a) `catch` handle)
