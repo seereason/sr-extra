@@ -36,11 +36,11 @@ import Language.Haskell.TH (Dec, TypeQ, Q)
 import System.IO.Unsafe (unsafePerformIO)
 
 -- | Serialize/deserialize prism.
-deserializePrism :: forall a. Serialize a => Prism' ByteString a
+deserializePrism :: forall a. (Serialize a, Typeable a) => Prism' ByteString a
 deserializePrism = prism encode (\s -> either (\_ -> Left s) Right (decode s :: Either String a))
 
 -- | Inverting a prism turns it into a getter.
-serializeGetter :: forall a. Serialize a => Getter a ByteString
+serializeGetter :: forall a. (Serialize a, Typeable a) => Getter a ByteString
 serializeGetter = re deserializePrism
 
 -- | A Serialize instance based on safecopy.  This means that
