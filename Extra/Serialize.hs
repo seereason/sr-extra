@@ -37,7 +37,7 @@ import System.IO.Unsafe (unsafePerformIO)
 
 -- | Serialize/deserialize prism.
 deserializePrism :: forall a. Serialize a => Prism' ByteString a
-deserializePrism = prism encode (\s -> either (\_ -> Left s) Right (Serialize.decode s :: Either String a))
+deserializePrism = prism encode (\s -> either (\_ -> Left s) Right (decode s :: Either String a))
 
 -- | Inverting a prism turns it into a getter.
 serializeGetter :: forall a. Serialize a => Getter a ByteString
@@ -84,7 +84,7 @@ decodeM' ::
   -> m a
 decodeM' b = go `catch` handle
   where
-    go = case decode b of
+    go = case Serialize.decode b of
            Left s -> throwError (fromDecodeError (DecodeError b s))
            Right a -> return a
     handle :: ErrorCall -> m a
@@ -96,7 +96,7 @@ decodeM' b = go `catch` handle
 -- decode type, adds constraint @Typeable a@.
 decode :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
 decode b =
-  over _Left annotate (decode b :: Either String a)
+  over _Left annotate (Serialize.decode b :: Either String a)
   where
     annotate :: String -> String
     annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
@@ -105,7 +105,7 @@ decode b =
 -- its message.
 decode' :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
 decode' b =
-  unsafePerformIO (evaluate (decode b :: Either String a) `catch` handle)
+  unsafePerformIO (evaluate (Serialize.decode b :: Either String a) `catch` handle)
   where
     handle :: ErrorCall -> IO (Either String a)
     handle (ErrorCall s) = return $ Left $ annotate s
