@@ -60,18 +60,24 @@ data DecodeError = DecodeError ByteString String deriving (Show, Data, Eq, Ord)
 class HasDecodeError e where fromDecodeError :: DecodeError -> e
 instance HasDecodeError DecodeError where fromDecodeError = id
 
--- | Monadic version of decode.
-decodeM ::
-  forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m)
-  => ByteString
-  -> m a
-decodeM b =
-  case decode b of
-    Left s -> throwError (fromDecodeError (DecodeError b s))
-    Right a -> return a
+-- | Like 'Serialize.decode' but annotates the error string with the
+-- decode type, adds constraint @Typeable a@.
+decode :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
+decode bs =
+  over _Left annotate (Serialize.decode bs :: Either String a)
   where
     annotate :: String -> String
-    annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
+    annotate e = "error - (decode " ++ show bs ++ ") :: " ++ show (typeRep (Proxy :: Proxy a)) ++ " -> " ++ show e
+
+-- | Monadic version of decode.
+decodeM ::
+  forall a e m. (Serialize a, Typeable a, HasDecodeError e, MonadError e m)
+  => ByteString
+  -> m a
+decodeM bs =
+  case decode bs of
+    Left s -> throwError (fromDecodeError (DecodeError bs s))
+    Right a -> return a
 
 -- | Like 'decodeM', but also catches any ErrorCall thrown and lifts
 -- it into the MonadError instance.  I'm not sure whether this can
@@ -82,35 +88,22 @@ decodeM' ::
   forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
   => ByteString
   -> m a
-decodeM' b = go `catch` handle
+decodeM' bs = go `catch` handle
   where
-    go = case Serialize.decode b of
-           Left s -> throwError (fromDecodeError (DecodeError b s))
+    go = case decode bs of
+           Left s -> throwError (fromDecodeError (DecodeError bs s))
            Right a -> return a
     handle :: ErrorCall -> m a
-    handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError b $ annotate s
-    annotate :: String -> String
-    annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
-
--- | Like 'Serialize.decode' but annotates the error string with the
--- decode type, adds constraint @Typeable a@.
-decode :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
-decode b =
-  over _Left annotate (Serialize.decode b :: Either String a)
-  where
-    annotate :: String -> String
-    annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
+    handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError bs s
 
 -- | Version of decode that catches any thrown ErrorCall and modifies
 -- its message.
 decode' :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
 decode' b =
-  unsafePerformIO (evaluate (Serialize.decode b :: Either String a) `catch` handle)
+  unsafePerformIO (evaluate (decode b :: Either String a) `catch` handle)
   where
     handle :: ErrorCall -> IO (Either String a)
-    handle (ErrorCall s) = return $ Left $ annotate s
-    annotate :: String -> String
-    annotate s = s <> " (decoding " <> show (typeRep (Proxy :: Proxy a)) <> ")"
+    handle e = return $ Left (show e)
 
 $(concat <$>
   sequence
