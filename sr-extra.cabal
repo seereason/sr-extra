@@ -34,6 +34,7 @@ Library
     exceptions,
     fgl,
     filepath,
+    generic-data,
     lens,
     ListLike,
     mtl,
