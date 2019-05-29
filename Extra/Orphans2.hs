@@ -56,9 +56,9 @@ instance Ppr Char where ppr = ptext . show
 instance Ppr Float where ppr = ptext . show
 -- instance Ppr ReportElemID where ppr = ptext . show
 -- instance Ppr ReportImageID where ppr = ptext . show
-instance (Ppr k, Ord k, {-Enum k,-} Show k, Ppr v) => Ppr (Map k v) where ppr = pprList . fmap pprPair . Map.toList
+instance (Ppr k, Ppr v) => Ppr (Map k v) where ppr = pprList . fmap pprPair . Map.toList
 #if 0
-instance (Ppr k, Ord k, Enum k, Show k, Ppr v) => Ppr (Order k v) where ppr = pprList . fmap pprPair . LL.toList . toPairs
+instance (Ppr k, Ppr v) => Ppr (Order k v) where ppr = pprList . fmap pprPair . LL.toList . toPairs
 #endif
 instance Ppr (Int, Char) where ppr = ptext . show
 
