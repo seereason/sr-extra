@@ -1,7 +1,8 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts #-}
 
 module Extra.Generics
     ( gFind
+    , Extra.Generics.GShow
     , gshow
     , gshows
     , gshowsPrec
@@ -20,9 +21,11 @@ import GHC.Generics (Generic, Rep)
 gFind :: (MonadPlus m, Data a, Typeable b) => a -> m b
 gFind = msum . map return . listify (const True)
 
+type GShow a = (Generic a, Generic.Data.Internal.Show.GShow Proxy (Rep a))
+
 -- | Generic version of show based on generic-data's gshowsPrec function.
-gshow :: (Generic a, GShow Proxy (Rep a)) => a -> String
+gshow :: (Generic a, Generic.Data.Internal.Show.GShow Proxy (Rep a)) => a -> String
 gshow x = gshows x ""
 
-gshows :: (Generic a, GShow Proxy (Rep a)) => a -> ShowS
+gshows :: (Generic a, Generic.Data.Internal.Show.GShow Proxy (Rep a)) => a -> ShowS
 gshows x = gshowsPrec 0 x
