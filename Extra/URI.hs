@@ -14,8 +14,7 @@ module Extra.URI
     ) where
 
 import Network.URI -- (URIAuth(..), URI(..), parseURI, uriToString, escapeURIString, isUnreserved, unEscapeString)
-import Data.List(intersperse, groupBy, inits)
-import Data.Maybe(isJust, isNothing, catMaybes)
+import Data.List(intersperse, groupBy)
 import Control.Arrow(second)
 
 -- |Create a relative URI with the given query.

@@ -12,28 +12,20 @@
 
 module Extra.Debug
     ( HasMessageInfo(..)
-    , Verbosity(..)
-    , message, quietly, noisily, indented
+    , Verbosity(message)
+    , quietly, noisily, indented
     , R(..))
     where
 
-import Control.Lens (_2, _3, (.=), (%=), at, Lens', lens, makeLenses, non, over, Traversal', use, view)
-import Control.Monad (MonadPlus, msum, when)
+import Control.Lens (Lens', makeLenses, over, view)
+import Control.Monad (when)
 import Control.Monad.Reader (local, MonadReader, ReaderT)
-import Control.Monad.RWS (evalRWST, listens, {-local,-} RWST, tell)
+import Control.Monad.RWS (RWST)
 import Control.Monad.Trans (MonadIO(liftIO))
 import Data.Char (isSpace)
-import Data.Data (Data)
-import Data.Generics ({-Data,-} everywhere, listify, mkT, Typeable)
 import Data.List (dropWhileEnd, intercalate)
-import Data.Map as Map (insert, lookup, Map, null, toList)
-import Data.Set as Set (difference, fromList, Set, singleton, toList, union, unions)
 import Instances.TH.Lift ()
-import Language.Haskell.TH
 import Language.Haskell.TH.Instances ()
-import Language.Haskell.TH.PprLib (Doc, hcat, hsep, ptext, to_HPJ_Doc)
-import Language.Haskell.TH.Syntax
-import qualified Text.PrettyPrint as HPJ
 import System.IO (hPutStrLn, stderr)
 
 class HasMessageInfo a where

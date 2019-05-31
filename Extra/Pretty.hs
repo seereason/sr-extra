@@ -26,7 +26,7 @@ module Extra.Pretty
 
 import Data.Data (Data)
 import Data.Generics (everywhere, mkT)
-import Data.Set as Set (difference, fromList, Set, singleton, toList, union, unions)
+import Data.Set as Set (Set, toList)
 import Data.Text (Text, unpack, pack)
 import Distribution.Pretty (Pretty(pretty), prettyShow)
 import Language.Haskell.TH

@@ -17,9 +17,16 @@ Maintainer:     David Fox <dsf@seereason.com>
 Homepage:       https://github.com/seereason/sr-extra
 Build-Type:     Simple
 Cabal-Version:  >= 1.2
+
 flag network-uri
- Description: Get Network.URI from the network-uri package
- Default: True
+  Description: Get Network.URI from the network-uri package rather than the
+   full network package.
+  Default: True
+
+flag omit-serialize
+  Description: Omit all the Serialize instances, on the assumption
+   that we will use SafeCopy instances instead.
+  Default: False
 
 Library
   GHC-Options: -Wall -Wredundant-constraints
@@ -28,7 +35,6 @@ Library
     bytestring,
     bzlib,
     Cabal,
-    cereal,
     containers,
     directory,
     exceptions,
@@ -56,10 +62,6 @@ Library
     uuid-orphans,
     uuid-types,
     zlib
-  if flag(network-uri)
-    Build-Depends: network-uri >= 2.6
-  else
-    Build-Depends: network >= 2.4
   C-Sources:         cbits/gwinsz.c
   Include-Dirs:        cbits
   Install-Includes:    gwinsz.h
@@ -79,7 +81,6 @@ Library
     Extra.Orphans,
     Extra.Orphans2,
     Extra.Pretty,
-    Extra.Serialize,
     Extra.TH,
     Extra.Time,
     Extra.Terminal,
@@ -87,6 +88,7 @@ Library
     Extra.URIQuery,
     Extra.Verbosity,
     Extra.IOThread
+
   if !impl(ghcjs)
     Build-Depends:
       show-please,
@@ -101,3 +103,16 @@ Library
       Extra.SSH,
       Test.QUnit,
       Test.QuickCheck.Properties
+
+  if flag(network-uri)
+    Build-Depends: network-uri >= 2.6
+  else
+    Build-Depends: network >= 2.4
+
+  if !flag(omit-serialize)
+    Build-Depends: cereal
+    Exposed-Modules: Extra.Serialize
+  else
+    -- We still need cereal to implement instance SafeCopy Proxy
+    Build-Depends: cereal
+    CPP-Options: -DOMIT_SERIALIZE

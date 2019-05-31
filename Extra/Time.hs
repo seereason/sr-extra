@@ -9,7 +9,6 @@ import Control.Exception
 import Control.Lens (makeLenses)
 import Data.Data (Data)
 import Data.SafeCopy (base, deriveSafeCopy)
-import Data.Serialize
 import Data.Time
 import Extra.Orphans ()
 import GHC.Generics
@@ -70,7 +69,7 @@ myTimeDiffToString diff =
 
 -- | A version of UTCTime with a Show instance that returns a Haskell
 -- expression.
-newtype Zulu = Zulu {_utcTime :: UTCTime} deriving (Eq, Ord, Data, Generic, Serialize)
+newtype Zulu = Zulu {_utcTime :: UTCTime} deriving (Eq, Ord, Data, Generic)
 
 $(makeLenses ''Zulu)
 $(deriveSafeCopy 1 'base ''Zulu)

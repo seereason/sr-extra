@@ -9,7 +9,7 @@ module Extra.Generics
     ) where
 
 import Control.Monad (MonadPlus, msum)
-import Data.Generics (Data, listify, Proxy(Proxy), Typeable)
+import Data.Generics (Data, listify, Proxy, Typeable)
 import Generic.Data (gshowsPrec)
 import Generic.Data.Internal.Show (GShow)
 import GHC.Generics (Generic, Rep)

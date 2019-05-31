@@ -4,6 +4,7 @@
 -- message.  It also re-exports all other Data.Serialize symbols
 
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -25,14 +26,27 @@ module Extra.Serialize
 
 import Control.Exception (ErrorCall(..), evaluate, )
 import Control.Lens (Getter, _Left, over, Prism', prism, re)
-import Control.Monad.Catch (catch, MonadCatch, try)
+import Control.Monad.Catch (catch, MonadCatch)
 import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString (ByteString)
-import Data.Data (Data, Proxy(Proxy), Typeable, typeRep)
+#ifndef OMIT_DATA_INSTANCES
+import Data.Data (Data)
+#endif
+import Data.Data (Proxy(Proxy), Typeable, typeRep)
 import Data.SafeCopy (base, deriveSafeCopy, safeGet, safePut)
 import Data.Serialize hiding (decode)
 import qualified Data.Serialize as Serialize (decode)
-import Language.Haskell.TH (Dec, TypeQ, Q)
+import Data.Text as T hiding (concat, intercalate)
+import Data.Text.Lazy as LT hiding (concat, intercalate)
+import Data.Text.Encoding as TE
+import Data.Text.Lazy.Encoding as TLE
+import Data.Time (UTCTime(..), Day(ModifiedJulianDay), toModifiedJulianDay, DiffTime)
+import Data.UUID.Orphans ()
+import Data.UUID (UUID)
+import Data.UUID.Orphans ()
+import Extra.Orphans ()
+import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
+import Network.URI (URI(..), URIAuth(..))
 import System.IO.Unsafe (unsafePerformIO)
 
 -- | Serialize/deserialize prism.
@@ -53,9 +67,7 @@ deriveSerializeViaSafeCopy typ =
           get = safeGet
           put = safePut|]
 
-deriving instance Data ErrorCall
-
-data DecodeError = DecodeError ByteString String deriving (Show, Data, Eq, Ord)
+data DecodeError = DecodeError ByteString String deriving (Eq, Ord)
 
 class HasDecodeError e where fromDecodeError :: DecodeError -> e
 instance HasDecodeError DecodeError where fromDecodeError = id
@@ -110,3 +122,47 @@ $(concat <$>
   [ deriveSafeCopy 1 'base ''ErrorCall
   , deriveSafeCopy 1 'base ''DecodeError
   ])
+
+#ifndef OMIT_DATA_INSTANCES
+deriving instance Data ErrorCall
+deriving instance Data DecodeError
+#endif
+
+#ifndef OMIT_SHOW_INSTANCES
+deriving instance Show DecodeError
+#endif
+
+-- * Orphan Serialize instances
+
+instance Serialize T.Text where
+    put = put . TE.encodeUtf8
+    get = TE.decodeUtf8 <$> get
+
+instance Serialize LT.Text where
+    put = put . TLE.encodeUtf8
+    get = TLE.decodeUtf8 <$> get
+
+-- | This is private, we can't create a Generic instance for it.
+instance Serialize DiffTime where
+    get = fromRational <$> get
+    put = put . toRational
+
+instance Serialize UTCTime where
+    get = uncurry UTCTime <$> get
+    put (UTCTime day time) = put (day, time)
+
+instance Serialize Day where
+    get = ModifiedJulianDay <$> get
+    put = put . toModifiedJulianDay
+
+-- deriving instance Generic UUID deriving instance Serialize UUID Use
+-- the SafeCopy methods to implement Serialize.  This is a pretty neat
+-- trick, it automatically does SafeCopy migration on any deserialize
+-- of a type with this implementation.
+instance Serialize UUID where
+    get = safeGet
+    put = safePut
+
+deriving instance Serialize Loc
+deriving instance Serialize URI
+deriving instance Serialize URIAuth
