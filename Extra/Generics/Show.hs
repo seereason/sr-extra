@@ -1,12 +1,22 @@
+-- | This is just a copy of the Show module from generic-data package
+-- with the Show a constraint removed from the K1 instance of DoS1.
+-- But it only works for primitive types Int and Char (as seen in
+-- doK1).
+
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS -Wall -Wredundant-constraints #-}
 
 module Extra.Generics.Show
@@ -15,10 +25,14 @@ module Extra.Generics.Show
   , GShow, gshow, gshows
   ) where
 
-import Data.Foldable (foldl')
+import Debug.Trace
+import Data.Data (cast, Typeable, Proxy(Proxy), typeRep, typeOf)
+import Data.Foldable (foldl', msum)
 import Data.Functor.Classes (Show1(..))
 import Data.Functor.Identity (Identity(Identity))
+import Data.Maybe (fromMaybe)
 import Data.Proxy (Proxy(Proxy))
+import GHC.Generics
 import GHC.Generics (Generic,
                      Generic1,
                      Rep,
@@ -46,11 +60,30 @@ import GHC.Generics (Generic,
 import Text.Show.Combinators (PrecShowS, {-ShowFields,-} noFields, showField, showListWith, showInfix, showApp, showCon, showRecord)
 import qualified Text.Show.Combinators as Show (appendFields)
 
+#if 0
+class Atomic a where
+  atomic :: Proxy a -> Bool
+  atomic _ = False
+
+instance {-# OVERLAPS #-} Atomic a where atomic _ = False
+instance {-# OVERLAPS #-} Atomic Int where atomic _ = True
+instance {-# OVERLAPS #-} Atomic Char where atomic _ = True
+#endif
+
+-- The K1 instance had constraint Show a, which means that every field
+-- we traversal must have a Show instance.  If we remove this
+-- constraint we must also remove it from doK1.  Now we need doK1 to
+-- either use the Generic instance to call gshowsPrec or the Show
+-- instance to call showsPrec.  If we switch the Show instances to
+-- Generic, we eventually get "No instance for (DoS1 Proxy (URec Int))"
+
 class                                    DoS1 p f               where doS1 :: p (Rd a) -> f a -> S1Result
-instance Show a                       => DoS1 p (K1 i a)        where doS1 _ (K1 x) = doK1 x
-instance Show1 f                      => DoS1 Identity (Rec1 f) where doS1 (Identity st) (Rec1 r) = doRec1 st r
+instance (GShow a, Typeable a) =>        DoS1 p (K1 R a)        where doS1 _ (K1 x) = doK1 ({-trace ("\n:: " <> show (typeOf x) <> "\n")-} x)
+instance Show1 f =>                      DoS1 Identity (Rec1 f) where doS1 (Identity st) (Rec1 r) = doRec1 st r
 instance                                 DoS1 Identity Par1     where doS1 (Identity st) (Par1 a) = doPar1 st a
-instance (Show1 f, DoS1 p g)          => DoS1 p (f :.: g)       where doS1 p (Comp1 c) = doComp1 p c
+instance (Show1 f, DoS1 p g) =>          DoS1 p (f :.: g)       where doS1 p (Comp1 c) = doComp1 p c
+instance                                 DoS1 Proxy (URec Int)  where doS1 p i = \prec s -> "<<" <> show i <> ">>" <> s
+instance                                 DoS1 Proxy (URec Char) where doS1 p i = \prec s -> show i <> s
 
 class                                    DoFields p f           where doFields :: p (Rd a) -> f a -> FieldsResult
 instance (DoFields p f, DoFields p g) => DoFields p (f :*: g)   where doFields p (x :*: y) = appendFields (doFields p x) (doFields p y)
@@ -76,14 +109,33 @@ instance                                 DoD1 p V1              where doD1 _ v =
 -- customization --
 
 type Rd a = (Int -> a -> ShowS, [a] -> ShowS) -- ShowsPrec
-type S1Result = PrecShowS
+type S1Result = PrecShowS -- Int -> ShowS
 type FieldsResult = [PrecShowS]
 type NamedResult = ShowS
 type C1Result = PrecShowS
 type D1Result = PrecShowS
 
-doK1 :: Show a => a -> S1Result
-doK1 = flip showsPrec
+deriving instance Generic Int
+deriving instance Generic Char
+
+#if 1
+doK1 :: (GShow a, Typeable a) => a -> S1Result
+doK1 x =
+  -- Could we use SYBWC to do this?  No, because we don't want to
+  -- create tons of SYBWC.Data instances.
+  fromMaybe (flip gshowsPrec x)
+    (msum [fmap (flip showsPrec) (cast x :: Maybe Int),
+           fmap (flip showsPrec) (cast x :: Maybe Char),
+           fmap (flip showsPrec) (cast x :: Maybe String)])
+#else
+class DoK1 a where doK1 :: a -> S1Result
+instance {-# OVERLAPPABLE #-} GShow a => DoK1 a where doK1 a = flip gshowsPrec a
+instance {-# OVERLAPPING #-} DoK1 Int where doK1 a = flip showsPrec a
+instance {-# OVERLAPPING #-} DoK1 Char where doK1 a = flip showsPrec a
+#endif
+
+doInt :: Int -> S1Result
+doInt i p s = show i <> s
 
 doRec1 :: Show1 f => Rd a -> f a -> S1Result
 doRec1 sp r = flip (uncurry liftShowsPrec sp) r
