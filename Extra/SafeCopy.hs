@@ -12,15 +12,12 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Extra.Serialize
-    ( DecodeError(..)
+module Extra.SafeCopy
+    ( module Data.SafeCopy
+    , DecodeError(..)
     , HasDecodeError(fromDecodeError)
-    , module Data.Serialize
-    , deserializePrism
-    , serializeGetter
-    , deriveSerializeViaSafeCopy
     , decode
-    , Serialize.encode
+    , encode
     , decode'
     , decodeM
     , decodeM'
@@ -57,65 +54,15 @@ data DecodeError = DecodeError ByteString String deriving (Eq, Ord)
 class HasDecodeError e where fromDecodeError :: DecodeError -> e
 instance HasDecodeError DecodeError where fromDecodeError = id
 
-encode :: Serialize a => a -> ByteString
-encode = Serialize.encode
+encode :: SafeCopy a => a -> ByteString
+encode = runPut . safePut
 
--- | Like 'Serialize.decode' but annotates the error string with the
--- decode type, adds constraint @Typeable a@.
-decode :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
-decode bs =
-  over _Left annotate (Serialize.decode bs :: Either String a)
-  where
-    annotate :: String -> String
-    annotate e = "error - (decode " ++ show bs ++ ") :: " ++ show (typeRep (Proxy :: Proxy a)) ++ " -> " ++ show e
-
--- | A Serialize instance based on safecopy.  This means that
--- migrations will be performed upon deserialization, which is handy
--- if the value is stored in the browser's local storage.  Thus, zero
--- downtime upgrades!
-deriveSerializeViaSafeCopy :: TypeQ -> Q [Dec]
-deriveSerializeViaSafeCopy typ =
-    [d|instance {-SafeCopy $typ =>-} Serialize $typ where
-          get = safeGet
-          put = safePut|]
-
-instance Serialize T.Text where
-    put = put . TE.encodeUtf8
-    get = TE.decodeUtf8 <$> get
-
-instance Serialize LT.Text where
-    put = put . TLE.encodeUtf8
-    get = TLE.decodeUtf8 <$> get
-
--- | This is private, we can't create a Generic instance for it.
-instance Serialize DiffTime where
-    get = fromRational <$> get
-    put = put . toRational
-
-instance Serialize UTCTime where
-    get = uncurry UTCTime <$> get
-    put (UTCTime day time) = put (day, time)
-
-instance Serialize Day where
-    get = ModifiedJulianDay <$> get
-    put = put . toModifiedJulianDay
-
--- deriving instance Generic UUID deriving instance Serialize UUID Use
--- the SafeCopy methods to implement Serialize.  This is a pretty neat
--- trick, it automatically does SafeCopy migration on any deserialize
--- of a type with this implementation.
-instance Serialize UUID where
-    get = safeGet
-    put = safePut
-
-deriving instance Serialize Loc
-deriving instance Serialize URI
-deriving instance Serialize URIAuth
-deriving instance Serialize Zulu
+decode :: SafeCopy a => ByteString -> Either String a
+decode = runGet safeGet
 
 -- | Monadic version of decode.
 decodeM ::
-  forall a e m. (Serialize a, Typeable a, HasDecodeError e, MonadError e m)
+  forall a e m. (SafeCopy a, Typeable a, HasDecodeError e, MonadError e m)
   => ByteString
   -> m a
 decodeM bs =
@@ -129,7 +76,7 @@ decodeM bs =
 -- outside the serialize package, in which case this (and decode') are
 -- pointless.
 decodeM' ::
-  forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
+  forall e m a. (SafeCopy a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
   => ByteString
   -> m a
 decodeM' bs = go `catch` handle
@@ -142,7 +89,7 @@ decodeM' bs = go `catch` handle
 
 -- | Version of decode that catches any thrown ErrorCall and modifies
 -- its message.
-decode' :: forall a. (Serialize a, Typeable a) => ByteString -> Either String a
+decode' :: forall a. (SafeCopy a, Typeable a) => ByteString -> Either String a
 decode' b =
   unsafePerformIO (evaluate (decode b :: Either String a) `catch` handle)
   where
@@ -150,11 +97,11 @@ decode' b =
     handle e = return $ Left (show e)
 
 -- | Serialize/deserialize prism.
-deserializePrism :: forall a. (Serialize a, Typeable a) => Prism' ByteString a
+deserializePrism :: forall a. (SafeCopy a, Typeable a) => Prism' ByteString a
 deserializePrism = prism encode (\s -> either (\_ -> Left s) Right (decode s :: Either String a))
 
 -- | Inverting a prism turns it into a getter.
-serializeGetter :: forall a. (Serialize a, Typeable a) => Getter a ByteString
+serializeGetter :: forall a. (SafeCopy a, Typeable a) => Getter a ByteString
 serializeGetter = re deserializePrism
 
 $(concat <$>

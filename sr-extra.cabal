@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.59
+Version:        1.60
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -81,6 +81,8 @@ Library
     Extra.Orphans,
     Extra.Orphans2,
     Extra.Pretty,
+    Extra.SafeCopy,
+    Extra.Serialize,
     Extra.TH,
     Extra.Time,
     Extra.Terminal,
@@ -109,10 +111,9 @@ Library
   else
     Build-Depends: network >= 2.4
 
-  if !flag(omit-serialize)
-    Build-Depends: cereal
-    Exposed-Modules: Extra.Serialize
-  else
+  if flag(omit-serialize)
+    CPP-Options: -DOMIT_SERIALIZE
     -- We still need cereal to implement instance SafeCopy Proxy
     Build-Depends: cereal
-    CPP-Options: -DOMIT_SERIALIZE
+  else
+    Build-Depends: cereal

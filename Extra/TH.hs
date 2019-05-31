@@ -6,6 +6,7 @@
 module Extra.TH
     ( here
     , Loc
+    , noLoc
     , prettyLocs
     , addConstraints
     , addConstraint
@@ -32,6 +33,9 @@ here = lift =<< location
 
 instance Pretty Loc where
     pPrint = prettyLoc
+
+noLoc :: Loc
+noLoc = Loc "" "" "" (0, 0) (0, 0)
 
 prettyLoc :: Loc -> Doc
 prettyLoc (Loc _filename _package modul (line, col) _) = text (modul <> ":" ++ show line ++ ":" ++ show col)
