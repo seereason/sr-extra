@@ -45,6 +45,7 @@ import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
 import Extra.Orphans ()
+import Extra.Time (Zulu(..))
 import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
 import Network.URI (URI(..), URIAuth(..))
 import System.IO.Unsafe (unsafePerformIO)
@@ -166,3 +167,4 @@ instance Serialize UUID where
 deriving instance Serialize Loc
 deriving instance Serialize URI
 deriving instance Serialize URIAuth
+deriving instance Serialize Zulu
