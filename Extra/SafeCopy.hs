@@ -44,15 +44,11 @@ import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
 import Extra.Orphans ()
+import Extra.Serialize (DecodeError(..), HasDecodeError(..))
 import Extra.Time (Zulu(..))
 import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
 import Network.URI (URI(..), URIAuth(..))
 import System.IO.Unsafe (unsafePerformIO)
-
-data DecodeError = DecodeError ByteString String deriving (Eq, Ord)
-
-class HasDecodeError e where fromDecodeError :: DecodeError -> e
-instance HasDecodeError DecodeError where fromDecodeError = id
 
 encode :: SafeCopy a => a -> ByteString
 encode = runPut . safePut
@@ -103,18 +99,3 @@ deserializePrism = prism encode (\s -> either (\_ -> Left s) Right (decode s :: 
 -- | Inverting a prism turns it into a getter.
 serializeGetter :: forall a. (SafeCopy a, Typeable a) => Getter a ByteString
 serializeGetter = re deserializePrism
-
-$(concat <$>
-  sequence
-  [ deriveSafeCopy 1 'base ''ErrorCall
-  , deriveSafeCopy 1 'base ''DecodeError
-  ])
-
-#ifndef OMIT_DATA_INSTANCES
-deriving instance Data ErrorCall
-deriving instance Data DecodeError
-#endif
-
-#ifndef OMIT_SHOW_INSTANCES
-deriving instance Show DecodeError
-#endif
