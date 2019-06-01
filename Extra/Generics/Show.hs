@@ -81,7 +81,7 @@ instance (Show1 f, DoS1 p g) =>             DoS1 p (f :.: g)       where doS1 p 
 
 class                                       DoFields p f           where doFields :: forall a. Debug a => p (Rd a) -> f a -> [S1Result]
 instance (DoFields p f, DoFields p g) =>    DoFields p (f :*: g)   where doFields p (x :*: y) = doFields p x <> doFields p y
-instance DoS1 p f =>                        DoFields p (M1 S c f)  where doFields p (M1 x) = [doS1 p x]
+instance (DoS1 p f, Selector s) =>          DoFields p (M1 S s f)  where doFields p (M1 x) = [doS1 p x]
 instance                                    DoFields p U1          where doFields _ U1 = []
 
 class                                       DoNamed p f            where doNamed :: forall a. Debug a => p (Rd a) -> f a -> [(String, S1Result)]
