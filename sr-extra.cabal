@@ -74,6 +74,7 @@ Library
     Extra.Exit,
     Extra.Files,
     Extra.Generics,
+    Extra.Generics.Show,
     Extra.List,
     Extra.HughesPJ,
     Extra.Misc,
