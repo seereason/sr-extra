@@ -16,10 +16,21 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS -Wall -Wredundant-constraints #-}
+
+-- TO DO:
+-- * Specialize the Top instance to be invisible OR
+--       (But if we have an instance
+-- * Figure out how to get gshow 'x' to be "'x'" rather than unboxed stuff
+-- * Add primitives
+-- * Get lists to render as [1, 2, 3] and tuples as (1, 2, 3)  (T6 thru T8)
+-- * Split class DoD1 into DoM1 and DoD1
+-- * Figure out exactly what types might be passed to the methods
+--   doD1, doC1, doS1 etc to understand how to split DoD1
 
 module Extra.Generics.Show
   ( GShow0, gprecShows, gshowsPrec
@@ -57,8 +68,8 @@ import Debug.Trace
 -- and using overlapping instances.
 
 -- Constraints for doing recusion into subtypes
-type DoRep1 f = (Generic1 f, DoD1 Identity (Rep1 f))
-type DoRep a = (Generic a, Debug a, DoD1 Proxy (Rep a))
+type DoRep1 f = (Generic1 f, DoM1 Identity (Rep1 f))
+type DoRep a = (Generic a, Debug a, DoM1 Proxy (Rep a))
 
 type Debug a = Typeable a
 
@@ -78,25 +89,23 @@ instance (DoNamed p f, DoNamed p g) =>      DoNamed p (f :*: g)    where doNamed
 instance (Selector c, DoS1 p f) =>          DoNamed p (M1 S c f)   where doNamed p x'@(M1 x) = [(G.selName x', doS1 p x)]
 instance                                    DoNamed p U1           where doNamed _ U1 = []
 
-class                                       DoC1 p c f             where doC1 :: forall a. Debug a => p (Rd a) -> String -> Fixity -> M1 C c f a -> C1Result
-instance DoFields p f =>           DoC1 p ('MetaCons s y 'False) f where doC1 p name fixity (M1 x) = doNormal name fixity (zip [0..] (doFields p x))
-instance DoNamed p f =>            DoC1 p ('MetaCons s y 'True) f  where doC1 p name fixity (M1 x) = doRecord name fixity (zip [0..] (doNamed p x))
+class                                       DoC1 p c f             where doConstructor :: forall a. Debug a => p (Rd a) -> String -> Fixity -> M1 C c f a -> C1Result
+instance DoFields p f =>           DoC1 p ('MetaCons s y 'False) f where doConstructor p name fixity (M1 x) = doNormal name fixity (zip [0..] (doFields p (trace ("doConstructor Fields") x)))
+instance DoNamed p f =>            DoC1 p ('MetaCons s y 'True) f  where doConstructor p name fixity (M1 x) = doRecord name fixity (zip [0..] (doNamed p (trace ("doConstructor Named") x)))
 
-class                                       DoType p d f           where doType :: forall a. Debug a => p (Rd a) -> M1 D d f a -> D1Result
-instance (DoD1 p f, Typeable f, Datatype d) => DoType p d f           where doType p x'@(M1 x) | G.datatypeName x' == "Top" && G.moduleName x' == "Extra.Generics.Show" = doD1 p (trace ("doTop " ++ show (typeOf x)) x)
-                                                                            doType p (M1 x) = doD1 p x
+class                                       DoDatatype p d f       where doDatatype :: forall a. Debug a => p (Rd a) -> M1 D d f a -> D1Result
+instance (DoD1 p f, Typeable f, Datatype d) => DoDatatype p d f    where doDatatype p x'@(M1 x) | G.datatypeName x' == "Top" && G.moduleName x' == "Extra.Generics.Show" = doD1 p (trace ("doDatatype " ++ G.datatypeName x') x)
+                                                                         doDatatype p x'@(M1 x) = doD1 p (trace ("doDatatype " ++ G.datatypeName x') x)
 
 class                                       DoD1 p f               where doD1 :: forall a. Debug a => p (Rd a) -> f a -> D1Result
-instance DoType p d f =>                    DoD1 p (M1 D d f)      where doD1 p x@(M1 _) = doType p x
-instance (DoD1 p f, DoD1 p g) =>            DoD1 p (f :+: g)       where doD1 p (L1 x) = doD1 p x
-                                                                         doD1 p (R1 y) = doD1 p y
-instance (Constructor c, DoC1 p c f)  =>    DoD1 p (M1 C c f)      where doD1 p x = doC1 p (G.conName x) (G.conFixity x) x
+instance (DoDatatype p d f, Datatype d) =>  DoD1 p (M1 D d f)      where doD1 p x@(M1 x') = doDatatype p (trace ("doD1 " ++ G.datatypeName x) x)
+instance (DoD1 p f, DoD1 p g) =>            DoD1 p (f :+: g)       where doD1 p (L1 x) = doD1 p (trace "doD1 (f :+: g) L" x)
+                                                                         doD1 p (R1 y) = doD1 p (trace "doD1 (f :+: g) R" y)
+instance (Constructor c, DoC1 p c f)  =>    DoD1 p (M1 C c f)      where doD1 p x = doConstructor p (G.conName x) (G.conFixity x) (trace ("doD1 M1 C " <> G.conName x) x)
 instance                                    DoD1 p V1              where doD1 _ v = case v of {}
 
-{-
-class                                       DoM1 p f               where doM1 :: p (Rd a) -> f a -> D1Result
-instance (Datatype d, DoD1 p f) =>          DoM1 p (M1 D d f)      where doM1 p (M1 x) = doD1 p (G.datatypeName x) (G.moduleName x) (G.packageName x) (G.isNewtype x) x
--}
+class                                       DoM1 p f               where doM1 :: forall a. Debug a => p (Rd a) -> f a -> D1Result
+instance (DoDatatype p d f, Datatype d) =>  DoM1 p (M1 D d f)      where doM1 p x@(M1 x') = doD1 p x
 
 -- customization for generic Show --
 
@@ -119,8 +128,8 @@ type S1Result = PrecShowS -- The result of a single field of a constructor
 type C1Result = PrecShowS -- Result of processing one constructors
 type D1Result = PrecShowS -- Result of processing a type value
 
-doTop :: GShow a => p -> Top a -> S1Result
-doTop _p (Top a) _prec s = gshow a <> s
+doTop :: (Generic a, Debug a, DoM1 Proxy (Rep a)) => p -> Top a -> S1Result
+doTop _p (Top a) _prec s = "<<TOP>>" <> gshow a <> s
 
 doLeaf :: Show a => p -> a -> S1Result
 doLeaf _p a _prec s = show a <> s
@@ -128,11 +137,11 @@ doLeaf _p a _prec s = show a <> s
 doUnboxed :: Show a => p -> a -> S1Result
 doUnboxed _p a _prec s = show a <> s
 
-doRecursion :: (Generic a, DoD1 Proxy (Rep a), Debug a) => p -> a -> S1Result
+doRecursion :: (Generic a, DoM1 Proxy (Rep a), Debug a) => p -> a -> S1Result
 doRecursion _p a = flip gshowsPrec a
 
 -- Rec1 marks a field (S1) which is itself a record
-doRec1 :: (Generic1 f, DoD1 Identity (Rep1 f)) => forall a. Debug a => Rd a -> f a -> S1Result
+doRec1 :: (Generic1 f, DoM1 Identity (Rep1 f)) => forall a. Debug a => Rd a -> f a -> S1Result
 doRec1 sp r = flip (uncurry gLiftShowsPrec sp) r
 
 -- Par1 marks a field (S1) which is just a type parameter
@@ -158,7 +167,7 @@ doRecord cname (Infix _ _) ks = showRecord ("(" ++ cname ++ ")") (foldl1 Show.ap
 ---------------------------------------------------
 
 -- | Generic representation of 'Show' types.
-type GShow0 = DoD1 Proxy
+type GShow0 = DoM1 Proxy
 
 newtype Top a = Top {unTop :: a} deriving Generic
 infixr 0 `Top`
@@ -170,7 +179,7 @@ infixr 0 `Top`
 --   'showsPrec' = 'gshowsPrec'
 -- @
 gprecShows :: forall a. (Generic a, Debug a, GShow0 (Rep a)) => a -> PrecShowS
-gprecShows = doD1 (Proxy :: Proxy (Rd a)) . from
+gprecShows = doM1 (Proxy :: Proxy (Rd a)) . from
 
 gshowsPrec :: (Generic a, Debug a, GShow0 (Rep a)) => Int -> a -> ShowS
 gshowsPrec = flip gprecShows
@@ -179,14 +188,14 @@ gshowsPrec = flip gprecShows
 -- class Show1 (f :: * -> *) where
 --   liftShowsPrec :: (Int -> a -> ShowS) -> ([a] -> ShowS) -> Int -> f a -> ShowS
 --   liftShowsList :: (Int -> a -> ShowS) -> ([a] -> ShowS) -> [f a] -> ShowS
-type GShow1 = DoD1 Identity
+type GShow1 = DoM1 Identity
 
 gLiftPrecShows ::
   (GShow1 f, Debug a)
   => (Int -> a -> ShowS)
   -> ([a] -> ShowS)
   -> f a -> PrecShowS
-gLiftPrecShows = curry (doD1 . Identity)
+gLiftPrecShows = curry (doM1 . Identity)
 
 -- | Generic 'liftShowsPrec'.
 gLiftShowsPrec ::
@@ -205,7 +214,7 @@ data Tree a = Leaf a | Node (Tree a) (Tree a) deriving (Generic, Show)
 data WithInt a = WithInt Int a deriving (Generic, Show)
 
 
-type GShow a = (Generic a, Debug a, DoD1 Proxy (Rep a))
+type GShow a = (Generic a, Debug a, DoM1 Proxy (Rep a))
 
 gshow :: GShow a => a -> String
 gshow x = gshows x ""
