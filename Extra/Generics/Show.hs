@@ -38,7 +38,7 @@ import Text.Show.Combinators (PrecShowS, {-ShowFields,-} noFields, showField, sh
 import qualified Text.Show.Combinators as Show (appendFields)
 
 -- For primitive instances
-import Data.Typeable (Typeable, typeRep)
+import Data.Typeable (Typeable, typeOf)
 
 -- For tests
 import Language.Haskell.TH (location)
@@ -47,7 +47,7 @@ import Language.Haskell.TH.Instances ()
 
 -- for debug
 import Debug.Trace
-import GHC.TypeLits
+--import GHC.TypeLits
 
 -- The K1 instance had constraint Show a, which means that every field
 -- traversed must have a Show instance.  I removed this constraint,
@@ -58,30 +58,36 @@ import GHC.TypeLits
 
 -- Constraints for doing recusion into subtypes
 type DoRep1 f = (Generic1 f, DoD1 Identity (Rep1 f))
-type DoRep a = (Generic a, DoD1 Proxy (Rep a))
+type DoRep a = (Generic a, Debug a, DoD1 Proxy (Rep a))
 
-class                                       DoS1 p f               where doS1 :: p (Rd a) -> f a -> S1Result
+type Debug a = Typeable a
+
+class                                       DoS1 p f               where doS1 :: forall a. Debug a => p (Rd a) -> f a -> S1Result
 instance DoRep a =>                         DoS1 p (K1 R a)        where doS1 p (K1 a) = doRecursion p a
 instance DoRep1 f =>                        DoS1 Identity (Rec1 f) where doS1 (Identity st) (Rec1 r) = doRec1 st r
 instance                                    DoS1 Identity Par1     where doS1 (Identity st) (Par1 a) = doPar1 st a
 instance (Show1 f, DoS1 p g) =>             DoS1 p (f :.: g)       where doS1 p (Comp1 c) = doComp1 p c
 
-class                                       DoFields p f           where doFields :: p (Rd a) -> f a -> [S1Result]
+class                                       DoFields p f           where doFields :: forall a. Debug a => p (Rd a) -> f a -> [S1Result]
 instance (DoFields p f, DoFields p g) =>    DoFields p (f :*: g)   where doFields p (x :*: y) = doFields p x <> doFields p y
 instance DoS1 p f =>                        DoFields p (M1 S c f)  where doFields p (M1 x) = [doS1 p x]
 instance                                    DoFields p U1          where doFields _ U1 = []
 
-class                                       DoNamed p f            where doNamed :: p (Rd a) -> f a -> [(String, S1Result)]
+class                                       DoNamed p f            where doNamed :: forall a. Debug a => p (Rd a) -> f a -> [(String, S1Result)]
 instance (DoNamed p f, DoNamed p g) =>      DoNamed p (f :*: g)    where doNamed p (x :*: y) = doNamed p x <> doNamed p y
 instance (Selector c, DoS1 p f) =>          DoNamed p (M1 S c f)   where doNamed p x'@(M1 x) = [(G.selName x', doS1 p x)]
 instance                                    DoNamed p U1           where doNamed _ U1 = []
 
-class                                       DoC1 p c f             where doC1 :: p (Rd a) -> String -> Fixity -> M1 C c f a -> C1Result
+class                                       DoC1 p c f             where doC1 :: forall a. Debug a => p (Rd a) -> String -> Fixity -> M1 C c f a -> C1Result
 instance DoFields p f =>           DoC1 p ('MetaCons s y 'False) f where doC1 p name fixity (M1 x) = doNormal name fixity (zip [0..] (doFields p x))
 instance DoNamed p f =>            DoC1 p ('MetaCons s y 'True) f  where doC1 p name fixity (M1 x) = doRecord name fixity (zip [0..] (doNamed p x))
 
-class                                       DoD1 p f               where doD1 :: p (Rd a) -> f a -> D1Result
-instance (Datatype d, DoD1 p f) =>          DoD1 p (M1 D d f)      where doD1 p (M1 x) = doD1 p x
+class                                       DoType p d f           where doType :: forall a. Debug a => p (Rd a) -> M1 D d f a -> D1Result
+instance (DoD1 p f, Typeable f, Datatype d) => DoType p d f           where doType p x'@(M1 x) | G.datatypeName x' == "Top" && G.moduleName x' == "Extra.Generics.Show" = doD1 p (trace ("doTop " ++ show (typeOf x)) x)
+                                                                            doType p (M1 x) = doD1 p x
+
+class                                       DoD1 p f               where doD1 :: forall a. Debug a => p (Rd a) -> f a -> D1Result
+instance DoType p d f =>                    DoD1 p (M1 D d f)      where doD1 p x@(M1 _) = doType p x
 instance (DoD1 p f, DoD1 p g) =>            DoD1 p (f :+: g)       where doD1 p (L1 x) = doD1 p x
                                                                          doD1 p (R1 y) = doD1 p y
 instance (Constructor c, DoC1 p c f)  =>    DoD1 p (M1 C c f)      where doD1 p x = doC1 p (G.conName x) (G.conFixity x) x
@@ -122,11 +128,11 @@ doLeaf _p a _prec s = show a <> s
 doUnboxed :: Show a => p -> a -> S1Result
 doUnboxed _p a _prec s = show a <> s
 
-doRecursion :: (Generic a, DoD1 Proxy (Rep a)) => p -> a -> S1Result
+doRecursion :: (Generic a, DoD1 Proxy (Rep a), Debug a) => p -> a -> S1Result
 doRecursion _p a = flip gshowsPrec a
 
 -- Rec1 marks a field (S1) which is itself a record
-doRec1 :: (Generic1 f, DoD1 Identity (Rep1 f)) => Rd a -> f a -> S1Result
+doRec1 :: (Generic1 f, DoD1 Identity (Rep1 f)) => forall a. Debug a => Rd a -> f a -> S1Result
 doRec1 sp r = flip (uncurry gLiftShowsPrec sp) r
 
 -- Par1 marks a field (S1) which is just a type parameter
@@ -134,7 +140,7 @@ doPar1 :: Rd a -> a -> S1Result
 doPar1 (op1', _) a = flip op1' a
 
 -- Comp1 is the marks a field (S1) of type (:.:), composition
-doComp1 :: (Show1 f, DoS1 p g) => p (Rd a) -> f (g a) -> S1Result
+doComp1 :: (Show1 f, DoS1 p g, Debug a) => p (Rd a) -> f (g a) -> S1Result
 doComp1 p c = flip (liftShowsPrec (flip (doS1 p)) (showListWith (flip (doS1 p) 0))) c
 
 -- Handle the unnamed fields of a constructor (C1)
@@ -154,7 +160,7 @@ doRecord cname (Infix _ _) ks = showRecord ("(" ++ cname ++ ")") (foldl1 Show.ap
 -- | Generic representation of 'Show' types.
 type GShow0 = DoD1 Proxy
 
-newtype Top a = Top a deriving Generic
+newtype Top a = Top {unTop :: a} deriving Generic
 infixr 0 `Top`
 
 -- | Generic 'showsPrec'.
@@ -163,10 +169,10 @@ infixr 0 `Top`
 -- instance 'Show' MyType where
 --   'showsPrec' = 'gshowsPrec'
 -- @
-gprecShows :: (Generic a, GShow0 (Rep a)) => a -> PrecShowS
-gprecShows = doD1 Proxy . from
+gprecShows :: forall a. (Generic a, Debug a, GShow0 (Rep a)) => a -> PrecShowS
+gprecShows = doD1 (Proxy :: Proxy (Rd a)) . from
 
-gshowsPrec :: (Generic a, GShow0 (Rep a)) => Int -> a -> ShowS
+gshowsPrec :: (Generic a, Debug a, GShow0 (Rep a)) => Int -> a -> ShowS
 gshowsPrec = flip gprecShows
 
 -- | Generic representation of 'Data.Functor.Classes.Show1' types.
@@ -176,7 +182,7 @@ gshowsPrec = flip gprecShows
 type GShow1 = DoD1 Identity
 
 gLiftPrecShows ::
-  GShow1 f
+  (GShow1 f, Debug a)
   => (Int -> a -> ShowS)
   -> ([a] -> ShowS)
   -> f a -> PrecShowS
@@ -184,7 +190,7 @@ gLiftPrecShows = curry (doD1 . Identity)
 
 -- | Generic 'liftShowsPrec'.
 gLiftShowsPrec ::
-  (Generic1 f, GShow1 (Rep1 f))
+  (Generic1 f, GShow1 (Rep1 f), Debug a)
   => (Int -> a -> ShowS)
   -> ([a] -> ShowS)
   -> Int
@@ -198,13 +204,15 @@ data Rose a = Fork a [Rose a] deriving (Generic, Show)
 data Tree a = Leaf a | Node (Tree a) (Tree a) deriving (Generic, Show)
 data WithInt a = WithInt Int a deriving (Generic, Show)
 
-type GShow a = (Generic a, DoD1 Proxy (Rep a))
+
+type GShow a = (Generic a, Debug a, DoD1 Proxy (Rep a))
 
 gshow :: GShow a => a -> String
 gshow x = gshows x ""
 gshows :: GShow a => a -> ShowS
 gshows = gshowsPrec 0
 
+myshow :: (DoS1 Proxy (K1 R a), Debug a) => a -> String
 myshow a = gshow (Top a)
 
 _tests :: IO ()
