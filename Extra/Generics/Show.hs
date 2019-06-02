@@ -91,13 +91,7 @@ instance                                    DoNamed p U1           where doNamed
 -- a missing constraint on an unexported GHC.Generics class.
 class                                       DoConstructor p c f    where doConstructor :: forall a. p (Rd a) -> (String, String, String, Bool) -> (String,  Fixity) -> M1 C c f a -> C1Result
 instance (DoFields p f, KnownSymbol s) =>   DoConstructor p ('MetaCons s y 'False) f
-                                                                   where doConstructor p ti@("(,)", "GHC.Tuple", _, _) ci@("(,)", _) (M1 x) = doTuple (doFields p ti ci x)
-                                                                         doConstructor p ti@("(,,)", "GHC.Tuple", _, _) ci@("(,,)", _) (M1 x) = doTuple (doFields p ti ci x)
-                                                                         doConstructor p ti@("(,,,)", "GHC.Tuple", _, _) ci@("(,,,)", _) (M1 x) = doTuple (doFields p ti ci x)
-                                                                         doConstructor p ti@("(,,,,)", "GHC.Tuple", _, _) ci@("(,,,,)", _) (M1 x) = doTuple (doFields p ti ci x)
-                                                                         doConstructor p ti@("(,,,,,)", "GHC.Tuple", _, _) ci@("(,,,,,)", _) (M1 x) = doTuple (doFields p ti ci x)
-                                                                         doConstructor p ti@("(,,,,,,)", "GHC.Tuple", _, _) ci@("(,,,,,,)", _) (M1 x) = doTuple (doFields p ti ci x)
-                                                                         doConstructor p ti ci (M1 x) = doNormal ti ci (zip [0..] (doFields p ti ci x))
+                                                                   where doConstructor p ti ci (M1 x) = doNormal ti ci (zip [0..] (doFields p ti ci x))
 instance DoNamed p f =>   DoConstructor p ('MetaCons s y 'True) f  where doConstructor p ti ci (M1 x) = doRecord ti ci (zip [0..] (doNamed p ti ci x))
 
 class                                       DoDatatype p d f       where doDatatype :: forall a. p (Rd a) -> (String, String, String, Bool) -> M1 D d f a -> D1Result
@@ -125,6 +119,28 @@ instance {-# OVERLAPPING #-}                DoS1 p (K1 R Char)     where doS1 p 
 instance {-# OVERLAPPING #-}                DoS1 p (K1 R String)   where doS1 p ti ci (K1 a) = doLeaf p ti ci a
 instance {-# OVERLAPPING #-} DoS1 Proxy (K1 R a) =>
                                             DoS1 p (K1 R [a])      where doS1 p ti ci (K1 xs) = doList p ti ci (fmap myshows xs)
+instance {-# OVERLAPPING #-}                DoS1 p (K1 R ())       where doS1 p ti ci (K1 ()) = doTuple p ti ci []
+instance {-# OVERLAPPING #-} (DoS1 Proxy (K1 R a),
+                              DoS1 Proxy (K1 R b)) =>
+                                            DoS1 p (K1 R (a, b))   where doS1 p ti ci (K1 (a, b)) = doTuple p ti ci [myshows a, myshows b]
+instance {-# OVERLAPPING #-} (DoS1 Proxy (K1 R a),
+                              DoS1 Proxy (K1 R b),
+                              DoS1 Proxy (K1 R c)) =>
+                                            DoS1 p (K1 R (a, b, c))
+                                                                   where doS1 p ti ci (K1 (a, b, c)) = doTuple p ti ci [myshows a, myshows b, myshows c]
+instance {-# OVERLAPPING #-} (DoS1 Proxy (K1 R a),
+                              DoS1 Proxy (K1 R b),
+                              DoS1 Proxy (K1 R c),
+                              DoS1 Proxy (K1 R d)) =>
+                                            DoS1 p (K1 R (a, b, c, d))
+                                                                   where doS1 p ti ci (K1 (a, b, c, d)) = doTuple p ti ci [myshows a, myshows b, myshows c, myshows d]
+instance {-# OVERLAPPING #-} (DoS1 Proxy (K1 R a),
+                              DoS1 Proxy (K1 R b),
+                              DoS1 Proxy (K1 R c),
+                              DoS1 Proxy (K1 R d),
+                              DoS1 Proxy (K1 R e)) =>
+                                            DoS1 p (K1 R (a, b, c, d, e))
+                                                                   where doS1 p ti ci (K1 (a, b, c, d, e)) = doTuple p ti ci [myshows a, myshows b, myshows c, myshows d, myshows e]
 
 -- Instances for unboxed types
 instance                                    DoS1 Proxy (URec Int)  where doS1 p ti ci a = doUnboxed p ti ci a
@@ -141,6 +157,10 @@ doLeaf _p _ti _ci a _prec = shows a
 doList :: p -> (String, String, String, Bool) -> (String, Fixity) -> [ShowS] -> S1Result
 doList _ _ _ [] = \_ -> showChar '[' . showChar ']'
 doList _ _ _ xs = \_ -> showChar '[' . foldl1 (\a b -> a . showString "," . b) xs . showChar ']'
+
+doTuple :: p -> (String, String, String, Bool) -> (String, Fixity) -> [ShowS] -> S1Result
+doTuple _ _ _ [] = \_ -> showString "()"
+doTuple _ _ _ ks = \_ -> showChar '(' . foldl1 (\a b -> a . showString "," . b) ks . showChar ')'
 
 doUnboxed :: Show a => p -> (String, String, String, Bool) -> (String, Fixity) -> a -> S1Result
 doUnboxed _p _ti _ci a _prec s = show a <> s
@@ -174,11 +194,6 @@ doRecord _ (cname, _) [] = showRecord cname noFields
 doRecord ("Top", "Extra.Generics.Show", _, _) _ [(_, (_, r))] = r
 doRecord _ (cname, Prefix) ks = showRecord cname (foldl1 Show.appendFields (fmap (uncurry showField) (fmap snd ks)))
 doRecord _ (cname, Infix _ _) ks = showRecord ("(" ++ cname ++ ")") (foldl1 Show.appendFields (fmap (uncurry showField) (fmap snd ks)))
-
---doTuple :: [(Int, (String, S1Result))] -> C1Result
---doTuple :: [(Int, (String, S1Result))] -> Int -> ShowS
-doTuple :: [S1Result] -> Int -> ShowS
-doTuple ks _ = showChar '(' . foldl1 (\a b -> a . showString "," . b) (fmap (\x -> x 0) ks) . showChar ')'
 
 ---------------------------------------------------
 
