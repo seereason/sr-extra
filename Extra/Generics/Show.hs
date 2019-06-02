@@ -191,10 +191,10 @@ infixr 0 `Top`
 -- instance 'Show' MyType where
 --   'showsPrec' = 'gshowsPrec'
 -- @
-gprecShows :: forall a. (Generic a, GShow0 (Rep a)) => a -> PrecShowS
+gprecShows :: forall a. GShow a => a -> PrecShowS
 gprecShows = doM1 (Proxy :: Proxy (Rd a)) . from
 
-gshowsPrec :: (Generic a, GShow0 (Rep a)) => Int -> a -> ShowS
+gshowsPrec :: GShow a => Int -> a -> ShowS
 gshowsPrec = flip gprecShows
 
 -- | Generic representation of 'Data.Functor.Classes.Show1' types.
@@ -220,14 +220,7 @@ gLiftShowsPrec ::
 gLiftShowsPrec op1' op2' =
   flip (gLiftPrecShows op1' op2' . from1)
 
-data Foo = Foo {n :: Int, ch :: Char} deriving (Generic, Show)
-data Bar = Bar [Foo] String deriving (Generic, Show)
-data Rose a = Fork a [Rose a] deriving (Generic, Show)
-data Tree a = Leaf a | Node (Tree a) (Tree a) deriving (Generic, Show)
-data WithInt a = WithInt Int a deriving (Generic, Show)
-
-
-type GShow a = (Generic a, DoM1 Proxy (Rep a))
+type GShow a = (Generic a, GShow0 (Rep a))
 
 gshow :: GShow a => a -> String
 gshow x = gshows x ""
@@ -241,6 +234,12 @@ myshows :: (DoS1 Proxy (K1 R a)) => a -> ShowS
 myshows a = gshows (Top a)
 
 #if !__GHCJS__
+data Foo = Foo {n :: Int, ch :: Char} deriving (Generic, Show)
+data Bar = Bar [Foo] String deriving (Generic, Show)
+data Rose a = Fork a [Rose a] deriving (Generic, Show)
+data Tree a = Leaf a | Node (Tree a) (Tree a) deriving (Generic, Show)
+data WithInt a = WithInt Int a deriving (Generic, Show)
+
 _tests :: IO ()
 _tests = do
   r@Counts{..} <-
