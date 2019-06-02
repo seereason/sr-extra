@@ -3,10 +3,10 @@
 -- without requiring that every type it can operate on have a Show
 -- instance.  It does require an instance for each base type.
 
--- {-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
--- {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -44,7 +44,6 @@ import Data.Functor.Identity (Identity(Identity))
 import Data.Proxy (Proxy(Proxy))
 import GHC.Generics as G
 import GHC.TypeLits
-import Test.HUnit
 import Text.Show.Combinators (PrecShowS, {-ShowFields,-} noFields, showField, showListWith, showInfix, showApp, showCon, showRecord)
 import qualified Text.Show.Combinators as Show (appendFields)
 
@@ -52,9 +51,12 @@ import qualified Text.Show.Combinators as Show (appendFields)
 -- import Data.Typeable (Typeable, typeOf)
 
 -- For tests
+#if !__GHCJS__
+import Test.HUnit
 import Language.Haskell.TH (location)
 import Language.Haskell.TH.Lift (lift)
 import Language.Haskell.TH.Instances ()
+#endif
 
 -- for debug
 -- import Debug.Trace
@@ -258,6 +260,7 @@ myshow a = gshow (Top a)
 myshows :: (DoS1 Proxy (K1 R a)) => a -> ShowS
 myshows a = gshows (Top a)
 
+#if !__GHCJS__
 _tests :: IO ()
 _tests = do
   r@Counts{..} <-
@@ -278,3 +281,4 @@ _tests = do
   case (errors, failures) of
     (0, 0) -> return ()
     _ -> error (show r)
+#endif
