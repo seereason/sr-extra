@@ -21,16 +21,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS -Wall -Wredundant-constraints #-}
 
--- TO DO:
--- * Specialize the Top instance to be invisible OR
---       (But if we have an instance
--- * Figure out how to get gshow 'x' to be "'x'" rather than unboxed stuff
--- * Add primitives
--- * Get lists to render as [1, 2, 3] and tuples as (1, 2, 3)  (T6 thru T8)
--- * Split class DoD1 into DoM1 and DoD1
--- * Figure out exactly what types might be passed to the methods
---   doD1, doC1, doS1 etc to understand how to split DoD1
-
 module Extra.Generics.Show
   ( GShow0, gprecShows, gshowsPrec
   , GShow1, gLiftPrecShows, gLiftShowsPrec
