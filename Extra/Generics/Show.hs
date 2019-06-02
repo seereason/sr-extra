@@ -65,7 +65,7 @@ type DoRep a = (Generic a, DoM1 Proxy (Rep a))
 type DoRep1 f = (Generic1 f, DoM1 Identity (Rep1 f))
 
 class                                       DoS1 p f               where doS1 :: forall a. p (Rd a) -> (String, String, String, Bool) -> (String,  Fixity) -> f a -> S1Result
-instance DoRep a =>                         DoS1 p (K1 R a)        where doS1 p ti ci (K1 a) = doRecursion p ti ci a
+instance {-# OVERLAPPABLE #-} DoRep a =>    DoS1 p (K1 R a)        where doS1 p ti ci (K1 a) = doRecursion p ti ci a
 instance DoRep1 f =>                        DoS1 Identity (Rec1 f) where doS1 (Identity st) ti ci (Rec1 r) = doRec1 st ti ci r
 instance                                    DoS1 Identity Par1     where doS1 (Identity st) ti ci (Par1 a) = doPar1 st ti ci a
 instance (Show1 f, DoS1 p g) =>             DoS1 p (f :.: g)       where doS1 p ti ci (Comp1 c) = doComp1 p ti ci c
@@ -102,42 +102,31 @@ instance (DoDatatype p d f, Datatype d) =>  DoM1 p (M1 D d f)      where doM1 p 
 
 -- customization for generic Show --
 
--- These are needed to do the traversal
-deriving instance Generic Int
-deriving instance Generic Char
-
 -- Instances for primitive types
-instance {-# OVERLAPPING #-}                DoS1 p (K1 R Int)      where doS1 p ti ci (K1 a) = doLeaf p ti ci a
-instance {-# OVERLAPPING #-}                DoS1 p (K1 R Char)     where doS1 p ti ci (K1 a) = doLeaf p ti ci a
-instance {-# OVERLAPPING #-}                DoS1 p (K1 R String)   where doS1 p ti ci (K1 a) = doLeaf p ti ci a
-instance {-# OVERLAPPING #-} DoS1 Proxy (K1 R a) =>
-                                            DoS1 p (K1 R [a])      where doS1 p ti ci (K1 xs) = doList p ti ci (fmap myshows xs)
-instance {-# OVERLAPPING #-}                DoS1 p (K1 R ())       where doS1 p ti ci (K1 ()) = doTuple p ti ci []
-instance {-# OVERLAPPING #-} (DoS1 Proxy (K1 R a),
-                              DoS1 Proxy (K1 R b)) =>
-                                            DoS1 p (K1 R (a, b))   where doS1 p ti ci (K1 (a, b)) = doTuple p ti ci [myshows a, myshows b]
-instance {-# OVERLAPPING #-} (DoS1 Proxy (K1 R a),
-                              DoS1 Proxy (K1 R b),
-                              DoS1 Proxy (K1 R c)) =>
-                                            DoS1 p (K1 R (a, b, c))
-                                                                   where doS1 p ti ci (K1 (a, b, c)) = doTuple p ti ci [myshows a, myshows b, myshows c]
-instance {-# OVERLAPPING #-} (DoS1 Proxy (K1 R a),
-                              DoS1 Proxy (K1 R b),
-                              DoS1 Proxy (K1 R c),
-                              DoS1 Proxy (K1 R d)) =>
-                                            DoS1 p (K1 R (a, b, c, d))
-                                                                   where doS1 p ti ci (K1 (a, b, c, d)) = doTuple p ti ci [myshows a, myshows b, myshows c, myshows d]
-instance {-# OVERLAPPING #-} (DoS1 Proxy (K1 R a),
-                              DoS1 Proxy (K1 R b),
-                              DoS1 Proxy (K1 R c),
-                              DoS1 Proxy (K1 R d),
-                              DoS1 Proxy (K1 R e)) =>
-                                            DoS1 p (K1 R (a, b, c, d, e))
-                                                                   where doS1 p ti ci (K1 (a, b, c, d, e)) = doTuple p ti ci [myshows a, myshows b, myshows c, myshows d, myshows e]
-
--- Instances for unboxed types
-instance                                    DoS1 Proxy (URec Int)  where doS1 p ti ci a = doUnboxed p ti ci a
-instance                                    DoS1 Proxy (URec Char) where doS1 p ti ci a = doUnboxed p ti ci a
+instance                      DoS1 p (K1 R Int)      where doS1 p ti ci (K1 a) = doLeaf p ti ci a
+instance                      DoS1 p (K1 R Char)     where doS1 p ti ci (K1 a) = doLeaf p ti ci a
+instance {-# OVERLAPPING #-}  DoS1 p (K1 R String)   where doS1 p ti ci (K1 a) = doLeaf p ti ci a -- overlaps [a]
+instance DoS1 Proxy (K1 R a) =>
+                              DoS1 p (K1 R [a])      where doS1 p ti ci (K1 xs) = doList p ti ci (fmap myshows xs)
+instance                      DoS1 p (K1 R ())       where doS1 p ti ci (K1 ()) = doTuple p ti ci []
+instance (DoS1 Proxy (K1 R a),
+          DoS1 Proxy (K1 R b)) => DoS1 p (K1 R (a, b))
+                                                     where doS1 p ti ci (K1 (a, b)) = doTuple p ti ci [myshows a, myshows b]
+instance (DoS1 Proxy (K1 R a),
+          DoS1 Proxy (K1 R b),
+          DoS1 Proxy (K1 R c)) => DoS1 p (K1 R (a, b, c))
+                                                     where doS1 p ti ci (K1 (a, b, c)) = doTuple p ti ci [myshows a, myshows b, myshows c]
+instance (DoS1 Proxy (K1 R a),
+          DoS1 Proxy (K1 R b),
+          DoS1 Proxy (K1 R c),
+          DoS1 Proxy (K1 R d)) => DoS1 p (K1 R (a, b, c, d))
+                                                     where doS1 p ti ci (K1 (a, b, c, d)) = doTuple p ti ci [myshows a, myshows b, myshows c, myshows d]
+instance (DoS1 Proxy (K1 R a),
+          DoS1 Proxy (K1 R b),
+          DoS1 Proxy (K1 R c),
+          DoS1 Proxy (K1 R d),
+          DoS1 Proxy (K1 R e)) => DoS1 p (K1 R (a, b, c, d, e))
+                                                     where doS1 p ti ci (K1 (a, b, c, d, e)) = doTuple p ti ci [myshows a, myshows b, myshows c, myshows d, myshows e]
 
 type Rd a = (Int -> a -> ShowS, [a] -> ShowS) -- Like a Reader monad
 type S1Result = PrecShowS -- The result of a single field of a constructor
