@@ -33,6 +33,7 @@ import Data.Foldable (foldl')
 import Data.Functor.Classes (Show1(..))
 import Data.Functor.Identity (Identity(Identity))
 import Data.Proxy (Proxy(Proxy))
+import Generic.Data (gconIndex)
 import GHC.Generics as G
 import GHC.TypeLits
 import Text.Show.Combinators (PrecShowS, {-ShowFields,-} noFields, showField, showListWith, showInfix, showApp, showCon, showRecord)
@@ -60,41 +61,44 @@ import Language.Haskell.TH.Instances ()
 -- Generic instance.  This can be done by creating a new class DoK1
 -- and using overlapping instances.
 
+type TypeTuple = (String, String, String, Bool)
+type ConstrTuple = (Int, String, Fixity)
+
 -- Constraints for doing recusion into subtypes
 type DoRep a = (Generic a, DoM1 Proxy (Rep a))
 type DoRep1 f = (Generic1 f, DoM1 Identity (Rep1 f))
 
-class                                       DoS1 p f               where doS1 :: forall a. p (Rd a) -> (String, String, String, Bool) -> (String,  Fixity) -> f a -> S1Result
+class                                       DoS1 p f               where doS1 :: forall a. p (Rd a) -> TypeTuple -> ConstrTuple -> f a -> S1Result
 instance {-# OVERLAPPABLE #-} DoRep a =>    DoS1 p (K1 R a)        where doS1 p ti ci (K1 a) = doRecursion p ti ci a
 instance DoRep1 f =>                        DoS1 Identity (Rec1 f) where doS1 (Identity st) ti ci (Rec1 r) = doRec1 st ti ci r
 instance                                    DoS1 Identity Par1     where doS1 (Identity st) ti ci (Par1 a) = doPar1 st ti ci a
 instance (Show1 f, DoS1 p g) =>             DoS1 p (f :.: g)       where doS1 p ti ci (Comp1 c) = doComp1 p ti ci c
 
-class                                       DoFields p f           where doFields :: forall a. p (Rd a) -> (String, String, String, Bool) -> (String,  Fixity) -> f a -> [S1Result]
+class                                       DoFields p f           where doFields :: forall a. p (Rd a) -> TypeTuple -> ConstrTuple -> f a -> [S1Result]
 instance (DoFields p f, DoFields p g) =>    DoFields p (f :*: g)   where doFields p ti ci (x :*: y) = doFields p ti ci x <> doFields p ti ci y
 instance (DoS1 p f, Selector s) =>          DoFields p (M1 S s f)  where doFields p ti ci (M1 x) = [doS1 p ti ci x]
 instance                                    DoFields p U1          where doFields _ _ _ U1 = []
 
-class                                       DoNamed p f            where doNamed :: forall a. p (Rd a) -> (String, String, String, Bool) -> (String,  Fixity) -> f a -> [(String, S1Result)]
+class                                       DoNamed p f            where doNamed :: forall a. p (Rd a) -> TypeTuple -> ConstrTuple -> f a -> [(String, S1Result)]
 instance (DoNamed p f, DoNamed p g) =>      DoNamed p (f :*: g)    where doNamed p ti ci (x :*: y) = doNamed p ti ci x <> doNamed p ti ci y
 instance (Selector c, DoS1 p f) =>          DoNamed p (M1 S c f)   where doNamed p ti ci x'@(M1 x) = [(G.selName x', doS1 p ti ci x)]
 instance                                    DoNamed p U1           where doNamed _ _ _ U1 = []
 
 -- Its tempting to add the Constructor constraint here but it leads to
 -- a missing constraint on an unexported GHC.Generics class.
-class                                       DoConstructor p c f    where doConstructor :: forall a. p (Rd a) -> (String, String, String, Bool) -> (String,  Fixity) -> M1 C c f a -> C1Result
+class                                       DoConstructor p c f    where doConstructor :: forall a. p (Rd a) -> TypeTuple -> ConstrTuple -> M1 C c f a -> C1Result
 instance (DoFields p f, KnownSymbol s) =>   DoConstructor p ('MetaCons s y 'False) f
                                                                    where doConstructor p ti ci (M1 x) = doNormal ti ci (zip [0..] (doFields p ti ci x))
 instance DoNamed p f =>   DoConstructor p ('MetaCons s y 'True) f  where doConstructor p ti ci (M1 x) = doRecord ti ci (zip [0..] (doNamed p ti ci x))
 
-class                                       DoDatatype p d f       where doDatatype :: forall a. p (Rd a) -> (String, String, String, Bool) -> M1 D d f a -> D1Result
+class                                       DoDatatype p d f       where doDatatype :: forall a. p (Rd a) -> TypeTuple -> M1 D d f a -> D1Result
 instance (DoD1 p f, Datatype d) =>          DoDatatype p d f       where doDatatype p ti (M1 x) = doD1 p ti x
 
-class                                       DoD1 p f               where doD1 :: forall a. p (Rd a) -> (String, String, String, Bool) -> f a -> D1Result
+class                                       DoD1 p f               where doD1 :: forall a. p (Rd a) -> TypeTuple -> f a -> D1Result
 instance (DoDatatype p d f, Datatype d) =>  DoD1 p (M1 D d f)      where doD1 p ti x@(M1 _) = doDatatype p ti x
 instance (DoD1 p f, DoD1 p g) =>            DoD1 p (f :+: g)       where doD1 p ti (L1 x) = doD1 p ti x
                                                                          doD1 p ti (R1 y) = doD1 p ti y
-instance (Constructor c, DoConstructor p c f) => DoD1 p (M1 C c f) where doD1 p ti x = doConstructor p ti (G.conName x, G.conFixity x) x
+instance (Constructor c, DoConstructor p c f) => DoD1 p (M1 C c f) where doD1 p ti x = doConstructor p ti (gconIndex x, G.conName x, G.conFixity x) x
 instance                                    DoD1 p V1              where doD1 _ _ v = case v of {}
 
 class                                       DoM1 p f               where doM1 :: forall a. p (Rd a) -> f a -> D1Result
@@ -133,49 +137,49 @@ type S1Result = PrecShowS -- The result of a single field of a constructor
 type C1Result = PrecShowS -- Result of processing one constructors
 type D1Result = PrecShowS -- Result of processing a type value
 
-doLeaf :: Show a => p -> (String, String, String, Bool) -> (String, Fixity) -> a -> S1Result
+doLeaf :: Show a => p -> TypeTuple -> ConstrTuple -> a -> S1Result
 doLeaf _p _ti _ci a _prec = shows a
 
-doList :: p -> (String, String, String, Bool) -> (String, Fixity) -> [ShowS] -> S1Result
+doList :: p -> TypeTuple -> ConstrTuple -> [ShowS] -> S1Result
 doList _ _ _ [] = \_ -> showChar '[' . showChar ']'
 doList _ _ _ xs = \_ -> showChar '[' . foldl1 (\a b -> a . showString "," . b) xs . showChar ']'
 
-doTuple :: p -> (String, String, String, Bool) -> (String, Fixity) -> [ShowS] -> S1Result
+doTuple :: p -> TypeTuple -> ConstrTuple -> [ShowS] -> S1Result
 doTuple _ _ _ [] = \_ -> showString "()"
 doTuple _ _ _ ks = \_ -> showChar '(' . foldl1 (\a b -> a . showString "," . b) ks . showChar ')'
 
-doUnboxed :: Show a => p -> (String, String, String, Bool) -> (String, Fixity) -> a -> S1Result
+doUnboxed :: Show a => p -> TypeTuple -> ConstrTuple -> a -> S1Result
 doUnboxed _p _ti _ci a _prec s = show a <> s
 
-doRecursion :: (Generic a, DoM1 Proxy (Rep a)) => p -> (String, String, String, Bool) -> (String,  Fixity) -> a -> S1Result
+doRecursion :: (Generic a, DoM1 Proxy (Rep a)) => p -> TypeTuple -> ConstrTuple -> a -> S1Result
 doRecursion _p _ti _ci a = flip gshowsPrec a
 
 -- Rec1 marks a field (S1) which is itself a record
-doRec1 :: (Generic1 f, DoM1 Identity (Rep1 f)) => forall a. Rd a -> (String, String, String, Bool) -> (String,  Fixity) -> f a -> S1Result
+doRec1 :: (Generic1 f, DoM1 Identity (Rep1 f)) => forall a. Rd a -> TypeTuple -> ConstrTuple -> f a -> S1Result
 doRec1 sp _ti _ci r = flip (uncurry gLiftShowsPrec sp) r
 
 -- Par1 marks a field (S1) which is just a type parameter
-doPar1 :: Rd a -> (String, String, String, Bool) -> (String,  Fixity) -> a -> S1Result
+doPar1 :: Rd a -> TypeTuple -> ConstrTuple -> a -> S1Result
 doPar1 (op1', _) _ti _ci a = flip op1' a
 
 -- Comp1 is the marks a field (S1) of type (:.:), composition
-doComp1 :: (Show1 f, DoS1 p g) => p (Rd a) -> (String, String, String, Bool) -> (String,  Fixity) -> f (g a) -> S1Result
+doComp1 :: (Show1 f, DoS1 p g) => p (Rd a) -> TypeTuple -> ConstrTuple -> f (g a) -> S1Result
 doComp1 p ti ci c = flip (liftShowsPrec (flip (doS1 p ti ci)) (showListWith (flip (doS1 p ti ci) 0))) c
 
 -- Handle the unnamed fields of a constructor (C1)
-doNormal :: (String, String, String, Bool) -> (String, Fixity) -> [(Int, S1Result)] -> C1Result
-doNormal _ (name, Infix _ fy) (k1 : k2 : ks) = foldl' showApp (showInfix name fy (snd k1) (snd k2)) (fmap snd ks)
-doNormal _ (name, Infix _ _) ks =              foldl' showApp (showCon ("(" ++ name ++ ")")) (fmap snd ks)
-doNormal _ (name, Prefix) ks =                   foldl' showApp (showCon         name        ) (fmap snd ks)
+doNormal :: TypeTuple -> ConstrTuple -> [(Int, S1Result)] -> C1Result
+doNormal _ (_, name, Infix _ fy) (k1 : k2 : ks) = foldl' showApp (showInfix name fy (snd k1) (snd k2)) (fmap snd ks)
+doNormal _ (_, name, Infix _ _) ks =              foldl' showApp (showCon ("(" ++ name ++ ")")) (fmap snd ks)
+doNormal _ (_, name, Prefix) ks =                   foldl' showApp (showCon         name        ) (fmap snd ks)
 
 -- Handle the named fields of a constructor (C1)
-doRecord :: (String, String, String, Bool) -> (String, Fixity) -> [(Int, (String, S1Result))] -> C1Result
-doRecord _ (cname, _) [] = showRecord cname noFields
+doRecord :: TypeTuple -> ConstrTuple -> [(Int, (String, S1Result))] -> C1Result
+doRecord _ (_, cname, _) [] = showRecord cname noFields
 -- Do not render the Top type, it is private to this module and is
 -- only used to get the recursion to work.
 doRecord ("Top", "Extra.Generics.Show", _, _) _ [(_, (_, r))] = r
-doRecord _ (cname, Prefix) ks = showRecord cname (foldl1 Show.appendFields (fmap (uncurry showField) (fmap snd ks)))
-doRecord _ (cname, Infix _ _) ks = showRecord ("(" ++ cname ++ ")") (foldl1 Show.appendFields (fmap (uncurry showField) (fmap snd ks)))
+doRecord _ (_, cname, Prefix) ks = showRecord cname (foldl1 Show.appendFields (fmap (uncurry showField) (fmap snd ks)))
+doRecord _ (_, cname, Infix _ _) ks = showRecord ("(" ++ cname ++ ")") (foldl1 Show.appendFields (fmap (uncurry showField) (fmap snd ks)))
 
 ---------------------------------------------------
 
