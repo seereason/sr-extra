@@ -117,12 +117,11 @@ deriving instance Generic Int
 deriving instance Generic Char
 
 -- Instances for primitive types
-instance {-# OVERLAPPING #-}                DoS1 p (K1 R Int)      where doS1 p ti ci (K1 a) = doLeaf p a
-instance {-# OVERLAPPING #-}                DoS1 p (K1 R Char)     where doS1 p ti ci (K1 a) = doLeaf p a
-instance {-# OVERLAPPING #-}                DoS1 p (K1 R String)   where doS1 p ti ci (K1 a) = doLeaf p a
-instance {-# OVERLAPPING #-} (DoS1 Proxy (K1 R a), DoM1 Proxy (Rep a)) =>
-                                            DoS1 p (K1 R [a])      where doS1 p ti ci (K1 []) = \_ -> showChar '[' . showChar ']'
-                                                                         doS1 p ti ci (K1 xs) = \_ -> showChar '[' . foldl1 (\a b -> a . showString "," . b) (fmap myshows xs) . showChar ']'
+instance {-# OVERLAPPING #-}                DoS1 p (K1 R Int)      where doS1 p ti ci (K1 a) = doLeaf p ti ci a
+instance {-# OVERLAPPING #-}                DoS1 p (K1 R Char)     where doS1 p ti ci (K1 a) = doLeaf p ti ci a
+instance {-# OVERLAPPING #-}                DoS1 p (K1 R String)   where doS1 p ti ci (K1 a) = doLeaf p ti ci a
+instance {-# OVERLAPPING #-} DoS1 Proxy (K1 R a) =>
+                                            DoS1 p (K1 R [a])      where doS1 p ti ci (K1 xs) = doList (fmap myshows xs)
 
 -- Instances for unboxed types
 instance                                    DoS1 Proxy (URec Int)  where doS1 p ti ci a = doUnboxed p a
@@ -136,11 +135,12 @@ type D1Result = PrecShowS -- Result of processing a type value
 doTop :: (Generic a, DoM1 Proxy (Rep a)) => p -> Top a -> S1Result
 doTop _p (Top a) _prec s = "<<TOP>>" <> gshow a <> s
 
-doLeaf :: Show a => p -> a -> S1Result
-doLeaf _p a _prec s = show a <> s
+doLeaf :: Show a => p -> (String, String, String, Bool) -> (String, Fixity) -> a -> S1Result
+doLeaf _p _ti _ci a _prec = shows a
 
-doList :: (DoM1 Proxy (Rep a)) => p -> [a] -> S1Result
-doList _p xs _prec = showChar '[' . foldl1 (\a b -> a . showString "," . b) (fmap (\_ -> gshows (Top 'x')) xs) . showChar ']'
+doList :: [ShowS] -> S1Result
+doList [] = \_ -> showChar '[' . showChar ']'
+doList xs = \_ -> showChar '[' . foldl1 (\a b -> a . showString "," . b) xs . showChar ']'
 
 doUnboxed :: Show a => p -> a -> S1Result
 doUnboxed _p a _prec s = show a <> s
