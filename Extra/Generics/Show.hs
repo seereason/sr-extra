@@ -35,6 +35,7 @@ module Extra.Generics.Show
   ( GShow0, gprecShows, gshowsPrec
   , GShow1, gLiftPrecShows, gLiftShowsPrec
   , GShow, gshow, gshows
+  , myshow
   ) where
 
 --import Debug.Trace
