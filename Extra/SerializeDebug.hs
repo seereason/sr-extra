@@ -14,6 +14,7 @@
 
 module Extra.SerializeDebug
     ( module Extra.Serialize
+    , Debug
     , DecodeError(..)
     , HasDecodeError(fromDecodeError)
     , deserializePrism

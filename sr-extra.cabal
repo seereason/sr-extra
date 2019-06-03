@@ -84,6 +84,7 @@ Library
     Extra.Orphans2,
     Extra.Pretty,
     Extra.SafeCopy,
+    Extra.SafeCopyDebug,
     Extra.Serialize,
     Extra.SerializeDebug,
     Extra.TH,
