@@ -6,6 +6,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -231,11 +232,21 @@ gshow x = gshows x ""
 gshows :: GShow a => a -> ShowS
 gshows = gshowsPrec 0
 
+#if 0
+class MyShow a where
+  myshows :: a -> ShowS
+  default myshows :: (Generic a, GShow (Rep a)) => a -> ShowS
+  myshows a = gshows (Top a)
+  myshow :: a -> String
+  default myshow :: (Generic a, GShow (Rep a)) => a -> String
+  myshow a = gshow
+#else
 myshow :: (DoS1 Proxy (K1 R a)) => a -> String
 myshow a = gshow (Top a)
 
 myshows :: (DoS1 Proxy (K1 R a)) => a -> ShowS
 myshows a = gshows (Top a)
+#endif
 
 #if !__GHCJS__
 data Foo = Foo {n :: Int, ch :: Char} deriving (Generic, Show)

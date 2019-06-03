@@ -85,6 +85,7 @@ Library
     Extra.Pretty,
     Extra.SafeCopy,
     Extra.Serialize,
+    Extra.SerializeDebug,
     Extra.TH,
     Extra.Time,
     Extra.Terminal,

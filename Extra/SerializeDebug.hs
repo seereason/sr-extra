@@ -12,15 +12,13 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Extra.Serialize
-    ( DecodeError(..)
+module Extra.SerializeDebug
+    ( module Extra.Serialize
+    , DecodeError(..)
     , HasDecodeError(fromDecodeError)
-    , module Data.Serialize
     , deserializePrism
     , serializeGetter
-    , deriveSerializeViaSafeCopy
     , decode
-    , Serialize.encode
     , decode'
     , decodeM
     , decodeM'
@@ -34,9 +32,9 @@ import Data.ByteString as B (ByteString, null)
 #ifndef OMIT_DATA_INSTANCES
 import Data.Data (Data)
 #endif
-import Data.Data (Proxy(Proxy))
+import Data.Data (Proxy(Proxy), Typeable, typeRep)
 import Data.SafeCopy (base, deriveSafeCopy, SafeCopy, safeGet, safePut)
-import Data.Serialize hiding (decode, encode)
+import Data.Serialize hiding (decode)
 import qualified Data.Serialize as Serialize (decode, encode)
 import Data.Text as T hiding (concat, intercalate)
 import Data.Text.Lazy as LT hiding (concat, intercalate)
@@ -47,76 +45,27 @@ import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
 import Extra.Orphans ()
+import Extra.Serialize hiding (decode, decode', decodeM, decodeM', deserializePrism, serializeGetter)
 import Extra.Time (Zulu(..))
 import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
 import Network.URI (URI(..), URIAuth(..))
 import System.IO.Unsafe (unsafePerformIO)
 
-data DecodeError = DecodeError ByteString String deriving (Eq, Ord)
-
-class HasDecodeError e where fromDecodeError :: DecodeError -> e
-instance HasDecodeError DecodeError where fromDecodeError = id
-
-encode :: Serialize a => a -> ByteString
-encode = Serialize.encode
+type Debug a = (Typeable a, Show a)
 
 -- | Decode a value from a strict ByteString, reconstructing the original
 -- structure.  Unlike Data.Serialize.decode, this function only succeeds
 -- if all the input is consumed.
-decode :: forall a. Serialize a => ByteString -> Either String a
+decode :: forall a. (Serialize a, Debug a) => ByteString -> Either String a
 decode b =
   case runGetState get b 0 of
     Left s -> Left s
     Right (a, remaining) | B.null remaining -> Right a
-    Right (a, remaining) -> Left ("decode " <> show b <> " failed to consume " <> show remaining)
-
--- | A Serialize instance based on safecopy.  This means that
--- migrations will be performed upon deserialization, which is handy
--- if the value is stored in the browser's local storage.  Thus, zero
--- downtime upgrades!
-deriveSerializeViaSafeCopy :: TypeQ -> Q [Dec]
-deriveSerializeViaSafeCopy typ =
-    [d|instance {-SafeCopy $typ =>-} Serialize $typ where
-          get = safeGet
-          put = safePut|]
-
-instance Serialize T.Text where
-    put = put . TE.encodeUtf8
-    get = TE.decodeUtf8 <$> get
-
-instance Serialize LT.Text where
-    put = put . TLE.encodeUtf8
-    get = TLE.decodeUtf8 <$> get
-
--- | This is private, we can't create a Generic instance for it.
-instance Serialize DiffTime where
-    get = fromRational <$> get
-    put = put . toRational
-
-instance Serialize UTCTime where
-    get = uncurry UTCTime <$> get
-    put (UTCTime day time) = put (day, time)
-
-instance Serialize Day where
-    get = ModifiedJulianDay <$> get
-    put = put . toModifiedJulianDay
-
--- deriving instance Generic UUID deriving instance Serialize UUID Use
--- the SafeCopy methods to implement Serialize.  This is a pretty neat
--- trick, it automatically does SafeCopy migration on any deserialize
--- of a type with this implementation.
-instance Serialize UUID where
-    get = safeGet
-    put = safePut
-
-deriving instance Serialize Loc
-deriving instance Serialize URI
-deriving instance Serialize URIAuth
-deriving instance Serialize Zulu
+    Right (a, remaining) -> Left ("decode " <> show b <> " :: " <> show (typeRep (Proxy :: Proxy a)) <> " failed to consume " <> show remaining)
 
 -- | Monadic version of decode.
 decodeM ::
-  forall a e m. (Serialize a, HasDecodeError e, MonadError e m)
+  forall a e m. (Serialize a, Debug a, HasDecodeError e, MonadError e m)
   => ByteString
   -> m a
 decodeM bs =
@@ -130,7 +79,7 @@ decodeM bs =
 -- outside the serialize package, in which case this (and decode') are
 -- pointless.
 decodeM' ::
-  forall e m a. (Serialize a, HasDecodeError e, MonadError e m, MonadCatch m)
+  forall e m a. (Serialize a, Debug a, HasDecodeError e, MonadError e m, MonadCatch m)
   => ByteString
   -> m a
 decodeM' bs = go `catch` handle
@@ -143,7 +92,7 @@ decodeM' bs = go `catch` handle
 
 -- | Version of decode that catches any thrown ErrorCall and modifies
 -- its message.
-decode' :: forall a. (Serialize a) => ByteString -> Either String a
+decode' :: forall a. (Serialize a, Debug a) => ByteString -> Either String a
 decode' b =
   unsafePerformIO (evaluate (decode b :: Either String a) `catch` handle)
   where
@@ -151,24 +100,9 @@ decode' b =
     handle e = return $ Left (show e)
 
 -- | Serialize/deserialize prism.
-deserializePrism :: forall a. (Serialize a) => Prism' ByteString a
+deserializePrism :: forall a. (Serialize a, Debug a) => Prism' ByteString a
 deserializePrism = prism encode (\s -> either (\_ -> Left s) Right (decode s :: Either String a))
 
 -- | Inverting a prism turns it into a getter.
-serializeGetter :: forall a. (Serialize a) => Getter a ByteString
+serializeGetter :: forall a. (Serialize a, Debug a) => Getter a ByteString
 serializeGetter = re deserializePrism
-
-$(concat <$>
-  sequence
-  [ deriveSafeCopy 1 'base ''ErrorCall
-  , deriveSafeCopy 1 'base ''DecodeError
-  ])
-
-#ifndef OMIT_DATA_INSTANCES
-deriving instance Data ErrorCall
-deriving instance Data DecodeError
-#endif
-
-#ifndef OMIT_SHOW_INSTANCES
-deriving instance Show DecodeError
-#endif
