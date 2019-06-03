@@ -14,6 +14,7 @@
 
 module Extra.SafeCopyDebug
     ( module Extra.SafeCopy
+    , Debug
     , DecodeError(..)
     , HasDecodeError(fromDecodeError)
     , decode
