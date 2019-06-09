@@ -16,7 +16,7 @@ module Extra.Pretty
     , pprSet
     , ppShow
     , ppText
-    , pprint1, pprint1'
+    , pprint1, pprint1', render1
     , pprintW
     , friendlyNames
     -- * Re-export
