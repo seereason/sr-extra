@@ -16,7 +16,7 @@ import Data.Int (Int32)
 import Data.List (intercalate)
 import Data.ListLike as LL
 import Data.Map as Map (Map, toList)
-import Data.SafeCopy (base, deriveSafeCopy)
+import Data.SafeCopy (base, SafeCopy(..))
 import Data.Set as Set (Set, toList)
 #if !__GHCJS__
 import Debug.Show (V(V))
@@ -98,10 +98,10 @@ instance Ppr (Set Type, Set Type) where
 instance Ppr (Set Type) where
     ppr s = hcat [ptext "Set.fromList [", ppr (Set.toList s), ptext "]"]
 
-$(deriveSafeCopy 0 'base ''OccName)
-$(deriveSafeCopy 0 'base ''NameSpace)
-$(deriveSafeCopy 0 'base ''PkgName)
-$(deriveSafeCopy 0 'base ''ModName)
-$(deriveSafeCopy 0 'base ''NameFlavour)
-$(deriveSafeCopy 0 'base ''Name)
-$(deriveSafeCopy 1 'base ''Loc)
+instance SafeCopy OccName where version = 0
+instance SafeCopy NameSpace where version = 0
+instance SafeCopy PkgName where version = 0
+instance SafeCopy ModName where version = 0
+instance SafeCopy NameFlavour where version = 0
+instance SafeCopy Name where version = 0
+instance SafeCopy Loc where version = 1

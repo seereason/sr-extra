@@ -47,7 +47,7 @@ Library
     pretty,
     pureMD5,
     random,
-    safecopy,
+    safecopy >= 0.9.5,
     show-combinators,
     syb,
     template-haskell,

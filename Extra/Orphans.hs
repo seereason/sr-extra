@@ -10,7 +10,7 @@ module Extra.Orphans where
 import Data.Graph.Inductive as G
 import Data.List (intercalate)
 import Data.Proxy (Proxy(Proxy))
-import Data.SafeCopy (base, contain, deriveSafeCopy,
+import Data.SafeCopy (base, contain,
                       SafeCopy(errorTypeName, getCopy, kind, putCopy, version))
 import Data.Serialize.Get (label)
 import Data.Text as T hiding (concat, intercalate)
@@ -20,7 +20,7 @@ import Data.UserId (UserId(..))
 import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.V4 as UUID (nextRandom)
-import Data.UUID.Orphans ()
+import Data.UUID.Orphans ({-instance SafeCopy UUID-})
 import Extra.Orphans2 ()
 import GHC.Generics (Generic)
 import Instances.TH.Lift ()
@@ -124,8 +124,9 @@ instance Arbitrary URI where
     arbitrary = genCanonicalURI >>= genNormalURI
 #endif
 
+instance SafeCopy URI where version = 0
+instance SafeCopy URIAuth where version = 0
+
 $(concat <$>
   sequence
-  [ deriveSafeCopy 0 'base ''URI
-  , deriveSafeCopy 0 'base ''URIAuth
-  , deriveLiftMany [''URI, ''URIAuth] ])
+  [ deriveLiftMany [''URI, ''URIAuth] ])

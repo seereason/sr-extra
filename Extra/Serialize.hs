@@ -7,6 +7,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -35,7 +36,7 @@ import Data.ByteString as B (ByteString, null)
 import Data.Data (Data)
 #endif
 import Data.Data (Proxy(Proxy))
-import Data.SafeCopy (base, deriveSafeCopy, SafeCopy, safeGet, safePut)
+import Data.SafeCopy (base, SafeCopy(..), safeGet, safePut)
 import Data.Serialize hiding (decode, encode)
 import qualified Data.Serialize as Serialize (decode, encode)
 import Data.Text as T hiding (concat, intercalate)
@@ -48,11 +49,12 @@ import Data.UUID (UUID)
 import Data.UUID.Orphans ()
 import Extra.Orphans ()
 import Extra.Time (Zulu(..))
+import GHC.Generics (Generic)
 import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
 import Network.URI (URI(..), URIAuth(..))
 import System.IO.Unsafe (unsafePerformIO)
 
-data DecodeError = DecodeError ByteString String deriving (Eq, Ord)
+data DecodeError = DecodeError ByteString String deriving (Generic, Eq, Ord)
 
 class HasDecodeError e where fromDecodeError :: DecodeError -> e
 instance HasDecodeError DecodeError where fromDecodeError = id
@@ -158,14 +160,9 @@ deserializePrism = prism encode (\s -> either (\_ -> Left s) Right (decode s :: 
 serializeGetter :: forall a. (Serialize a) => Getter a ByteString
 serializeGetter = re deserializePrism
 
-$(concat <$>
-  sequence
-  [ deriveSafeCopy 1 'base ''ErrorCall
-  , deriveSafeCopy 1 'base ''DecodeError
-  ])
+instance SafeCopy DecodeError where version = 1
 
 #ifndef OMIT_DATA_INSTANCES
-deriving instance Data ErrorCall
 deriving instance Data DecodeError
 #endif
 
