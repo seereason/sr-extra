@@ -58,6 +58,7 @@ data DecodeError = DecodeError ByteString String deriving (Generic, Eq, Ord)
 
 class HasDecodeError e where fromDecodeError :: DecodeError -> e
 instance HasDecodeError DecodeError where fromDecodeError = id
+instance Serialize DecodeError where get = safeGet; put = safePut
 
 encode :: Serialize a => a -> ByteString
 encode = Serialize.encode
