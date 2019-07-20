@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.61
+Version:        1.62
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -69,6 +69,7 @@ Library
   Exposed-modules:
     Extra.Bool,
     Extra.Debug,
+    Extra.Debug2,
     Extra.Either,
     Extra.EnvPath,
     Extra.Except,
@@ -76,6 +77,7 @@ Library
     Extra.Files,
     Extra.Generics,
     Extra.Generics.Show,
+    Extra.IO,
     Extra.List,
     Extra.HughesPJ,
     Extra.Misc,
@@ -87,6 +89,7 @@ Library
     Extra.SafeCopyDebug,
     Extra.Serialize,
     Extra.SerializeDebug,
+    Extra.Text,
     Extra.TH,
     Extra.Time,
     Extra.Terminal,
