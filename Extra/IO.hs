@@ -37,7 +37,8 @@ testAndWriteFile dest new = do
          msg5
          Text.writeFile (dest <> ".new") new
          error $ "Generated " <> dest <> ".new does not match existing " <> dest <> ":\n" <>
-                  diffText (dest, old) (dest <> ".new", new)) >>=
+                  diffText (dest, old) (dest <> ".new", new) <>
+                  "\nIf these changes look reasonable move " <> dest <> ".new to " <> dest <> " and retry.") >>=
     either (\(e :: IOException) -> case isDoesNotExistError e of
                                      True -> msg2 >> Text.writeFile dest new
                                      False -> msg3 e >> throw e)
