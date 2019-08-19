@@ -81,4 +81,4 @@ instance Arbitrary Zulu where arbitrary = Zulu <$> arbitrary
 -- instance FormatTime Zulu
 
 instance Show Zulu where
-  showsPrec d (Zulu t) = showParen (d > 10) $ showString "Zulu (read " ++ show (show t) ++ ")"
+  showsPrec d (Zulu t) = showParen (d > 10) $ showString ("Zulu (read " ++ show (show t) ++ ")")
