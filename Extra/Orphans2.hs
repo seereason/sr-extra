@@ -16,7 +16,7 @@ import Data.Int (Int32)
 import Data.List (intercalate)
 import Data.ListLike as LL
 import Data.Map as Map (Map, toList)
-import Data.SafeCopy (base, SafeCopy(..))
+import Data.SafeCopy (SafeCopy(..))
 import Data.Set as Set (Set, toList)
 #if !__GHCJS__
 import Debug.Show (V(V))

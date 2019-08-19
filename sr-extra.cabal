@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.62
+Version:        1.62.1
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -80,6 +80,7 @@ Library
     Extra.FP,
     Extra.Generics,
     Extra.Generics.Show,
+    Extra.IOThread
     Extra.List,
     Extra.HughesPJ,
     Extra.Misc,
@@ -99,7 +100,6 @@ Library
     Extra.URI,
     Extra.URIQuery,
     Extra.Verbosity,
-    Extra.IOThread
 
   if !impl(ghcjs)
     Build-Depends:

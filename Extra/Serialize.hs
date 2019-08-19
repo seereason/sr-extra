@@ -65,7 +65,12 @@ encode = Serialize.encode
 
 -- | Decode a value from a strict ByteString, reconstructing the original
 -- structure.  Unlike Data.Serialize.decode, this function only succeeds
--- if all the input is consumed.
+-- if all the input is consumed.  Not sure if this is in use anywhere.
+--
+--   > Extra.Serialize.decode (encode 'x' <> encode 'y') :: Either String Char
+--   Left "decode \"xy\" failed to consume \"y\""
+--   > Data.Serialize.decode (encode 'x' <> encode 'y') :: Either String Char
+--   Right 'x'
 decode :: forall a. Serialize a => ByteString -> Either String a
 decode b =
   case runGetState get b 0 of
