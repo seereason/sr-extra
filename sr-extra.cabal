@@ -84,6 +84,7 @@ Library
     Extra.List,
     Extra.HughesPJ,
     Extra.Misc,
+    Extra.Monad.Supply,
     Extra.Net,
     Extra.Orphans,
     Extra.Orphans2,
