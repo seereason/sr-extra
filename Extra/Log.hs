@@ -2,6 +2,7 @@
 
 module Extra.Log
   ( alog
+  , Priority(..)
   ) where
 
 import Control.Monad.Trans (liftIO, MonadIO)
