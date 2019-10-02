@@ -84,6 +84,7 @@ Library
     Extra.IOThread
     Extra.List,
     Extra.HughesPJ,
+    Extra.Log,
     Extra.Misc,
     Extra.Monad.Supply,
     Extra.Net,
