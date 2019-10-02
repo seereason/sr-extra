@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.62.1
+Version:        1.63.1
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -45,6 +45,7 @@ Library
     hslogger,
     lens,
     ListLike,
+    mmorph,
     mtl,
     pretty,
     pureMD5,

@@ -6,6 +6,7 @@ module Extra.Text
     , capitalize
     , Describe(describe')
     , describe
+    , textshow
     , trunc
 #if !__GHCJS__
     , tests
@@ -15,7 +16,7 @@ module Extra.Text
 import Data.Algorithm.DiffContext (getContextDiff, prettyContextDiff)
 import Data.Char (isUpper, toUpper)
 import Data.ListLike (groupBy)
-import Data.Text (split, Text, unpack)
+import Data.Text (split, Text, pack, unpack)
 #if !__GHCJS__
 import Test.HUnit (assertEqual, Test(TestCase, TestList))
 #endif
@@ -68,3 +69,7 @@ describe = describe' Nothing
 -- | Truncate a string to avoid writing monster lines into the log.
 trunc :: String -> String
 trunc s = if length s > 1000 then take 1000 s ++ "..." else s
+
+-- | The ever needed, never available show that returns a Text.
+textshow :: Show a => a -> Text
+textshow = pack . show
