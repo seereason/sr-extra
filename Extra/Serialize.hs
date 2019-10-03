@@ -17,8 +17,8 @@ module Extra.Serialize
     ( DecodeError(..)
     , HasDecodeError(fromDecodeError)
     , module Data.Serialize
-    , deserializePrism
-    , serializeGetter
+    , decodePrism, deserializePrism
+    , encodeGetter, serializeGetter
     , deriveSerializeViaSafeCopy
     , decode
     , Serialize.encode
@@ -160,11 +160,20 @@ decode' b =
 
 -- | Serialize/deserialize prism.
 deserializePrism :: forall a. (Serialize a) => Prism' ByteString a
-deserializePrism = prism encode (\s -> either (\_ -> Left s) Right (decode s :: Either String a))
+deserializePrism = decodePrism
+{-# DEPRECATED deserializePrism "dumb name - use decodePrism" #-}
+
+-- | Serialize/deserialize prism.
+decodePrism :: forall a. (Serialize a) => Prism' ByteString a
+decodePrism = prism encode (\s -> either (\_ -> Left s) Right (decode s :: Either String a))
 
 -- | Inverting a prism turns it into a getter.
 serializeGetter :: forall a. (Serialize a) => Getter a ByteString
 serializeGetter = re deserializePrism
+{-# DEPRECATED serializeGetter "dumb name - use encodeGetter" #-}
+
+encodeGetter :: forall a. (Serialize a) => Getter a ByteString
+encodeGetter = re deserializePrism
 
 instance SafeCopy DecodeError where version = 1
 
