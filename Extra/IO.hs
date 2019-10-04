@@ -1,20 +1,27 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS -Wall #-}
 
 module Extra.IO
     ( -- * IO functions to write files and notice when they change.
-      testAndWriteFile
+      testAndWriteDotNew
+    , testAndWriteBackup
+    , testAndWriteFile
+    , testAndWrite
     , writeFileWithBackup
     , findHaskellFiles
     , timeComputation
     ) where
 
 import Control.Exception as E (IOException, throw, try)
+import Control.Monad (when)
 import Control.Monad.Trans (liftIO, MonadIO)
 import Data.Monoid ((<>))
-import Data.Text (Text)
+import Data.Text as Text (length, take, Text)
 import Data.Text.IO as Text (readFile, writeFile)
 import Data.Time (getCurrentTime, diffUTCTime, getCurrentTime, NominalDiffTime)
+import Extra.Log (alog)
 import Extra.Text (diffText)
 import System.Directory (getCurrentDirectory, removeFile, renameFile)
 import System.FilePath.Find as Find
@@ -22,37 +29,54 @@ import System.FilePath.Find as Find
 import System.IO.Error (isDoesNotExistError)
 import System.Log.Logger ({-logM,-} Priority(DEBUG, ERROR))
 
+testAndWriteDotNew :: FilePath -> Text -> IO ()
+testAndWriteDotNew dest new = testAndWrite writeDotNew dest new
+
+testAndWriteBackup :: FilePath -> Text -> IO ()
+testAndWriteBackup dest new = testAndWrite (\dest' _ new' -> writeFileWithBackup dest' new') dest new
+
+testAndWriteFile :: FilePath -> Text -> IO ()
+testAndWriteFile = testAndWriteDotNew
+{-# DEPRECATED testAndWriteFile "Use testAndWriteDotNew" #-}
+
 -- | See if the new Paths code matches the old, if not write it to a
 -- file with the suffix ".new" and throw an error so the new code can
 -- be inspected and checked in.  If the new file does match, the
 -- existing .new file is removed.
-testAndWriteFile :: FilePath -> Text -> IO ()
-testAndWriteFile dest new = do
-  msg1
+testAndWrite :: (FilePath -> Text -> Text -> IO ()) -> FilePath -> Text -> IO ()
+testAndWrite changeAction dest new = do
+  here <- getCurrentDirectory
+  alog "Extra.IO" DEBUG ("testAndWriteFile " <> show dest <> " " <> show (shorten 50 new) <> " (cwd=" <> show here <> ")")
   removeFileMaybe (dest <> ".new")
   try (Text.readFile dest >>= \old ->
-       if old == new
-       then msg4 >> pure ()
-       else do
-         msg5
-         Text.writeFile (dest <> ".new") new
-         error $ "Generated " <> dest <> ".new does not match existing " <> dest <> ":\n" <>
-                  diffText (dest, old) (dest <> ".new", new) <>
-                  "\nIf these changes look reasonable move " <> dest <> ".new to " <> dest <> " and retry.") >>=
-    either (\(e :: IOException) -> case isDoesNotExistError e of
-                                     True -> msg2 >> Text.writeFile dest new
-                                     False -> msg3 e >> throw e)
+       when (old /= new) (changeAction dest old new)) >>=
+    either (\(e :: IOException) ->
+              case isDoesNotExistError e of
+                True -> do
+                  alog "Extra.IO" DEBUG "testAndWriteFile - no existing version"
+                  Text.writeFile dest new
+                False -> do
+                  alog "Extra.IO" ERROR ("testAndWriteFile " <> show dest <> " - IOException " ++ show e)
+                  throw e)
            return
-  where
-    msg _ s = putStrLn ("Data.Path.Prelude.IO - " <> s)
-    msg1 = do
-      here <- getCurrentDirectory
-      msg DEBUG ("testAndWriteFile " <> show dest <> " " <> take 50 (show new) <> " (cwd=" <> show here <> ")")
-    msg2 = msg DEBUG "testAndWriteFile - no existing version"
-    msg3 e = msg ERROR ("testAndWriteFile " <> show dest <> " - IOException " ++ show e)
-    msg4 = msg DEBUG "testAndWriteFile - match"
-    msg5 = msg DEBUG ("testAndWriteFile - mismatch, writing " <> show (dest <> ".new"))
 
+-- | Shorten a string to a maximum length by replacing its suffix with "..."
+shorten :: Int -> Text -> Text
+shorten n t | n <= 3 = Text.take n t -- no room for an ellipsis
+shorten n t | Text.length t > n - 3 = Text.take (n - 3) t <> "..."
+shorten _ t = t
+
+-- | If the new file does not match the old, write it to file.new and error.
+writeDotNew :: FilePath -> Text -> Text -> IO ()
+writeDotNew dest old new = do
+  alog "Extra.IO" DEBUG ("testAndWriteFile - mismatch, writing " <> show (dest <> ".new"))
+  Text.writeFile (dest <> ".new") new
+  error ("Generated " <> dest <> ".new does not match existing " <> dest <> ":\n" <>
+         diffText (dest, old) (dest <> ".new", new) <>
+         "\nIf these changes look reasonable move " <> dest <> ".new to " <> dest <> " and retry.")
+
+
+-- | Rename existing file with suffix "~" and write a new file
 writeFileWithBackup :: FilePath -> Text -> IO ()
 writeFileWithBackup dest text = do
   removeFileMaybe (dest <> "~")
@@ -60,6 +84,7 @@ writeFileWithBackup dest text = do
   removeFileMaybe dest
   Text.writeFile dest text
 
+-- | Remove a file if it exists
 removeFileMaybe :: FilePath -> IO ()
 removeFileMaybe p =
     try (removeFile p) >>=
@@ -67,6 +92,7 @@ removeFileMaybe p =
                                      True -> pure ()
                                      False -> throw e) pure
 
+-- | Rename a file if it exists
 renameFileMaybe :: FilePath -> FilePath -> IO ()
 renameFileMaybe oldpath newpath =
     try (renameFile oldpath newpath) >>=
@@ -74,6 +100,7 @@ renameFileMaybe oldpath newpath =
                                      True -> pure ()
                                      False -> throw e) pure
 
+-- | Find all regular files with extension .hs
 findHaskellFiles :: FilePath -> IO [FilePath]
 findHaskellFiles dir = find always (Find.extension ==? ".hs" &&? fileType ==? RegularFile) dir
 
