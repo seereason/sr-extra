@@ -1,6 +1,4 @@
-{-# LANGUAGE CPP, ConstraintKinds #-}
-{-# LANGUAGE DeriveAnyClass, DeriveDataTypeable, DeriveGeneric #-}
-{-# LANGUAGE FlexibleContexts, OverloadedStrings, RankNTypes, ScopedTypeVariables, StandaloneDeriving #-}
+{-# LANGUAGE CPP, DeriveAnyClass, OverloadedStrings, UndecidableInstances #-}
 {-# OPTIONS -Wall -Wredundant-constraints -Wno-orphans #-}
 
 module Extra.Except
@@ -16,6 +14,7 @@ module Extra.Except
     , MonadIOError
     , liftIOError
     , tryIOError
+    , logIOError
     , HasLoc(withLoc)
 
     , module Control.Monad.Except
@@ -24,7 +23,9 @@ module Extra.Except
 import Control.Exception ({-evaluate,-} Exception, IOException, SomeException(..), try)
 import Control.Monad.Except
 import Data.Data (typeOf)
+import Extra.Log (logException)
 import Language.Haskell.TH.Syntax (Loc)
+import System.Log.Logger (Priority(ERROR))
 
 -- | Apply a function to whatever @Exception@ type is inside a
 -- @SomeException@:
@@ -57,8 +58,8 @@ handleError = flip catchError
 mapError :: (MonadError e m, MonadError e' n) => (m (Either e a) -> n (Either e' b)) -> m a -> n b
 mapError f action = f (tryError action) >>= liftEither
 
--- | In order to guarantee IOException is caught, do NOT include the
--- standard 'HasIOException' instance
+-- | In order to guarantee IOException is caught, do NOT create this
+-- 'HasIOException' instance for IOException.
 --
 -- > instance HasIOException IOException where fromIOException = id
 --
@@ -80,7 +81,7 @@ mapError f action = f (tryError action) >>= liftEither
 -- and then create a suitable error type
 --
 -- >>> newtype Error = Error IOException deriving Show
--- >>> instance HasIOException Error where fromIOException = Error
+-- >>> instance MonadIOError Error where liftIOError io = liftIO (try io) >>= either (throwError . fromIOException) return
 --
 -- Now the thrown 'IOException' will always be caught and lifted into
 -- the 'MonadError':
@@ -89,17 +90,39 @@ mapError f action = f (tryError action) >>= liftEither
 -- Left (Error /etc/nonexistant: openFile: does not exist (No such file or directory))
 class HasIOException e where fromIOException :: IOException -> e
 
--- | Constraints required by 'liftIOError' or 'tryIOError'
-type MonadIOError e m = (MonadIO m, HasIOException e, MonadError e m)
+-- | An alternative to MonadIO that catches all IOExceptions.
+class (HasIOException e, MonadError e m) => MonadIOError e m where
+  liftIOError :: IO a -> m a
 
--- | Catch any thrown 'IOException' and use the 'HasIOException' to
--- lift it into an error monad.
-liftIOError :: MonadIOError e m => IO a -> m a
-liftIOError action = liftIO (try action) >>= either (throwError . fromIOException) return
-
+-- | MonadIOError analog to the 'try' function.
 tryIOError :: MonadIOError e m => IO a -> m (Either e a)
 tryIOError = tryError . liftIOError
+
+instance (HasIOException e, MonadIO m) => MonadIOError e (ExceptT e m) where
+  liftIOError io = liftIO (try io) >>= either (throwError . fromIOException) return
+
+-- This instance overlaps with the ExceptT instance above, which is
+-- preferred, hence the Overlappable.
+instance {-# Overlappable #-} (MonadIOError e m, MonadError e (t m), MonadTrans t) => MonadIOError e (t m) where
+  liftIOError = lift . liftIOError
+
+logIOError :: MonadIOError e m => m a -> m a
+logIOError = handleError (\e -> liftIOError ($logException ERROR (pure e)) >> throwError e)
 
 -- | Modify an exception to include a source code location:
 -- e.g. @withError (withLoc $here) $ tryError action@.
 class HasLoc e where withLoc :: Loc -> e -> e
+
+#if 0
+newtype Error = Error IOException
+instance Show Error where show (Error e) = "(Error " <> show (show e) <> ")"
+instance HasIOException Error where fromIOException = Error
+
+readFile' :: MonadIOError e m => FilePath -> m String
+readFile' path = liftIOError (readFile path)
+
+example :: IO ()
+example = do
+  r <- runExceptT (readFile' "/etc/nonexistant" :: ExceptT Error IO String)
+  putStrLn (show r <> " :: " <> show (typeOf r))
+#endif

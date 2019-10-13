@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.63.2
+Version:        1.64
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -69,6 +69,9 @@ Library
   C-Sources:         cbits/gwinsz.c
   Include-Dirs:        cbits
   Install-Includes:    gwinsz.h
+  Extensions: ConstraintKinds, CPP, DataKinds, DeriveDataTypeable, DeriveFunctor, DeriveGeneric
+  Extensions: FlexibleInstances, FlexibleContexts, MultiParamTypeClasses, RankNTypes
+  Extensions: ScopedTypeVariables, StandaloneDeriving, TypeApplications, TypeFamilies
   Exposed-modules:
     Extra.Bool,
     Extra.Debug,
