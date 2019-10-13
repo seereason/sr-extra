@@ -77,16 +77,16 @@ instance Semigroup (RunOptions a m) where
     a <> RunOptions b = RunOptions ([a] <> b)
     a <> b = RunOptions [a, b]
 
-showCommand :: MonadIO m => String -> CreateProcess -> m ()
-showCommand prefix p = ePutStrLn (prefix ++ showCreateProcessForUser p)
+showCommand :: MonadIOError e m => String -> CreateProcess -> m ()
+showCommand prefix p = liftIOError $ ePutStrLn (prefix ++ showCreateProcessForUser p)
 
-showCommandAndResult :: MonadIO m => [Char] -> CreateProcess -> (ExitCode, a, a) -> m ()
+showCommandAndResult :: MonadIOError e m => [Char] -> CreateProcess -> (ExitCode, a, a) -> m ()
 showCommandAndResult prefix p (code, _, _) =
-    ePutStrLn (prefix ++ showCreateProcessForUser p ++ " -> " ++ show code)
+    liftIOError $ ePutStrLn (prefix ++ showCreateProcessForUser p ++ " -> " ++ show code)
 
-putIndented :: forall a c m. (Eq c, ListLikeProcessIO a c, IsString a, MonadIO m) => [Chunk a] -> m [Chunk a]
+putIndented :: forall a c e m. (Eq c, ListLikeProcessIO a c, IsString a, MonadIOError e m) => [Chunk a] -> m [Chunk a]
 putIndented chunks =
-    liftIO $ mapM_ echo (indentChunks "     1> " "     2> " chunks) >> return chunks
+    liftIOError $ mapM_ echo (indentChunks "     1> " "     2> " chunks) >> return chunks
     where
       echo :: Chunk a -> IO (Chunk a)
       echo c@(Stdout x) = hPutStr stdout x >> return c
@@ -236,36 +236,36 @@ modifyProcessEnv pairs p = do
   return $ p {env = Just env'}
 
 runV2 ::
-    (MonadIO m, MonadCatch m, Eq c, IsString a, ListLikeProcessIO a c, MonadError e m)
+    (MonadIOError e m, MonadCatch m, Eq c, IsString a, ListLikeProcessIO a c)
     => [Loc] -> CreateProcess -> a -> m (ExitCode, a, a)
 runV2 locs p input =
     run2 locs (StartMessage (showCommand' locs) <> OverOutput putIndented <> FinishMessage showCommandAndResult) p input
 
 runVE2 ::
-    forall a c e m. (Eq c, IsString a, ListLikeProcessIO a c, MonadIO m, MonadCatch m, MonadError e m, Exception e)
+    forall a c e m. (Eq c, IsString a, ListLikeProcessIO a c, MonadIOError e m, MonadCatch m, Exception e)
     => [Loc] -> CreateProcess -> a -> m (Either e (ExitCode, a, a))
 runVE2 locs p input = do
     try (runV2 locs p input)
 
 runQ2 ::
-    (MonadIO m, MonadCatch m, ListLikeProcessIO a c, MonadError e m)
+    (MonadIOError e m, MonadCatch m, ListLikeProcessIO a c)
     => [Loc] -> CreateProcess -> a -> m (ExitCode, a, a)
 runQ2 locs p input =
     run2 locs (StartMessage (showCommand' locs) <> FinishMessage showCommandAndResult) p input
 
 runQE2 ::
-    (ListLikeProcessIO a c, MonadIO m, MonadCatch m, MonadError e m, Exception e)
+    (ListLikeProcessIO a c, MonadIOError e m, MonadCatch m, Exception e)
     => [Loc] -> CreateProcess -> a -> m (Either e (ExitCode, a, a))
 runQE2 locs p input =
     try (runQ2 locs p input)
 
-showCommand' :: (MonadIO m{-, HasOSKey r, MonadReader r m-}) => [Loc] -> String -> CreateProcess -> m ()
+showCommand' :: (MonadIOError e m{-, HasOSKey r, MonadReader r m-}) => [Loc] -> String -> CreateProcess -> m ()
 showCommand' locs prefix p = do
   -- key <- view osKey
-  ePutStrLn (prefix ++ showCreateProcessForUser p ++ " (" ++ {-"in " ++ show key ++ ", " ++-} "called from " ++ show (prettyLocs ($here : locs)) ++ ")")
+  liftIOError $ ePutStrLn (prefix ++ showCreateProcessForUser p ++ " (" ++ {-"in " ++ show key ++ ", " ++-} "called from " ++ show (prettyLocs ($here : locs)) ++ ")")
 
 run2 ::
-    forall a c e m. (MonadError e m, ListLikeProcessIO a c, MonadIO m, MonadCatch m)
+    forall a c e m. (MonadIOError e m, ListLikeProcessIO a c, MonadCatch m)
     => [Loc]
     -> RunOptions a m
     -> CreateProcess
@@ -273,10 +273,10 @@ run2 ::
     -> m (ExitCode, a, a)
 run2 locs opts p input = do
   start " -> " p
-  (result :: (ExitCode, a, a)) <- catch (liftIO (readCreateProcessLazy p input) >>= overOutput >>= return . collectOutput)
-                                        (\se -> withException (\e -> liftIO (hPutStrLn stderr ("(at " ++ show (prettyLocs ($here : locs)) ++ ": " ++ show e ++ ") :: " ++ show (typeOf e)))) se >> throw se)
+  (result :: (ExitCode, a, a)) <- catch (liftIOError (readCreateProcessLazy p input) >>= overOutput >>= return . collectOutput)
+                                        (\se -> withException (\e -> liftIOError (hPutStrLn stderr ("(at " ++ show (prettyLocs ($here : locs)) ++ ": " ++ show e ++ ") :: " ++ show (typeOf e)))) se >> throw se)
   finish " <- " p result
-  liftIO $ evaluate result
+  liftIOError $ evaluate result
     where
       -- We need the options as a Foldable type
       opts' :: [RunOptions a m]
@@ -291,7 +291,7 @@ run2 locs opts p input = do
 -- stray copies of the stuff above that I moved here, with MonadApt constraints
 
 runV3 ::
-    (Eq c, IsString a, ListLikeProcessIO a c, HasEnvRoot r, MonadReader r m, MonadError e m, MonadIO m, MonadCatch m)
+    (Eq c, IsString a, ListLikeProcessIO a c, HasEnvRoot r, MonadReader r m, MonadIOError e m, MonadCatch m)
     => [Loc] -> CreateProcess -> a -> m (ExitCode, a, a)
 runV3 locs p input =
     run2 locs (StartMessage showCommand3' <> OverOutput putIndented <> FinishMessage showCommandAndResult) p input
@@ -304,17 +304,17 @@ runVE3 locs p input = try $ runV3 locs p input
 -}
 
 runQ3 ::
-    (ListLikeProcessIO a c, HasEnvRoot r, MonadReader r m, MonadError e m, MonadIO m, MonadCatch m)
+    (ListLikeProcessIO a c, HasEnvRoot r, MonadReader r m, MonadIOError e m, MonadCatch m)
     => [Loc] -> CreateProcess -> a -> m (ExitCode, a, a)
 runQ3 locs p input =
     run2 locs (StartMessage showCommand3' <> FinishMessage showCommandAndResult) p input
 
 runQE3 ::
-    (ListLikeProcessIO a c, HasEnvRoot r, MonadReader r m, MonadError e m, MonadIO m, MonadCatch m)
+    (ListLikeProcessIO a c, HasEnvRoot r, MonadReader r m, MonadIOError e m, MonadCatch m)
     => [Loc] -> CreateProcess -> a -> m (Either IOException (ExitCode, a, a))
 runQE3 locs p input = try $ runQ3 locs p input
 
-showCommand3' :: (HasEnvRoot r, MonadReader r m, MonadIO m) => String -> CreateProcess -> m ()
+showCommand3' :: (HasEnvRoot r, MonadReader r m, MonadIOError e m) => String -> CreateProcess -> m ()
 showCommand3' prefix p = do
   key <- view (envRootLens . rootPath)
-  ePutStrLn (prefix ++ showCreateProcessForUser p ++ " (in " ++ show key ++ ")")
+  liftIOError $ ePutStrLn (prefix ++ showCreateProcessForUser p ++ " (in " ++ show key ++ ")")

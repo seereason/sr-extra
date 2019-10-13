@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, DeriveAnyClass, OverloadedStrings, UndecidableInstances #-}
+{-# LANGUAGE CPP, DeriveAnyClass, OverloadedStrings, TemplateHaskell, UndecidableInstances #-}
 {-# OPTIONS -Wall -Wredundant-constraints -Wno-orphans #-}
 
 module Extra.Except
