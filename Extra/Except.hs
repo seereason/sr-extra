@@ -98,7 +98,7 @@ class (HasIOException e, MonadError e m) => MonadIOError e m where
 tryIOError :: MonadIOError e m => IO a -> m (Either e a)
 tryIOError = tryError . liftIOError
 
-instance (HasIOException e, MonadIO m) => MonadIOError e (ExceptT e m) where
+instance {-# Overlapping #-} (HasIOException e, MonadIO m) => MonadIOError e (ExceptT e m) where
   liftIOError io = liftIO (try io) >>= either (throwError . fromIOException) return
 
 -- This instance overlaps with the ExceptT instance above, which is
