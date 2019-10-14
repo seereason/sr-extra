@@ -22,6 +22,10 @@ module Extra.Except
 
 import Control.Exception ({-evaluate,-} Exception, IOException, SomeException(..), try)
 import Control.Monad.Except
+import Control.Monad.Reader (ReaderT)
+import Control.Monad.RWS (RWST)
+import Control.Monad.State (StateT)
+import Control.Monad.Writer (WriterT)
 import Data.Data (typeOf)
 import Extra.Log (logException)
 import Language.Haskell.TH.Syntax (Loc)
@@ -103,8 +107,15 @@ instance {-# Overlapping #-} (HasIOException e, MonadIO m) => MonadIOError e (Ex
 
 -- This instance overlaps with the ExceptT instance above, which is
 -- preferred, hence the Overlappable.
+#if 0
 instance {-# Overlappable #-} (MonadIOError e m, MonadError e (t m), MonadTrans t) => MonadIOError e (t m) where
   liftIOError = lift . liftIOError
+#else
+instance MonadIOError e m => MonadIOError e (ReaderT r m) where liftIOError = lift . liftIOError
+instance MonadIOError e m => MonadIOError e (StateT s m) where liftIOError = lift . liftIOError
+instance (MonadIOError e m, Monoid w) => MonadIOError e (WriterT w m) where liftIOError = lift . liftIOError
+instance (MonadIOError e m, Monoid w) => MonadIOError e (RWST r w s m) where liftIOError = lift . liftIOError
+#endif
 
 logIOError :: MonadIOError e m => m a -> m a
 logIOError = handleError (\e -> liftIOError ($logException ERROR (pure e)) >> throwError e)
