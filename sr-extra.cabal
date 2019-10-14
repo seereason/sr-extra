@@ -79,6 +79,7 @@ Library
     Extra.Either,
     Extra.EnvPath,
     Extra.Except,
+    Extra.ExceptOld,
     Extra.Exit,
     Extra.Files,
     Extra.FP,
