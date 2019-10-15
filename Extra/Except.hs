@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, DeriveAnyClass, OverloadedStrings, TemplateHaskell, UndecidableInstances #-}
+{-# LANGUAGE CPP, DeriveAnyClass, FunctionalDependencies, OverloadedStrings, TemplateHaskell, UndecidableInstances #-}
 {-# OPTIONS -Wall -Wredundant-constraints -Wno-orphans #-}
 
 module Extra.Except
@@ -12,16 +12,20 @@ module Extra.Except
     , handleError
     , HasIOException(fromIOException)
     , IOException'(..)
-    , MonadIOError
-    , liftIOError
+
+    , MonadIOError(liftIOError)
     , tryIOError
     , logIOError
-    , HasLoc(withLoc)
+
+    , MonadLiftIO(lyftIO)
+    , tryLiftIO
+    , logLiftIO
 
     , module Control.Monad.Except
     ) where
 
-import Control.Exception ({-evaluate,-} Exception, IOException, SomeException(..), try)
+import Control.Exception ({-evaluate,-} Exception, IOException, SomeException(..))
+import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.Reader (ReaderT)
 import Control.Monad.RWS (RWST)
@@ -29,7 +33,7 @@ import Control.Monad.State (StateT)
 import Control.Monad.Writer (WriterT)
 import Data.Data (typeOf)
 import Extra.Log (logException)
-import Language.Haskell.TH.Syntax (Loc)
+-- import Language.Haskell.TH.Syntax (Loc)
 import System.Log.Logger (Priority(ERROR))
 
 -- | Apply a function to whatever @Exception@ type is inside a
@@ -125,10 +129,6 @@ instance (MonadIOError e m, Monoid w) => MonadIOError e (RWST r w s m) where lif
 logIOError :: MonadIOError e m => m a -> m a
 logIOError = handleError (\e -> liftIOError ($logException ERROR (pure e)) >> throwError e)
 
--- | Modify an exception to include a source code location:
--- e.g. @withError (withLoc $here) $ tryError action@.
-class HasLoc e where withLoc :: Loc -> e -> e
-
 #if 0
 readFile' :: MonadIOError e m => FilePath -> m String
 readFile' = liftIOError . readFile
@@ -138,3 +138,24 @@ example = do
   r <- runExceptT (readFile' "/etc/nonexistant" :: ExceptT IOException' IO String)
   putStrLn (show r <> " :: " <> show (typeOf r))
 #endif
+
+-- | Generalized version of MonadIOError, instead of IO it lifts any
+-- MonadIO instance into m.  Eventually we want to just say `type
+-- MonadIOError e m = MonadLiftIO e IO m`.  But we'll see.
+class (MonadIO io, MonadError e io, HasIOException e, MonadError e m) => MonadLiftIO e io m | m -> io where
+  lyftIO :: io a -> m a
+
+instance {-# Overlapping #-} (HasIOException e, MonadCatch io, MonadIO io, MonadError e io) => MonadLiftIO e io (ExceptT e io) where
+  lyftIO io = lift (try io) >>= either (throwError . fromIOException) return
+
+instance MonadLiftIO e io m => MonadLiftIO e io (ReaderT r m) where lyftIO = lift . lyftIO
+instance MonadLiftIO e io m => MonadLiftIO e io (StateT s m) where lyftIO = lift . lyftIO
+instance (MonadLiftIO e io m, Monoid w) => MonadLiftIO e io (WriterT w m) where lyftIO = lift . lyftIO
+instance (MonadLiftIO e io m, Monoid w) => MonadLiftIO e io (RWST r w s m) where lyftIO = lift . lyftIO
+
+ -- | MonadLiftIO analog to the 'try' function.
+tryLiftIO :: MonadLiftIO e io m => io a -> m (Either e a)
+tryLiftIO = tryError . lyftIO
+
+logLiftIO :: forall io e m a. (MonadLiftIO e io m, {-MonadError e io,-} Show e) => m a -> m a
+logLiftIO = handleError (\e -> lyftIO ($logException ERROR (pure e) :: io e) >> throwError e)

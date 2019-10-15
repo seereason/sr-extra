@@ -20,6 +20,7 @@ module Extra.Process
     , processException
     , insertProcessEnv
     , modifyProcessEnv
+    , HasLoc(withLoc)
     -- * Refugees
     , runV2, runVE2, runQ2, runQE2
     , run2
@@ -30,7 +31,7 @@ import Control.Arrow (second)
 import Control.Exception (evaluate, Exception, IOException, throw)
 import Control.Lens (view)
 import Control.Monad.Catch (catch, MonadCatch, try)
-import Control.Monad.Except (MonadError, throwError)
+import Control.Monad.Except (throwError)
 import Control.Monad.Reader (MonadReader)
 import Control.Monad.State (evalState, StateT, get, put)
 import Control.Monad.Trans (liftIO, MonadIO)
@@ -42,7 +43,7 @@ import Data.Text (unpack)
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time (diffUTCTime, getCurrentTime, NominalDiffTime)
 import Data.Typeable (typeOf)
-import Extra.Except (liftIOError, MonadIOError, withError, withException, HasLoc(withLoc))
+import Extra.Except (liftIOError, MonadIOError, withError, withException)
 import Extra.EnvPath (HasEnvRoot(envRootLens), rootPath)
 import Extra.Verbosity (ePutStrLn)
 import Extra.TH (here, prettyLocs)
@@ -318,3 +319,7 @@ showCommand3' :: (HasEnvRoot r, MonadReader r m, MonadIOError e m) => String -> 
 showCommand3' prefix p = do
   key <- view (envRootLens . rootPath)
   liftIOError $ ePutStrLn (prefix ++ showCreateProcessForUser p ++ " (in " ++ show key ++ ")")
+
+-- | Modify a value (typically an exception) to include a source code
+-- location: e.g. @withError (withLoc $here) $ tryError action@.
+class HasLoc e where withLoc :: Loc -> e -> e

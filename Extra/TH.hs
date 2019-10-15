@@ -74,7 +74,7 @@ addConstraint tname typeq (InstanceD mo cxt inst decs) = do
       isVar _ = Nothing
       fixTypeVar :: Map String Name -> Type -> Type
       fixTypeVar mp (VarT n) = VarT (maybe n id (Map.lookup (nameBase n) mp))
-      fixTypeVar mp t = t
+      fixTypeVar _mp t = t
 addConstraint _ _ d = return d
 
 -- | Remove simple constraints from a 'Dec' based on type class name
