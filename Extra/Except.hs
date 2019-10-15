@@ -11,6 +11,7 @@ module Extra.Except
     , mapError
     , handleError
     , HasIOException(fromIOException)
+    , IOException'(..)
     , MonadIOError
     , liftIOError
     , tryIOError
@@ -94,6 +95,10 @@ mapError f action = f (tryError action) >>= liftEither
 -- Left (Error /etc/nonexistant: openFile: does not exist (No such file or directory))
 class HasIOException e where fromIOException :: IOException -> e
 
+newtype IOException' = IOException' IOException
+instance Show IOException' where show (IOException' e) = "(IOException' " <> show (show e) <> ")"
+instance HasIOException IOException' where fromIOException = IOException'
+
 -- | An alternative to MonadIO that catches all IOExceptions.
 class (HasIOException e, MonadError e m) => MonadIOError e m where
   liftIOError :: IO a -> m a
@@ -125,15 +130,11 @@ logIOError = handleError (\e -> liftIOError ($logException ERROR (pure e)) >> th
 class HasLoc e where withLoc :: Loc -> e -> e
 
 #if 0
-newtype Error = Error IOException
-instance Show Error where show (Error e) = "(Error " <> show (show e) <> ")"
-instance HasIOException Error where fromIOException = Error
-
 readFile' :: MonadIOError e m => FilePath -> m String
-readFile' path = liftIOError (readFile path)
+readFile' = liftIOError . readFile
 
 example :: IO ()
 example = do
-  r <- runExceptT (readFile' "/etc/nonexistant" :: ExceptT Error IO String)
+  r <- runExceptT (readFile' "/etc/nonexistant" :: ExceptT IOException' IO String)
   putStrLn (show r <> " :: " <> show (typeOf r))
 #endif
