@@ -153,7 +153,7 @@ instance MonadLiftIO e io m => MonadLiftIO e io (StateT s m) where lyftIO = lift
 instance (MonadLiftIO e io m, Monoid w) => MonadLiftIO e io (WriterT w m) where lyftIO = lift . lyftIO
 instance (MonadLiftIO e io m, Monoid w) => MonadLiftIO e io (RWST r w s m) where lyftIO = lift . lyftIO
 
- -- | MonadLiftIO analog to the 'try' function.
+-- | MonadLiftIO analog to the 'try' function.
 tryLiftIO :: MonadLiftIO e io m => io a -> m (Either e a)
 tryLiftIO = tryError . lyftIO
 
