@@ -13,13 +13,17 @@ module Extra.Except
     , HasIOException(fromIOException)
     , IOException'(..)
 
-    , MonadIOError(liftIOError)
-    , tryIOError
-    , logIOError
-
-    , MonadLiftIO(lyftIO)
+    , LyftIO(lyftIO, IOMonad, ErrorType)
     , tryLiftIO
     , logLiftIO
+    , lyft
+    , lyftIO'
+    , LyftIO'
+
+    , MonadIOError
+    , liftIOError
+    , tryIOError
+    , logIOError
 
     , module Control.Monad.Except
     ) where
@@ -31,10 +35,8 @@ import Control.Monad.Reader (ReaderT)
 import Control.Monad.RWS (RWST)
 import Control.Monad.State (StateT)
 import Control.Monad.Writer (WriterT)
-import Data.Data (typeOf)
-import Extra.Log (logException)
--- import Language.Haskell.TH.Syntax (Loc)
-import System.Log.Logger (Priority(ERROR))
+import Data.Typeable (typeOf)
+import Extra.Log (logException, Priority(ERROR))
 
 -- | Apply a function to whatever @Exception@ type is inside a
 -- @SomeException@:
@@ -103,59 +105,68 @@ newtype IOException' = IOException' IOException
 instance Show IOException' where show (IOException' e) = "(IOException' " <> show (show e) <> ")"
 instance HasIOException IOException' where fromIOException = IOException'
 
--- | An alternative to MonadIO that catches all IOExceptions.
-class (HasIOException e, MonadError e m) => MonadIOError e m where
-  liftIOError :: IO a -> m a
+class (MonadIO (IOMonad m),
+       MonadError (ErrorType m) (IOMonad m),
+       HasIOException (ErrorType m),
+       MonadError (ErrorType m) m) => LyftIO m where
+  type ErrorType m
+  type IOMonad m :: * -> *
+  lyftIO :: IOMonad m a -> m a
 
--- | MonadIOError analog to the 'try' function.
+instance {-# Overlapping #-} (MonadCatch m,
+                              MonadIO m,
+                              MonadError e (IOMonad (ExceptT e m)),
+                              HasIOException e) => LyftIO (ExceptT e m) where
+  type ErrorType (ExceptT e m) = e
+  type IOMonad (ExceptT e m) = m
+  lyftIO io = lift (try io) >>= either (throwError . fromIOException) return
+
+instance LyftIO m => LyftIO (ReaderT r m) where
+  type ErrorType (ReaderT r m) = ErrorType m
+  type IOMonad (ReaderT r m) = IOMonad m
+  lyftIO = lift . lyftIO
+instance LyftIO m => LyftIO (StateT s m) where
+  type ErrorType (StateT s m) = ErrorType m
+  type IOMonad (StateT s m) = IOMonad m
+  lyftIO = lift . lyftIO
+instance (Monoid w, LyftIO m) => LyftIO (WriterT w m) where
+  type ErrorType (WriterT w m) = ErrorType m
+  type IOMonad (WriterT w m) = IOMonad m
+  lyftIO = lift . lyftIO
+instance (Monoid w, LyftIO m) => LyftIO (RWST r w s m) where
+  type ErrorType (RWST r w s m) = ErrorType m
+  type IOMonad (RWST r w s m) = IOMonad m
+  lyftIO = lift . lyftIO
+
+-- | LyftIO analog to the 'try' function.
+tryLiftIO :: LyftIO m => IOMonad m a -> m (Either (ErrorType m) a)
+tryLiftIO = tryError . lyftIO
+
+logLiftIO :: forall m a. (LyftIO m, Show (ErrorType m)) => m a -> m a
+logLiftIO = handleError (\e -> lyftIO ($logException ERROR (pure e) :: IOMonad m (ErrorType m)) >> throwError e)
+
+-- | Lift an @IOMonad m a@ action into @m a@.
+lyft :: (LyftIO m, Exception (ErrorType m), MonadCatch (IOMonad m)) => IOMonad m a -> m a
+lyft action = lyftIO (try action >>= liftEither)
+
+-- | Lift an IO action into any LyftIO instance.  Well, almost any
+-- LyftIO instance.
+lyftIO' :: forall m a. (LyftIO m, IOMonad m ~ ExceptT (ErrorType m) IO) => IO a -> m a
+lyftIO' io = lyftIO (withExceptT f (liftIO io))
+  where f :: IOException' -> ErrorType m
+        f = (fromIOException . (\(IOException' e) -> e))
+
+type LyftIO' m = (LyftIO m, IOMonad m ~ ExceptT (ErrorType m) IO)
+
+-- Backwards compatibiity
+
+type MonadIOError e m = (LyftIO' m, e ~ ErrorType m)
+
+liftIOError :: MonadIOError e m => IO a -> m a
+liftIOError = lyftIO'
+
 tryIOError :: MonadIOError e m => IO a -> m (Either e a)
 tryIOError = tryError . liftIOError
 
-instance {-# Overlapping #-} (HasIOException e, MonadIO m) => MonadIOError e (ExceptT e m) where
-  liftIOError io = liftIO (try io) >>= either (throwError . fromIOException) return
-
--- This instance overlaps with the ExceptT instance above, which is
--- preferred, hence the Overlappable.
-#if 0
-instance {-# Overlappable #-} (MonadIOError e m, MonadError e (t m), MonadTrans t) => MonadIOError e (t m) where
-  liftIOError = lift . liftIOError
-#else
-instance MonadIOError e m => MonadIOError e (ReaderT r m) where liftIOError = lift . liftIOError
-instance MonadIOError e m => MonadIOError e (StateT s m) where liftIOError = lift . liftIOError
-instance (MonadIOError e m, Monoid w) => MonadIOError e (WriterT w m) where liftIOError = lift . liftIOError
-instance (MonadIOError e m, Monoid w) => MonadIOError e (RWST r w s m) where liftIOError = lift . liftIOError
-#endif
-
 logIOError :: MonadIOError e m => m a -> m a
 logIOError = handleError (\e -> liftIOError ($logException ERROR (pure e)) >> throwError e)
-
-#if 0
-readFile' :: MonadIOError e m => FilePath -> m String
-readFile' = liftIOError . readFile
-
-example :: IO ()
-example = do
-  r <- runExceptT (readFile' "/etc/nonexistant" :: ExceptT IOException' IO String)
-  putStrLn (show r <> " :: " <> show (typeOf r))
-#endif
-
--- | Generalized version of MonadIOError, instead of IO it lifts any
--- MonadIO instance into m.  Eventually we want to just say `type
--- MonadIOError e m = MonadLiftIO e IO m`.  But we'll see.
-class (MonadIO io, MonadError e io, HasIOException e, MonadError e m) => MonadLiftIO e io m | m -> io where
-  lyftIO :: io a -> m a
-
-instance {-# Overlapping #-} (HasIOException e, MonadCatch io, MonadIO io, MonadError e io) => MonadLiftIO e io (ExceptT e io) where
-  lyftIO io = lift (try io) >>= either (throwError . fromIOException) return
-
-instance MonadLiftIO e io m => MonadLiftIO e io (ReaderT r m) where lyftIO = lift . lyftIO
-instance MonadLiftIO e io m => MonadLiftIO e io (StateT s m) where lyftIO = lift . lyftIO
-instance (MonadLiftIO e io m, Monoid w) => MonadLiftIO e io (WriterT w m) where lyftIO = lift . lyftIO
-instance (MonadLiftIO e io m, Monoid w) => MonadLiftIO e io (RWST r w s m) where lyftIO = lift . lyftIO
-
--- | MonadLiftIO analog to the 'try' function.
-tryLiftIO :: MonadLiftIO e io m => io a -> m (Either e a)
-tryLiftIO = tryError . lyftIO
-
-logLiftIO :: forall io e m a. (MonadLiftIO e io m, {-MonadError e io,-} Show e) => m a -> m a
-logLiftIO = handleError (\e -> lyftIO ($logException ERROR (pure e) :: io e) >> throwError e)
