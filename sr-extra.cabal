@@ -16,7 +16,7 @@ Description:
 Maintainer:     David Fox <dsf@seereason.com>
 Homepage:       https://github.com/seereason/sr-extra
 Build-Type:     Simple
-Cabal-Version:  >= 1.2
+Cabal-Version:  >= 1.4
 
 flag network-uri
   Description: Get Network.URI from the network-uri package rather than the
