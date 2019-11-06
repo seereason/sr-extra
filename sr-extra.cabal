@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.64
+Version:        1.65
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -59,6 +59,7 @@ Library
     th-lift-instances,
     th-orphans,
     time >= 1.1,
+    unexceptionalio,
     unix,
     Unixutils >= 1.51,
     userid,
