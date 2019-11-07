@@ -12,7 +12,9 @@ module Extra.Except
     , handleError
     , HasIOException(fromIOException)
     , IOException'(..)
+#if !__GHCJS__
     , logIOError
+#endif
 
       -- * UnexceptionalIO extensions
     , HasSomeNonPseudoException(fromSomeNonPseudoException)
@@ -21,7 +23,9 @@ module Extra.Except
     , module Control.Monad.Except
     ) where
 
+import Control.Applicative
 import Control.Exception ({-evaluate,-} Exception, IOException, SomeException(..))
+import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.RWS (RWST)
 import Control.Monad.Reader (ReaderT)
@@ -30,9 +34,11 @@ import Control.Monad.Trans (MonadTrans(lift), liftIO)
 import Control.Monad.Except (ExceptT, runExceptT)
 import Control.Monad.Writer (WriterT)
 import Data.Typeable (typeOf)
+#if !__GHCJS__
 import Extra.Log (logException, Priority(ERROR))
-import UnexceptionalIO (fromIO, SomeNonPseudoException, Unexceptional)
-import qualified UnexceptionalIO as UIO (lift)
+#endif
+import UnexceptionalIO (fromIO, run, SomeNonPseudoException, UIO, Unexceptional, unsafeFromIO)
+import qualified UnexceptionalIO as UIO
 
 -- | Apply a function to whatever @Exception@ type is inside a
 -- @SomeException@:
@@ -101,8 +107,10 @@ newtype IOException' = IOException' IOException
 instance Show IOException' where show (IOException' e) = "(IOException' " <> show (show e) <> ")"
 instance HasIOException IOException' where fromIOException = IOException'
 
+#if !__GHCJS__
 logIOError :: (MonadIO m, MonadError e m) => m a -> m a
 logIOError = handleError (\e -> liftIO ($logException ERROR (pure e)) >> throwError e)
+#endif
 
 class HasSomeNonPseudoException e where
   fromSomeNonPseudoException :: SomeNonPseudoException -> e
@@ -131,3 +139,20 @@ instance Unexceptional m => Unexceptional (StateT s m) where
   lift = lift . UIO.lift
 instance (Unexceptional m, Monoid w) => Unexceptional (WriterT w m) where
   lift = lift . UIO.lift
+
+instance MonadCatch UIO where
+  catch uio f = unsafeFromIO $ catch (run uio) (\e -> run (f e))
+instance MonadThrow UIO where
+  throwM = unsafeFromIO . throwM
+
+#if 0
+instance Unexceptional m => Unexceptional (ServerPartT m) where
+  lift = error "instance Unexceptional (ServerPartT m)"
+#endif
+
+instance MonadPlus UIO where
+  mzero = unsafeFromIO mzero
+  mplus a b = unsafeFromIO (mplus (run a) (run b))
+instance Alternative UIO where
+  empty = unsafeFromIO empty
+  a <|> b = unsafeFromIO (run a <|> run b)
