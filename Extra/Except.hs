@@ -27,18 +27,13 @@ import Control.Applicative
 import Control.Exception ({-evaluate,-} Exception, IOException, SomeException(..))
 import Control.Monad.Catch
 import Control.Monad.Except
-import Control.Monad.RWS (RWST)
-import Control.Monad.Reader (ReaderT)
-import Control.Monad.State (StateT)
 import Control.Monad.Trans (MonadTrans(lift), liftIO)
 import Control.Monad.Except (ExceptT, runExceptT)
-import Control.Monad.Writer (WriterT)
 import Data.Typeable (typeOf)
 #if !__GHCJS__
 import Extra.Log (logException, Priority(ERROR))
 #endif
-import UnexceptionalIO (fromIO, run, SomeNonPseudoException, UIO, Unexceptional, unsafeFromIO)
-import qualified UnexceptionalIO as UIO
+import UnexceptionalIO.Trans (fromIO, run, SomeNonPseudoException, UIO, Unexceptional, unsafeFromIO)
 
 -- | Apply a function to whatever @Exception@ type is inside a
 -- @SomeException@:
@@ -118,27 +113,7 @@ instance HasSomeNonPseudoException SomeNonPseudoException where
   fromSomeNonPseudoException = id
 
 lyftIO :: (MonadError e m, Unexceptional m, HasSomeNonPseudoException e) => IO a -> m a
---lyftIO io = runExceptT (lyftIO'' io) >>= either throwError return
---lyftIO io = runExceptT (withExceptT fromSomeNonPseudoException (lyftIO' io)) >>= either throwError return
---lyftIO io = runExceptT (withExceptT fromSomeNonPseudoException (fromIO io >>= liftEither)) >>= either throwError return
-lyftIO io = fromIO io >>= either (throwError . fromSomeNonPseudoException) return
-
---lyftIO'' :: (Unexceptional m, HasSomeNonPseudoException e) => IO a -> ExceptT e m a
---lyftIO'' io = withExceptT fromSomeNonPseudoException (lyftIO' io)
-
---lyftIO' :: Unexceptional m => IO a -> ExceptT SomeNonPseudoException m a
---lyftIO' io = fromIO io >>= liftEither
-
-instance Unexceptional m => Unexceptional (ExceptT e m) where
-  lift = lift . UIO.lift
-instance Unexceptional m => Unexceptional (ReaderT r m) where
-  lift = lift . UIO.lift
-instance (Unexceptional m, Monoid w) => Unexceptional (RWST r w s m) where
-  lift = lift . UIO.lift
-instance Unexceptional m => Unexceptional (StateT s m) where
-  lift = lift . UIO.lift
-instance (Unexceptional m, Monoid w) => Unexceptional (WriterT w m) where
-  lift = lift . UIO.lift
+lyftIO io = runExceptT (withExceptT fromSomeNonPseudoException (fromIO io)) >>= liftEither
 
 instance MonadCatch UIO where
   catch uio f = unsafeFromIO $ catch (run uio) (\e -> run (f e))

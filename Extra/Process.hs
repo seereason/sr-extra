@@ -43,7 +43,7 @@ import Data.Text (unpack)
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time (diffUTCTime, getCurrentTime, NominalDiffTime)
 import Data.Typeable (typeOf)
-import Extra.Except -- (LyftIO(lyftIO, ErrorType), LyftIO', lyftIO', withError, withException)
+import Extra.Except
 import Extra.EnvPath (HasEnvRoot(envRootLens), rootPath)
 import Extra.Verbosity (ePutStrLn)
 import Extra.TH (here, prettyLocs)

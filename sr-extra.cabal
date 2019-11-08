@@ -59,6 +59,7 @@ Library
     th-lift-instances,
     th-orphans,
     time >= 1.1,
+    transformers,
     unexceptionalio,
     unix,
     Unixutils >= 1.51,
@@ -106,7 +107,8 @@ Library
     Extra.Terminal,
     Extra.URI,
     Extra.URIQuery,
-    Extra.Verbosity
+    Extra.Verbosity,
+    UnexceptionalIO.Trans
   if !impl(ghcjs)
     Build-Depends:
       show-please,
