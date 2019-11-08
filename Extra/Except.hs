@@ -8,6 +8,7 @@ module Extra.Except
       -- * Control.Monad.Except extensions
     , tryError
     , withError
+    , withError'
     , mapError
     , handleError
     , HasIOException(fromIOException)
@@ -55,9 +56,14 @@ displaySomeExceptionType = withException (show . typeOf)
 tryError :: MonadError e m => m a -> m (Either e a)
 tryError action = (Right <$> action) `catchError` (pure . Left)
 
+-- | Absorb an ExceptT e' action into another MonadError instance.
+withError :: MonadError e m => (e' -> e) -> ExceptT e' m a -> m a
+withError f action = runExceptT (withExceptT f action) >>= liftEither
+
 -- | Modify the value (but not the type) of an error
-withError :: MonadError e m => (e -> e) -> m a -> m a
-withError f action = tryError action >>= either (throwError . f) return
+withError' :: MonadError e m => (e -> e) -> m a -> m a
+withError' f action = tryError action >>= either (throwError . f) return
+{-# DEPRECATED withError' "withError might to be able to do this job" #-}
 
 handleError :: MonadError e m => (e -> m a) -> m a -> m a
 handleError = flip catchError

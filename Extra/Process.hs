@@ -102,7 +102,7 @@ run ::
     -> m (ExitCode, a, a)
 run opts p input = do
   start " -> " p
-  (result :: (ExitCode, a, a)) <- withError (withLoc $here) $ liftIO (readCreateProcessLazy p input) >>= overOutput >>= return . collectOutput
+  (result :: (ExitCode, a, a)) <- withError' (withLoc $here) $ liftIO (readCreateProcessLazy p input) >>= overOutput >>= return . collectOutput
   finish " <- " p result
   return result
     where
