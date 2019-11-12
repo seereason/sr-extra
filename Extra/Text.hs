@@ -1,7 +1,8 @@
 {-# LANGUAGE CPP, RankNTypes #-}
 
 module Extra.Text
-    ( diffText
+    ( Texty(textyString, textyText, textyLazy)
+    , diffText
     , camelWords
     , capitalize
     , Describe(describe')
@@ -16,11 +17,34 @@ module Extra.Text
 import Data.Algorithm.DiffContext (getContextDiff, prettyContextDiff)
 import Data.Char (isUpper, toUpper)
 import Data.ListLike (groupBy)
+import Data.String (IsString)
 import Data.Text (split, Text, pack, unpack)
+import qualified Data.Text.Lazy as Lazy ( fromStrict, pack, Text, toStrict, unpack )
 #if !__GHCJS__
 import Test.HUnit (assertEqual, Test(TestCase, TestList))
 #endif
 import qualified Text.PrettyPrint as HPJ
+-- * Texty
+
+class (IsString a, Monoid a) => Texty a where
+  textyString :: String -> a
+  textyText :: Text -> a
+  textyLazy :: Lazy.Text -> a
+
+instance Texty Text where
+  textyString = pack
+  textyText = id
+  textyLazy = Lazy.toStrict
+
+instance Texty String where
+  textyString = id
+  textyText = unpack
+  textyLazy = Lazy.unpack
+
+instance Texty Lazy.Text where
+  textyString = Lazy.pack
+  textyText = Lazy.fromStrict
+  textyLazy = id
 
 -- | Output the difference between two string in the style of diff(1).  This
 -- can be used with Test.HUnit.assertString:  assertString (diffText ("a", "1\n2\n3\n"), ("b", "1\n3\n"))
@@ -71,5 +95,5 @@ trunc :: String -> String
 trunc s = if length s > 1000 then take 1000 s ++ "..." else s
 
 -- | The ever needed, never available show that returns a Text.
-textshow :: Show a => a -> Text
-textshow = pack . show
+textshow :: (Texty text, Show a) => a -> text
+textshow = textyString . show
