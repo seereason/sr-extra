@@ -46,6 +46,10 @@ instance Texty Lazy.Text where
   textyText = Lazy.fromStrict
   textyLazy = id
 
+-- | The ever needed, never available show that returns a Text.
+textshow :: (Texty text, Show a) => a -> text
+textshow = textyString . show
+
 -- | Output the difference between two string in the style of diff(1).  This
 -- can be used with Test.HUnit.assertString:  assertString (diffText ("a", "1\n2\n3\n"), ("b", "1\n3\n"))
 diffText :: (String, Text) -> (String, Text) -> String
@@ -93,7 +97,3 @@ describe = describe' Nothing
 -- | Truncate a string to avoid writing monster lines into the log.
 trunc :: String -> String
 trunc s = if length s > 1000 then take 1000 s ++ "..." else s
-
--- | The ever needed, never available show that returns a Text.
-textshow :: (Texty text, Show a) => a -> text
-textshow = textyString . show
