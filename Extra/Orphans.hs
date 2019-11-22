@@ -54,7 +54,7 @@ instance Lift UserId where lift (UserId x0) = [|UserId $(lift x0)|]
 $(deriveLift ''G.Gr)
 $(deriveLift ''G.NodeMap)
 
-instance Ppr UserId where ppr = ptext . show
+instance Ppr UserId where ppr (UserId n) = ptext ("U" <> show n)
 
 #if !__GHCJS__
 instance Arbitrary T.Text where
