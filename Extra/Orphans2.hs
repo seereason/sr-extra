@@ -14,7 +14,7 @@ module Extra.Orphans2 where
 import Data.Generics (TyCon, TypeRep, tyConFingerprint, tyConModule, tyConName, tyConPackage, splitTyConApp)
 import Data.Int (Int32)
 import Data.List (intercalate)
-import Data.ListLike as LL
+import Data.ListLike as LL hiding (show)
 import Data.Map as Map (Map, toList)
 import Data.SafeCopy (SafeCopy(..))
 import Data.Set as Set (Set, toList)
