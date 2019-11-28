@@ -60,6 +60,7 @@ Library
     th-orphans,
     time >= 1.1,
     transformers,
+    unexceptionalio-trans,
     unix,
     Unixutils >= 1.51,
     userid,
@@ -114,8 +115,7 @@ Library
       HUnit,
       process,
       process-extras,
-      QuickCheck >= 2 && < 3,
-      unexceptionalio-trans
+      QuickCheck >= 2 && < 3
     Exposed-Modules:
       Extra.GPGSign,
       Extra.Lock,
