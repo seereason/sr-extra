@@ -114,7 +114,8 @@ Library
       HUnit,
       process,
       process-extras,
-      QuickCheck >= 2 && < 3
+      QuickCheck >= 2 && < 3,
+      unexceptionalio-trans
     Exposed-Modules:
       Extra.GPGSign,
       Extra.Lock,
