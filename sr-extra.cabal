@@ -60,7 +60,6 @@ Library
     th-orphans,
     time >= 1.1,
     transformers,
-    unexceptionalio,
     unix,
     Unixutils >= 1.51,
     userid,
@@ -108,7 +107,6 @@ Library
     Extra.URI,
     Extra.URIQuery,
     Extra.Verbosity,
-    UnexceptionalIO.Trans
   if !impl(ghcjs)
     Build-Depends:
       show-please,
