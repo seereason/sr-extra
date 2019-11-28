@@ -106,7 +106,7 @@ Library
     Extra.Terminal,
     Extra.URI,
     Extra.URIQuery,
-    Extra.Verbosity,
+    Extra.Verbosity
   if !impl(ghcjs)
     Build-Depends:
       show-please,
