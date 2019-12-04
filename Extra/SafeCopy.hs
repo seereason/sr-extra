@@ -4,7 +4,6 @@
 -- message.  It also re-exports all other Data.Serialize symbols
 
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE RankNTypes #-}
@@ -24,13 +23,10 @@ module Extra.SafeCopy
     ) where
 
 import Control.Exception (ErrorCall(..), evaluate, )
-import Control.Lens (Getter, _Left, over, Prism', prism, re)
+import Control.Lens (Getter, Prism', prism, re)
 import Control.Monad.Catch (catch, MonadCatch)
 import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString as B (ByteString, null)
-#ifndef OMIT_DATA_INSTANCES
-import Data.Data (Data)
-#endif
 import Data.Data (Proxy(Proxy), Typeable, typeRep)
 import Data.SafeCopy (base, SafeCopy, safeGet, safePut)
 import Data.Serialize hiding (decode, encode)

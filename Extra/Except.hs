@@ -1,4 +1,12 @@
-{-# LANGUAGE CPP, DeriveAnyClass, FunctionalDependencies, OverloadedStrings, TemplateHaskell, UndecidableInstances #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS -Wall -Wredundant-constraints -Wno-orphans #-}
 
 module Extra.Except
@@ -12,29 +20,42 @@ module Extra.Except
     , mapError
     , handleError
     , HasIOException(fromIOException)
+    , HasErrorCall(..)
     , IOException'(..)
+    , lyftIO'
+    , FromSomeNonPseudoException(fromSomeNonPseudoException)
+    , lyftIO
 #if !__GHCJS__
     , logIOError
 #endif
-
-      -- * UnexceptionalIO extensions
-    , HasSomeNonPseudoException(fromSomeNonPseudoException)
-    , lyftIO
-
     , module Control.Monad.Except
     ) where
 
 import Control.Applicative
-import Control.Exception ({-evaluate,-} Exception, IOException, SomeException(..))
+import Control.Exception hiding (catch) -- ({-evaluate,-} Exception, IOException, SomeException(..))
 import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.Trans (MonadTrans(lift), liftIO)
 import Control.Monad.Except (ExceptT, runExceptT)
+import Data.Serialize
 import Data.Typeable (typeOf)
 #if !__GHCJS__
 import Extra.Log (logException, Priority(ERROR))
 #endif
-import UnexceptionalIO.Trans (fromIO, run, SomeNonPseudoException, UIO, Unexceptional, unsafeFromIO)
+import Foreign.C.Types (CInt(..))
+import GHC.Generics (Generic)
+import GHC.IO.Exception (IOException(IOError), IOErrorType(..))
+import UnexceptionalIO.Trans (fromIO', run, SomeNonPseudoException, UIO, Unexceptional, unsafeFromIO)
+
+deriving instance Generic CInt
+deriving instance Serialize CInt
+deriving instance Generic IOErrorType
+deriving instance Serialize IOErrorType
+deriving instance Generic IOException
+instance Serialize IOException where
+  put (IOError _handle a b c d e) = put a >> put b >> put c >> put d >> put e
+  get = uncurry6 IOError (pure Nothing, get, get, get, get, get)
+    where uncurry6 f (h, t, l, d, e, p) = f <$> h <*> t <*> l <*> d <*> e <*> p
 
 -- | Apply a function to whatever @Exception@ type is inside a
 -- @SomeException@:
@@ -103,23 +124,18 @@ mapError f action = f (tryError action) >>= liftEither
 -- >>> runExceptT (readFile' "/etc/nonexistant" :: ExceptT Error IO String)
 -- Left (Error /etc/nonexistant: openFile: does not exist (No such file or directory))
 class HasIOException e where fromIOException :: IOException -> e
+instance HasIOException IOException where fromIOException = id
 
 newtype IOException' = IOException' IOException
 instance Show IOException' where show (IOException' e) = "(IOException' " <> show (show e) <> ")"
-instance HasIOException IOException' where fromIOException = IOException'
+
+class HasErrorCall e where fromErrorCall :: ErrorCall -> e
+instance HasErrorCall ErrorCall where fromErrorCall = id
 
 #if !__GHCJS__
 logIOError :: (MonadIO m, MonadError e m) => m a -> m a
 logIOError = handleError (\e -> liftIO ($logException ERROR (pure e)) >> throwError e)
 #endif
-
-class HasSomeNonPseudoException e where
-  fromSomeNonPseudoException :: SomeNonPseudoException -> e
-instance HasSomeNonPseudoException SomeNonPseudoException where
-  fromSomeNonPseudoException = id
-
-lyftIO :: (MonadError e m, Unexceptional m, HasSomeNonPseudoException e) => IO a -> m a
-lyftIO io = runExceptT (withExceptT fromSomeNonPseudoException (fromIO io)) >>= liftEither
 
 instance MonadCatch UIO where
   catch uio f = unsafeFromIO $ catch (run uio) (\e -> run (f e))
@@ -137,3 +153,28 @@ instance MonadPlus UIO where
 instance Alternative UIO where
   empty = unsafeFromIO empty
   a <|> b = unsafeFromIO (run a <|> run b)
+
+-- | Like 'UnexceptionalIO.Trans.fromIO'', but lifts into any
+-- 'MonadError' instance rather than only ExceptT.
+lyftIO' ::
+  (Unexceptional m, Exception e, MonadError e m)
+  => (SomeNonPseudoException -> e)
+  -> IO a
+  -> m a
+lyftIO' f io =
+  runExceptT (fromIO' f io) >>= liftEither
+  -- withError id (fromIO' fromSomeNonPseudoException io)
+
+-- | Like 'lyftIO'' but gets the function argument from the type class
+-- 'FromSomeNonPseudoException'.
+lyftIO ::
+  (Unexceptional m, Exception e, MonadError e m, FromSomeNonPseudoException e)
+  => IO a
+  -> m a
+lyftIO = lyftIO' fromSomeNonPseudoException
+
+class FromSomeNonPseudoException e where
+  fromSomeNonPseudoException :: SomeNonPseudoException -> e
+instance FromSomeNonPseudoException SomeNonPseudoException where
+  fromSomeNonPseudoException = id
+
