@@ -25,10 +25,11 @@ module Extra.Serialize
     , decode'
     , decodeM
     , decodeM'
+    , FakeTypeRep(..), fakeTypeRep
     ) where
 
 import Control.Exception (ErrorCall(..), evaluate, )
-import Control.Lens (Getter, _Left, over, Prism', prism, re)
+import Control.Lens (Getter, Prism', prism, re)
 import Control.Monad.Catch (catch, MonadCatch)
 import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString as B (ByteString, null)
@@ -36,14 +37,15 @@ import Data.ByteString as B (ByteString, null)
 import Data.Data (Data)
 #endif
 import Data.Data (Proxy(Proxy))
-import Data.SafeCopy (base, SafeCopy(..), safeGet, safePut)
+import Data.SafeCopy (SafeCopy(..), safeGet, safePut)
 import Data.Serialize hiding (decode, encode)
-import qualified Data.Serialize as Serialize (decode, encode)
+import qualified Data.Serialize as Serialize (encode)
 import Data.Text as T hiding (concat, intercalate)
 import Data.Text.Lazy as LT hiding (concat, intercalate)
 import Data.Text.Encoding as TE
 import Data.Text.Lazy.Encoding as TLE
 import Data.Time (UTCTime(..), Day(ModifiedJulianDay), toModifiedJulianDay, DiffTime)
+import Data.Typeable (Typeable, typeRep)
 import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
@@ -54,7 +56,12 @@ import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
 import Network.URI (URI(..), URIAuth(..))
 import System.IO.Unsafe (unsafePerformIO)
 
-data DecodeError = DecodeError ByteString String deriving (Generic, Eq, Ord)
+newtype FakeTypeRep = FakeTypeRep String deriving (Generic, Eq, Ord, Serialize)
+instance SafeCopy FakeTypeRep
+fakeTypeRep :: forall a. Typeable a => Proxy a -> FakeTypeRep
+fakeTypeRep a = FakeTypeRep (show (typeRep a))
+
+data DecodeError = DecodeError ByteString FakeTypeRep String deriving (Generic, Eq, Ord, Typeable)
 
 class HasDecodeError e where fromDecodeError :: DecodeError -> e
 instance HasDecodeError DecodeError where fromDecodeError = id
@@ -124,12 +131,12 @@ deriving instance Serialize Zulu
 
 -- | Monadic version of decode.
 decodeM ::
-  forall a e m. (Serialize a, HasDecodeError e, MonadError e m)
+  forall a e m. (Serialize a, Typeable a, HasDecodeError e, MonadError e m)
   => ByteString
   -> m a
 decodeM bs =
   case decode bs of
-    Left s -> throwError (fromDecodeError (DecodeError bs s))
+    Left s -> throwError (fromDecodeError (DecodeError bs (fakeTypeRep (Proxy @a)) s))
     Right a -> return a
 
 -- | Like 'decodeM', but also catches any ErrorCall thrown and lifts
@@ -138,16 +145,16 @@ decodeM bs =
 -- outside the serialize package, in which case this (and decode') are
 -- pointless.
 decodeM' ::
-  forall e m a. (Serialize a, HasDecodeError e, MonadError e m, MonadCatch m)
+  forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
   => ByteString
   -> m a
 decodeM' bs = go `catch` handle
   where
     go = case decode bs of
-           Left s -> throwError (fromDecodeError (DecodeError bs s))
+           Left s -> throwError (fromDecodeError (DecodeError bs (fakeTypeRep (Proxy @a)) s))
            Right a -> return a
     handle :: ErrorCall -> m a
-    handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError bs s
+    handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError bs (fakeTypeRep (Proxy @a)) ("ErrorCall: " <> s)
 
 -- | Version of decode that catches any thrown ErrorCall and modifies
 -- its message.
@@ -178,9 +185,11 @@ encodeGetter = re deserializePrism
 instance SafeCopy DecodeError where version = 1
 
 #ifndef OMIT_DATA_INSTANCES
+deriving instance Data FakeTypeRep
 deriving instance Data DecodeError
 #endif
 
 #ifndef OMIT_SHOW_INSTANCES
+deriving instance Show FakeTypeRep
 deriving instance Show DecodeError
 #endif

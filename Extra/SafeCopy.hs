@@ -27,23 +27,12 @@ import Control.Lens (Getter, Prism', prism, re)
 import Control.Monad.Catch (catch, MonadCatch)
 import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString as B (ByteString, null)
-import Data.Data (Proxy(Proxy), Typeable, typeRep)
+import Data.Data (Proxy(Proxy), Typeable)
 import Data.SafeCopy (base, SafeCopy, safeGet, safePut)
 import Data.Serialize hiding (decode, encode)
-import qualified Data.Serialize as Serialize (decode, encode)
-import Data.Text as T hiding (concat, intercalate)
-import Data.Text.Lazy as LT hiding (concat, intercalate)
-import Data.Text.Encoding as TE
-import Data.Text.Lazy.Encoding as TLE
-import Data.Time (UTCTime(..), Day(ModifiedJulianDay), toModifiedJulianDay, DiffTime)
-import Data.UUID.Orphans ()
-import Data.UUID (UUID)
 import Data.UUID.Orphans ()
 import Extra.Orphans ()
-import Extra.Serialize (DecodeError(..), HasDecodeError(..))
-import Extra.Time (Zulu(..))
-import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
-import Network.URI (URI(..), URIAuth(..))
+import Extra.Serialize (DecodeError(..), fakeTypeRep, HasDecodeError(..))
 import System.IO.Unsafe (unsafePerformIO)
 
 encode :: SafeCopy a => a -> ByteString
@@ -57,12 +46,12 @@ decode b = case runGetState safeGet b 0 of
 
 -- | Monadic version of decode.
 decodeM ::
-  forall a e m. (SafeCopy a, HasDecodeError e, MonadError e m)
+  forall a e m. (SafeCopy a, Typeable a, HasDecodeError e, MonadError e m)
   => ByteString
   -> m a
 decodeM bs =
   case decode bs of
-    Left s -> throwError (fromDecodeError (DecodeError bs s))
+    Left s -> throwError (fromDecodeError (DecodeError bs (fakeTypeRep (Proxy @a)) s))
     Right a -> return a
 
 -- | Like 'decodeM', but also catches any ErrorCall thrown and lifts
@@ -71,16 +60,16 @@ decodeM bs =
 -- outside the serialize package, in which case this (and decode') are
 -- pointless.
 decodeM' ::
-  forall e m a. (SafeCopy a, HasDecodeError e, MonadError e m, MonadCatch m)
+  forall e m a. (SafeCopy a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
   => ByteString
   -> m a
 decodeM' bs = go `catch` handle
   where
     go = case decode bs of
-           Left s -> throwError (fromDecodeError (DecodeError bs s))
+           Left s -> throwError (fromDecodeError (DecodeError bs (fakeTypeRep (Proxy @a)) s))
            Right a -> return a
     handle :: ErrorCall -> m a
-    handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError bs s
+    handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError bs (fakeTypeRep (Proxy @a)) s
 
 -- | Version of decode that catches any thrown ErrorCall and modifies
 -- its message.

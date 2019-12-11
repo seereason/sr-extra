@@ -45,6 +45,7 @@ import Data.UUID (UUID)
 import Data.UUID.Orphans ()
 import Extra.Orphans ()
 import Extra.SafeCopy hiding (decode, decode', decodeM, decodeM')
+import Extra.Serialize (fakeTypeRep)
 import Extra.SerializeDebug (Debug, DecodeError(..), HasDecodeError(..))
 import Extra.Time (Zulu(..))
 import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
@@ -64,7 +65,7 @@ decodeM ::
   -> m a
 decodeM bs =
   case decode bs of
-    Left s -> throwError (fromDecodeError (DecodeError bs s))
+    Left s -> throwError (fromDecodeError (DecodeError bs (fakeTypeRep (Proxy @a)) s))
     Right a -> return a
 
 -- | Like 'decodeM', but also catches any ErrorCall thrown and lifts
@@ -79,10 +80,10 @@ decodeM' ::
 decodeM' bs = go `catch` handle
   where
     go = case decode bs of
-           Left s -> throwError (fromDecodeError (DecodeError bs s))
+           Left s -> throwError (fromDecodeError (DecodeError bs (fakeTypeRep (Proxy @a)) s))
            Right a -> return a
     handle :: ErrorCall -> m a
-    handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError bs s
+    handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError bs (fakeTypeRep (Proxy @a)) s
 
 -- | Version of decode that catches any thrown ErrorCall and modifies
 -- its message.

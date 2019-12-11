@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.65
+Version:        1.66
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -26,6 +26,10 @@ flag network-uri
 flag omit-serialize
   Description: Omit all the Serialize instances, on the assumption
    that we will use SafeCopy instances instead.
+  Default: False
+
+flag omit-data
+  Description: Omit all Data instances
   Default: False
 
 Library
@@ -129,6 +133,9 @@ Library
     Build-Depends: network-uri >= 2.6
   else
     Build-Depends: network >= 2.4
+
+  if flag(omit-data)
+    CPP-Options: -DOMIT_DATA_INSTANCES
 
   if flag(omit-serialize)
     CPP-Options: -DOMIT_SERIALIZE
