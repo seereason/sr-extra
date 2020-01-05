@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.66
+Version:        1.67
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -84,6 +84,7 @@ Library
     Extra.Debug2,
     Extra.Either,
     Extra.EnvPath,
+    Extra.ErrorControl,
     Extra.Except,
     Extra.Exit,
     Extra.Files,
