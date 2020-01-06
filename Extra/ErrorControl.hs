@@ -1,5 +1,6 @@
 -- | From the PureScript Error.Control package by Luka Jacobowitz.
 
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
@@ -45,8 +46,7 @@ instance Monad m => ErrorControl e (ExceptT e m) m where
   controlError ma f = runExceptT ma >>= either f pure
   accept = lift
 
-#if 1
--- | Resolve the error on the Left side of an Either.
+-- | Resolve the error on the left side of an Either.
 instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) (ExceptT e2 m) where
   controlError :: ExceptT (Either e1 e2) m a -> (Either e1 e2 -> ExceptT e2 m a) -> ExceptT e2 m a
   controlError ma f =
@@ -56,19 +56,15 @@ instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) (Exce
       pivot = either (either (Right . Right) Left) (Right . Left)
   accept :: ExceptT e2 m a -> ExceptT (Either e1 e2) m a
   accept = withExceptT Right
-#else
--- Resolve the error on the Right side of an Either.  This instance
--- conflicts with the one above, so we will keep the one that resolves
--- the Left error.
-instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) where
-  type Handled (ExceptT (Either e1 e2) m) = ExceptT e1 m
+
+-- | Resolve the error on the right side of an Either.
+instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) (ExceptT e1 m) where
   controlError ma f =
     ExceptT (pivot <$> runExceptT ma) >>= either (f . Right) pure
     where
       pivot :: Either (Either a b) c -> Either a (Either b c)
       pivot = either (either Left (Right . Left)) (Right . Right)
   accept = withExceptT Left
-#endif
 
 instance ErrorControl e m n => ErrorControl e (StateT s m) (StateT s n) where
   controlError sma f = StateT (\s -> controlError (runStateT sma s) (\e -> runStateT (f e) s))
