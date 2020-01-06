@@ -11,7 +11,7 @@
 
 module Extra.ErrorControl
   ( MonadError(throwError) -- re-export
-  , ErrorControl(Handled, controlError, accept)
+  , ErrorControl(controlError, accept)
   , intercept
   , trial
   , trialT
@@ -29,32 +29,25 @@ import Control.Monad.Writer (mapWriterT, runWriterT, WriterT(WriterT))
 import Control.Exception (IOException)
 import UnexceptionalIO.Trans (run, UIO, unsafeFromIO)
 
-class (MonadError e m, Monad (Handled m)) => ErrorControl e m where
-  type Handled m :: * -> *
-  controlError :: m a -> (e -> Handled m a) -> Handled m a
-  accept :: Handled m a -> m a
+class (MonadError e m, Monad n) => ErrorControl e m n where
+  controlError :: m a -> (e -> n a) -> n a
+  accept :: n a -> m a
 
-instance ErrorControl e (Either e) where
-  type Handled (Either e) = Identity
+instance ErrorControl e (Either e) Identity where
   controlError ma f = either f Identity ma
   accept = Right . runIdentity
 
-instance ErrorControl IOException IO where
-  type Handled IO = UIO
+instance ErrorControl IOException IO UIO where
   controlError ma f = unsafeFromIO (ma `catchError` (accept . f))
   accept = run
 
-{-
-instance Monad m => ErrorControl e (ExceptT e m) where
-  type Handled (ExceptT e m) = m
+instance Monad m => ErrorControl e (ExceptT e m) m where
   controlError ma f = runExceptT ma >>= either f pure
   accept = lift
--}
 
 #if 1
 -- | Resolve the error on the Left side of an Either.
-instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) where
-  type Handled (ExceptT (Either e1 e2) m) = ExceptT e2 m
+instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) (ExceptT e2 m) where
   controlError :: ExceptT (Either e1 e2) m a -> (Either e1 e2 -> ExceptT e2 m a) -> ExceptT e2 m a
   controlError ma f =
     ExceptT (pivot <$> runExceptT ma) >>= either pure (f . Left)
@@ -77,40 +70,36 @@ instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) where
   accept = withExceptT Left
 #endif
 
-instance ErrorControl e m => ErrorControl e (StateT s m) where
-  type Handled (StateT s m) = StateT s (Handled m)
+instance ErrorControl e m n => ErrorControl e (StateT s m) (StateT s n) where
   controlError sma f = StateT (\s -> controlError (runStateT sma s) (\e -> runStateT (f e) s))
   accept = mapStateT accept
 
-instance ErrorControl e m => ErrorControl e (ReaderT r m) where
-  type Handled (ReaderT r m) = ReaderT r (Handled m)
+instance ErrorControl e m n => ErrorControl e (ReaderT r m) (ReaderT r n) where
   controlError rma f = ReaderT (\r -> controlError (runReaderT rma r) (\e -> runReaderT (f e) r))
   accept = mapReaderT accept
 
-instance (ErrorControl e m, Monoid w) => ErrorControl e (WriterT w m) where
-  type Handled (WriterT w m) = WriterT w (Handled m)
+instance (ErrorControl e m n, Monoid w) => ErrorControl e (WriterT w m) (WriterT w n) where
   controlError wma f = WriterT (controlError (runWriterT wma) (runWriterT . f))
   accept = mapWriterT accept
 
-instance (ErrorControl e m, Monoid w) => ErrorControl e (RWST r w s m) where
-  type Handled (RWST r w s m) = RWST r w s (Handled m)
+instance (ErrorControl e m n, Monoid w) => ErrorControl e (RWST r w s m) (RWST r w s n) where
   controlError rwsma f = RWST (\r s -> controlError (runRWST rwsma r s) (\e -> runRWST (f e) r s))
   accept = mapRWST accept
 
 -- | Enhanced 'handleError'
-intercept :: ErrorControl e m => m a -> (e -> a) -> Handled m a
+intercept :: ErrorControl e m n => m a -> (e -> a) -> n a
 intercept fa f = controlError fa (pure . f)
 
 -- | Enhanced 'try'
-trial :: ErrorControl e m => m a -> Handled m (Either e a)  -- try
+trial :: ErrorControl e m n => m a -> n (Either e a)  -- try
 trial fa = intercept (fmap Right fa) Left
 
-trialT :: ErrorControl e m => m a -> ExceptT e (Handled m) a
+trialT :: ErrorControl e m n => m a -> ExceptT e n a
 trialT fa = ExceptT (trial fa)
 
-absolve :: ErrorControl e m => Handled m (Either e a) -> m a
+absolve :: ErrorControl e m n => n (Either e a) -> m a
 absolve gea = accept gea >>= (either throwError pure)
 
-assure :: ErrorControl e m => Handled m a -> (a -> e) -> (a -> Bool) -> m a
+assure :: ErrorControl e m n => n a -> (a -> e) -> (a -> Bool) -> m a
 assure ga err predicate =
   accept ga >>= (\a -> if predicate a then pure a else throwError (err a))
