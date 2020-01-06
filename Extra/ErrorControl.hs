@@ -2,7 +2,11 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Extra.ErrorControl
@@ -16,7 +20,7 @@ module Extra.ErrorControl
   ) where
 
 import Control.Monad.Except
-  (catchError, ExceptT(ExceptT), lift, MonadError, runExceptT, throwError)
+  (catchError, ExceptT(ExceptT), lift, MonadError, runExceptT, throwError, withExceptT)
 import Control.Monad.Identity (Identity(Identity), runIdentity)
 import Control.Monad.Reader (mapReaderT, ReaderT(ReaderT), runReaderT)
 import Control.Monad.RWS (mapRWST, runRWST, RWST(RWST))
@@ -40,10 +44,38 @@ instance ErrorControl IOException IO where
   controlError ma f = unsafeFromIO (ma `catchError` (accept . f))
   accept = run
 
+{-
 instance Monad m => ErrorControl e (ExceptT e m) where
   type Handled (ExceptT e m) = m
   controlError ma f = runExceptT ma >>= either f pure
   accept = lift
+-}
+
+#if 1
+-- | Resolve the error on the Left side of an Either.
+instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) where
+  type Handled (ExceptT (Either e1 e2) m) = ExceptT e2 m
+  controlError :: ExceptT (Either e1 e2) m a -> (Either e1 e2 -> ExceptT e2 m a) -> ExceptT e2 m a
+  controlError ma f =
+    ExceptT (pivot <$> runExceptT ma) >>= either pure (f . Left)
+    where
+      pivot :: Either (Either a b) c -> Either b (Either c a)
+      pivot = either (either (Right . Right) Left) (Right . Left)
+  accept :: ExceptT e2 m a -> ExceptT (Either e1 e2) m a
+  accept = withExceptT Right
+#else
+-- Resolve the error on the Right side of an Either.  This instance
+-- conflicts with the one above, so we will keep the one that resolves
+-- the Left error.
+instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) where
+  type Handled (ExceptT (Either e1 e2) m) = ExceptT e1 m
+  controlError ma f =
+    ExceptT (pivot <$> runExceptT ma) >>= either (f . Right) pure
+    where
+      pivot :: Either (Either a b) c -> Either a (Either b c)
+      pivot = either (either Left (Right . Left)) (Right . Right)
+  accept = withExceptT Left
+#endif
 
 instance ErrorControl e m => ErrorControl e (StateT s m) where
   type Handled (StateT s m) = StateT s (Handled m)
