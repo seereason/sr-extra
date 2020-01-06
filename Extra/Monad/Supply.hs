@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -27,6 +28,7 @@ import Control.Monad.Reader
 import Control.Monad.Writer
 import Control.Monad.Morph (MFunctor(..))
 import qualified Data.Semigroup as Sem
+import Extra.ErrorControl
 
 class Monad m => MonadSupply s m | m -> s where
   supply :: m s
@@ -95,6 +97,11 @@ instance Sem.Semigroup a => Sem.Semigroup (Supply s a) where
 instance (Monoid a) => Monoid (Supply s a) where
   mempty = return mempty
   mappend = (<>)
+
+instance ErrorControl e m n => ErrorControl e (SupplyT s m) (SupplyT s n) where
+  controlError :: SupplyT s m a -> (e -> SupplyT s n a) -> SupplyT s n a
+  controlError ma f = SupplyT (controlError (unSupplyT ma) (unSupplyT . f)) where unSupplyT (SupplyT s) = s
+  accept (SupplyT n) = SupplyT (accept n)
 
 -- | Get n supplies.
 supplies :: MonadSupply s m => Int -> m [s]
