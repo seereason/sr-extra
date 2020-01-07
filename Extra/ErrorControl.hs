@@ -57,7 +57,9 @@ instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) (Exce
   accept :: ExceptT e2 m a -> ExceptT (Either e1 e2) m a
   accept = withExceptT Right
 
--- | Resolve the error on the right side of an Either.
+#if 0
+-- | Resolve the error on the right side of an Either.  (It turns out
+-- this actually does conflict with the one above.)
 instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) (ExceptT e1 m) where
   controlError ma f =
     ExceptT (pivot <$> runExceptT ma) >>= either (f . Right) pure
@@ -65,6 +67,7 @@ instance Monad m => ErrorControl (Either e1 e2) (ExceptT (Either e1 e2) m) (Exce
       pivot :: Either (Either a b) c -> Either a (Either b c)
       pivot = either (either Left (Right . Left)) (Right . Right)
   accept = withExceptT Left
+#endif
 
 instance ErrorControl e m n => ErrorControl e (StateT s m) (StateT s n) where
   controlError sma f = StateT (\s -> controlError (runStateT sma s) (\e -> runStateT (f e) s))
