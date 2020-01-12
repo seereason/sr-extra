@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -19,11 +20,15 @@ module Extra.Except
     , withError'
     , mapError
     , handleError
-    , HasIOException(fromIOException)
+    , HasIOException(ioException)
+    , HasNonIOException(nonIOException)
     , HasErrorCall(..)
     , IOException'(..)
+    -- , HasSomeNonPseudoException(someNonPseudoException)
+    , SomeNonPseudoException'
+    -- , lyftIO
+    -- , lyftIO'
     , lyftIO'
-    , FromSomeNonPseudoException(fromSomeNonPseudoException)
     , lyftIO
 #if !__GHCJS__
     , logIOError
@@ -33,19 +38,22 @@ module Extra.Except
 
 import Control.Applicative
 import Control.Exception hiding (catch) -- ({-evaluate,-} Exception, IOException, SomeException(..))
+import Control.Lens (iso, Prism', preview, prism, review, _Right)
 import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.Trans (MonadTrans(lift), liftIO)
 import Control.Monad.Except (ExceptT, runExceptT)
+import Data.Maybe (fromJust)
 import Data.Serialize
-import Data.Typeable (typeOf)
+import Data.Typeable (Typeable, typeOf)
+import Extra.ErrorControl
 #if !__GHCJS__
 import Extra.Log (logException, Priority(ERROR))
 #endif
 import Foreign.C.Types (CInt(..))
 import GHC.Generics (Generic)
 import GHC.IO.Exception (IOException(IOError), IOErrorType(..))
-import UnexceptionalIO.Trans (fromIO', run, SomeNonPseudoException, UIO, Unexceptional, unsafeFromIO)
+import UnexceptionalIO.Trans
 
 deriving instance Generic CInt
 deriving instance Serialize CInt
@@ -123,8 +131,8 @@ mapError f action = f (tryError action) >>= liftEither
 --
 -- >>> runExceptT (readFile' "/etc/nonexistant" :: ExceptT Error IO String)
 -- Left (Error /etc/nonexistant: openFile: does not exist (No such file or directory))
-class HasIOException e where fromIOException :: IOException -> e
-instance HasIOException IOException where fromIOException = id
+class HasIOException e where ioException :: Prism' e IOException
+instance HasIOException IOException where ioException = id
 
 newtype IOException' = IOException' IOException
 instance Show IOException' where show (IOException' e) = "(IOException' " <> show (show e) <> ")"
@@ -154,6 +162,7 @@ instance Alternative UIO where
   empty = unsafeFromIO empty
   a <|> b = unsafeFromIO (run a <|> run b)
 
+#if 0
 -- | Like 'UnexceptionalIO.Trans.fromIO'', but lifts into any
 -- 'MonadError' instance rather than only ExceptT.
 lyftIO' ::
@@ -163,18 +172,131 @@ lyftIO' ::
   -> m a
 lyftIO' f io =
   runExceptT (fromIO' f io) >>= liftEither
-  -- withError id (fromIO' fromSomeNonPseudoException io)
+  -- withError id (fromIO' (view someNonPseudoException) io)
 
--- | Like 'lyftIO'' but gets the function argument from the type class
--- 'FromSomeNonPseudoException'.
+-- | Like 'lyftIO' but gets the function argument from the type class
+-- 'HasSomeNonPseudoException'.
 lyftIO ::
-  (Unexceptional m, Exception e, MonadError e m, FromSomeNonPseudoException e)
+  (Unexceptional m, Exception e, MonadError e m, HasSomeNonPseudoException e)
   => IO a
   -> m a
-lyftIO = lyftIO' fromSomeNonPseudoException
+lyftIO = lyftIO' (review someNonPseudoException)
+#endif
 
-class FromSomeNonPseudoException e where
-  fromSomeNonPseudoException :: SomeNonPseudoException -> e
-instance FromSomeNonPseudoException SomeNonPseudoException where
-  fromSomeNonPseudoException = id
+lyftIO' ::
+  forall e m a. (Unexceptional m, HasNonIOException e, HasIOException e, Exception e)
+  => IO a
+  -> ExceptT e m a
+lyftIO' io =
+  controlError
+    (fromIO io :: ExceptT SomeNonPseudoException m a)
+    (\(e :: SomeNonPseudoException) -> (maybe (throwError (review nonIOException e)) (\e' -> throwError (review ioException e')) (preview ioException e)))
 
+lyftIO ::
+  (Unexceptional m, Exception e, MonadError e m, HasNonIOException e, HasIOException e)
+  => IO a
+  -> m a
+lyftIO io = runExceptT (lyftIO' io) >>= either throwError return
+
+class HasSomeNonPseudoException e where
+  someNonPseudoException :: Prism' e SomeNonPseudoException
+instance HasSomeNonPseudoException SomeNonPseudoException where
+  someNonPseudoException = id
+
+-- | This is an error that was caught by UnexceptionalIO and is not an
+-- IO exception.  It is stored as a SomeNonPseudoException (or should
+-- it be a SomeException?)
+class HasNonIOException e where
+  nonIOException :: Prism' e SomeNonPseudoException
+
+newtype NonIOException e = NonIOException {unNonIOException :: e}
+
+-- | A type we can derive from a 'SomeNonPseudoException' that has
+-- IOException and NonIOException instances.
+type SomeNonPseudoException' =
+  Either (NonIOException SomeNonPseudoException) IOException
+
+-- | An example of a type that splits a 'SomeNonPseudoException' into
+-- an IOException and a 'NonIOException'.  It happens to be an Iso'.
+instance HasNonIOException SomeNonPseudoException' where
+  nonIOException :: Prism' SomeNonPseudoException' SomeNonPseudoException
+  nonIOException = iso f g
+    where
+      f :: SomeNonPseudoException' -> SomeNonPseudoException
+      f = either unNonIOException (fromJust . fromException . toException)
+      g :: SomeNonPseudoException -> SomeNonPseudoException'
+      g e = maybe (Left (NonIOException e)) Right (fromException (toException e))
+
+-- The HasIOException instance is easy.
+instance HasIOException SomeNonPseudoException' where
+  ioException = _Right
+
+instance HasIOException SomeNonPseudoException where
+  ioException :: Prism' SomeNonPseudoException IOException
+  ioException = prism f g
+    where
+      f :: IOException -> SomeNonPseudoException
+      -- Because IOException is a non-pseudo exception this
+      -- fromException will return a Just
+      f = fromJust . fromException . toException
+      g :: SomeNonPseudoException -> Either SomeNonPseudoException IOException
+      g e = maybe (Left e) Right (fromException (toException e))
+
+-- Now use ErrorControl to handle the NonIOException and leave the IOException.
+
+instance Monad m => ErrorControl SomeNonPseudoException' (ExceptT SomeNonPseudoException' m) (ExceptT IOException m) where
+  controlError :: ExceptT SomeNonPseudoException' m a -> (SomeNonPseudoException' -> ExceptT IOException m a) -> ExceptT IOException m a
+  controlError ma f = mapExceptT (\ma' -> ma' >>= either (runExceptT . f) (pure . Right)) ma
+  accept :: ExceptT IOException m a -> ExceptT SomeNonPseudoException' m a
+  accept = withExceptT Right
+
+-- fromException :: Exception e => SomeException -> Maybe e
+-- toException :: Exception e => e -> SomeException
+
+-- | Convert a SomeNonPseudoException into any error type with
+-- both IOException and NonIOException instances.  This has a
+-- problem when you try to use 'accept' to convert an e back into
+-- a SomeNonPseudoException, so best not to use accept.
+#if 1
+instance (Monad m, HasIOException e, HasNonIOException e, {-Typeable e, Show e,-} Exception e)
+    => ErrorControl SomeNonPseudoException (ExceptT SomeNonPseudoException m) (ExceptT e m) where
+  controlError :: ExceptT SomeNonPseudoException m a -> (SomeNonPseudoException -> ExceptT e m a) -> ExceptT e m a
+  controlError ma f =
+    mapExceptT (\ma' -> ma' >>= either
+                                  (\e -> maybe
+                                           (runExceptT (f e))
+                                           (pure . Left . review ioException)
+                                           (fromException (toException e) :: Maybe IOException))
+                                  (pure . Right)) ma
+  accept :: ExceptT e m a -> ExceptT SomeNonPseudoException m a
+  accept = withExceptT convert
+    where convert :: e -> SomeNonPseudoException
+          convert e =
+            case preview ioException e of
+              Just ioe -> fromJust (fromException (toException ioe))
+              Nothing ->
+                case preview nonIOException e of
+                  Just e' -> e'
+                  -- If we can't use IOException or the NonIOException
+                  -- use the Exception instance.  I'm not fully certain
+                  -- what the implications of this happening are.
+                  Nothing -> fromJust (fromException (toException e))
+
+#else
+instance Monad m => ErrorControl SomeNonPseudoException (ExceptT SomeNonPseudoException m) (ExceptT IOException m) where
+  controlError :: ExceptT SomeNonPseudoException m a -> (SomeNonPseudoException -> ExceptT IOException m a) -> ExceptT IOException m a
+  controlError ma f =
+    -- My process...
+    -- (undefined :: ExceptT IOException m a)
+    -- mapExceptT (undefined :: m (Either SomeNonPseudoException a) -> m (Either IOException a)) ma
+    -- mapExceptT (\ma' -> ma' >>= (undefined :: (Either SomeNonPseudoException a) -> m (Either IOException a))) ma
+    -- mapExceptT (\ma' -> ma' >>= either (undefined :: SomeNonPseudoException -> m (Either IOException a)) (undefined :: a -> m (Either IOException a))) ma
+    -- mapExceptT (\ma' -> ma' >>= either ((undefined :: SomeException -> m (Either IOException a)) . toException) (pure . Right)) ma
+    -- mapExceptT (\ma' -> ma' >>= either (\e -> (undefined :: Maybe IOException -> m (Either IOException a)) $ fromException $ toException e) (pure . Right)) ma
+    -- mapExceptT (\ma' -> ma' >>= either (\e -> (maybe (undefined :: m (Either IOException a)) (undefined :: IOException -> m (Either IOException a))) $ fromException $ toException e) (pure . Right)) ma
+    -- mapExceptT (\ma' -> ma' >>= either (\(e :: SomeNonPseudoException) -> (maybe ((undefined :: ExceptT IOException m a -> m (Either IOException a)) (f e)) (pure . Left)) $ fromException $ toException e) (pure . Right)) ma
+    mapExceptT (\ma' -> ma' >>= either (\e -> maybe (runExceptT (f e)) (pure . Left) $ fromException $ toException e) (pure . Right)) ma
+  accept :: ExceptT IOException m a -> ExceptT SomeNonPseudoException m a
+  -- This will work because IOException is a non-pseudo exception
+  accept = withExceptT (fromJust . fromException . toException)
+#endif
