@@ -14,7 +14,8 @@
 module Extra.SafeCopy
     ( module Data.SafeCopy
     , DecodeError(..)
-    , HasDecodeError(fromDecodeError)
+    , HasDecodeError
+    , fromDecodeError
     , decode
     , encode
     , decode'
@@ -32,7 +33,7 @@ import Data.SafeCopy (base, SafeCopy, safeGet, safePut)
 import Data.Serialize hiding (decode, encode)
 import Data.UUID.Orphans ()
 import Extra.Orphans ()
-import Extra.Serialize (DecodeError(..), fakeTypeRep, HasDecodeError(..))
+import Extra.Serialize (DecodeError(..), fakeTypeRep, HasDecodeError, fromDecodeError)
 import System.IO.Unsafe (unsafePerformIO)
 
 encode :: SafeCopy a => a -> ByteString

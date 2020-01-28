@@ -12,10 +12,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Extra.Serialize
     ( DecodeError(..)
-    , HasDecodeError(fromDecodeError)
+    , HasDecodeError
+    , fromDecodeError
     , module Data.Serialize
     , decodePrism, deserializePrism
     , encodeGetter, serializeGetter
@@ -29,7 +31,7 @@ module Extra.Serialize
     ) where
 
 import Control.Exception (ErrorCall(..), evaluate, )
-import Control.Lens (Getter, Prism', prism, re)
+import Control.Lens (Getter, Prism', prism, re, review)
 import Control.Monad.Catch (catch, MonadCatch)
 import Control.Monad.Except (MonadError, throwError)
 import Data.ByteString as B (ByteString, null)
@@ -49,6 +51,7 @@ import Data.Typeable (Typeable, typeRep)
 import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
+import Extra.ErrorSet (Member(follow))
 import Extra.Orphans ()
 import Extra.Time (Zulu(..))
 import GHC.Generics (Generic)
@@ -62,10 +65,15 @@ fakeTypeRep :: forall a. Typeable a => Proxy a -> FakeTypeRep
 fakeTypeRep a = FakeTypeRep (show (typeRep a))
 
 data DecodeError = DecodeError ByteString FakeTypeRep String deriving (Generic, Eq, Ord, Typeable)
-
-class HasDecodeError e where fromDecodeError :: DecodeError -> e
-instance HasDecodeError DecodeError where fromDecodeError = id
 instance Serialize DecodeError where get = safeGet; put = safePut
+
+type HasDecodeError e = Member DecodeError e
+decodeError :: Member DecodeError e => Prism' e DecodeError
+decodeError = follow
+fromDecodeError :: Member DecodeError e => DecodeError -> e
+fromDecodeError = review decodeError
+
+-- instance Member DecodeError DecodeError where follow = id
 
 encode :: Serialize a => a -> ByteString
 encode = Serialize.encode
