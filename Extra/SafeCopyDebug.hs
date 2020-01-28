@@ -16,6 +16,7 @@ module Extra.SafeCopyDebug
     ( module Extra.SafeCopy
     , Debug
     , DecodeError(..)
+    , HasDecodeError(fromDecodeError)
     , decode
     , decode'
     , decodeM
@@ -45,7 +46,7 @@ import Data.UUID.Orphans ()
 import Extra.Orphans ()
 import Extra.SafeCopy hiding (decode, decode', decodeM, decodeM')
 import Extra.Serialize (fakeTypeRep)
-import Extra.SerializeDebug (Debug, DecodeError(..), fromDecodeError, HasDecodeError)
+import Extra.SerializeDebug (Debug, DecodeError(..), HasDecodeError(..))
 import Extra.Time (Zulu(..))
 import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
 import Network.URI (URI(..), URIAuth(..))
