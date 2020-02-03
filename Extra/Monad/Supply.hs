@@ -19,6 +19,8 @@ module Extra.Monad.Supply
 , supplies
 ) where
 
+import Control.Exception (throw)
+import Control.Monad.Catch
 import Control.Monad.Fix
 import Control.Monad.Identity
 import Control.Monad.RWS
@@ -102,6 +104,13 @@ instance ErrorControl e m n => ErrorControl e (SupplyT s m) (SupplyT s n) where
   controlError :: SupplyT s m a -> (e -> SupplyT s n a) -> SupplyT s n a
   controlError ma f = SupplyT (controlError (unSupplyT ma) (unSupplyT . f)) where unSupplyT (SupplyT s) = s
   accept (SupplyT n) = SupplyT (accept n)
+
+instance (MonadCatch m, MonadIO m) => MonadCatch (SupplyT i m) where
+  catch (SupplyT io) f = SupplyT (catch io (unSupplyT . f))
+    where unSupplyT (SupplyT s) = s
+
+instance (MonadThrow m, MonadIO m) => MonadThrow (SupplyT i m) where
+  throwM = liftIO . throw
 
 -- | Get n supplies.
 supplies :: MonadSupply s m => Int -> m [s]
