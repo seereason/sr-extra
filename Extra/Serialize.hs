@@ -17,6 +17,7 @@
 module Extra.Serialize
     ( DecodeError(..)
     , HasDecodeError(fromDecodeError)
+    , HasDecodeFailure
     , decodeFailure
     , fromDecodeFailure
     , module Data.Serialize
@@ -52,7 +53,7 @@ import Data.Typeable (Typeable, typeRep)
 import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
-import Extra.ErrorSet (Member, OneOf, Set, follow)
+import Extra.ErrorSet (Member(follow))
 import Extra.Orphans ()
 import Extra.Time (Zulu(..))
 import GHC.Generics (Generic)
@@ -72,11 +73,13 @@ instance HasDecodeError DecodeError where fromDecodeError = id
 instance Serialize DecodeError where get = safeGet; put = safePut
 
 -- New name for backwards compatibility, especially in appraisalscribe-migrate.
-decodeFailure :: Member DecodeError e => Prism' (OneOf e) DecodeError
+type HasDecodeFailure e = Member DecodeError e
+decodeFailure :: Member DecodeError e => Prism' e DecodeError
 decodeFailure = follow
-
-fromDecodeFailure :: Member DecodeError e => DecodeError -> OneOf e
+fromDecodeFailure :: Member DecodeError e => DecodeError -> e
 fromDecodeFailure = review decodeFailure
+
+-- instance Member DecodeError DecodeError where follow = id
 
 encode :: Serialize a => a -> ByteString
 encode = Serialize.encode

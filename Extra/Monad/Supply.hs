@@ -16,7 +16,6 @@ module Extra.Monad.Supply
 , evalSupply
 , runSupplyT
 , runSupply
-, mapSupplyT
 , supplies
 ) where
 
@@ -128,6 +127,3 @@ runSupplyT (SupplyT s) = runStateT s
 
 runSupply :: Supply s a -> [s] -> (a,[s])
 runSupply (Supply s) = runIdentity . runSupplyT s
-
-mapSupplyT :: (m (a, [s]) -> n (b, [s])) -> SupplyT s m a -> SupplyT s n b
-mapSupplyT f (SupplyT s) = SupplyT (mapStateT f s)
