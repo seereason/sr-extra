@@ -85,6 +85,7 @@ Library
     Extra.Either,
     Extra.EnvPath,
     Extra.ErrorControl,
+    Extra.Errors,
     Extra.ErrorSet,
     Extra.Except,
     Extra.Exit,

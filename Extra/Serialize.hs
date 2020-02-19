@@ -53,7 +53,7 @@ import Data.Typeable (Typeable, typeRep)
 import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
-import Extra.ErrorSet (Member(follow))
+import qualified Extra.Errors as Errors
 import Extra.Orphans ()
 import Extra.Time (Zulu(..))
 import GHC.Generics (Generic)
@@ -73,10 +73,10 @@ instance HasDecodeError DecodeError where fromDecodeError = id
 instance Serialize DecodeError where get = safeGet; put = safePut
 
 -- New name for backwards compatibility, especially in appraisalscribe-migrate.
-type HasDecodeFailure e = Member DecodeError e
-decodeFailure :: Member DecodeError e => Prism' e DecodeError
-decodeFailure = follow
-fromDecodeFailure :: Member DecodeError e => DecodeError -> e
+type HasDecodeFailure e = Errors.Member DecodeError e
+decodeFailure :: Errors.Member DecodeError e => Prism' (Errors.OneOf e) DecodeError
+decodeFailure = Errors.follow
+fromDecodeFailure :: Errors.Member DecodeError e => DecodeError -> Errors.OneOf e
 fromDecodeFailure = review decodeFailure
 
 -- instance Member DecodeError DecodeError where follow = id
