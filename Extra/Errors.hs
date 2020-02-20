@@ -39,7 +39,9 @@ import Control.Lens (Prism', prism')
 import Data.Type.Bool
 import Data.Type.Equality
 import Data.Word (Word8)
-import qualified Data.Serialize as S (Serialize(get, put), getWord8, PutM, Get)
+import Data.SafeCopy
+import qualified Data.Serialize as S (Serialize(get, put), getWord8, Put, PutM, Get)
+import Data.Typeable (Typeable, typeOf)
 import Data.Proxy
 
 type family IsMember x ys where
@@ -83,6 +85,24 @@ instance (S.Serialize e, S.Serialize (OneOf s)) => S.Serialize (OneOf (e ': s)) 
   get :: S.Get (OneOf (e ': s))
   get = S.getWord8 >>= \case
     0 -> NoVal <$> S.get
+
+instance SafeCopy (OneOf '[]) where
+  version = 1
+  kind = base
+  getCopy :: S.Serialize (OneOf s) => Contained (S.Get (OneOf s))
+  getCopy = contain S.get
+  putCopy :: S.Serialize (OneOf s) => OneOf s -> Contained S.Put
+  putCopy = contain . S.put
+  errorTypeName _ = "()"
+
+instance (SafeCopy e, S.Serialize e, Typeable e,  S.Serialize (OneOf s), Typeable s) => SafeCopy (OneOf (e ': s)) where
+  version = 1
+  kind = base
+  getCopy :: Contained (S.Get (OneOf (e ': s)))
+  getCopy = contain S.get
+  putCopy :: OneOf (e ': s) -> Contained S.Put
+  putCopy = contain . S.put
+  errorTypeName = show . typeOf
 
 class Set e xs where
   set :: e -> OneOf xs
