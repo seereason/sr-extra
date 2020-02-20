@@ -17,9 +17,8 @@
 module Extra.Serialize
     ( DecodeError(..)
     , HasDecodeError(fromDecodeError)
-    , HasDecodeFailure
-    , decodeFailure
-    , fromDecodeFailure
+    -- , HasDecodeFailure
+    -- , decodeFailure, fromDecodeFailure
     , module Data.Serialize
     , decodePrism, deserializePrism
     , encodeGetter, serializeGetter
@@ -68,16 +67,19 @@ fakeTypeRep a = FakeTypeRep (show (typeRep a))
 
 data DecodeError = DecodeError ByteString FakeTypeRep String deriving (Generic, Eq, Ord, Typeable)
 
-class HasDecodeError e where fromDecodeError :: DecodeError -> e
-instance HasDecodeError DecodeError where fromDecodeError = id
 instance Serialize DecodeError where get = safeGet; put = safePut
 
+class HasDecodeError e where fromDecodeError :: DecodeError -> e
+instance HasDecodeError DecodeError where fromDecodeError = id
+
+#if 0
 -- New name for backwards compatibility, especially in appraisalscribe-migrate.
 type HasDecodeFailure e = Errors.Member DecodeError e
 decodeFailure :: Errors.Member DecodeError e => Prism' (Errors.OneOf e) DecodeError
 decodeFailure = Errors.follow
 fromDecodeFailure :: Errors.Member DecodeError e => DecodeError -> Errors.OneOf e
 fromDecodeFailure = review decodeFailure
+#endif
 
 -- instance Member DecodeError DecodeError where follow = id
 

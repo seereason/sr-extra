@@ -6,13 +6,15 @@ module Extra.ErrorSet
   ( Insert
   , Delete
   , Member(follow)
+  , OneOf(OneOf, unOneOf)
   -- * Re-export
   -- , Void
   ) where
 
 import Control.Lens
 import Data.SafeCopy
--- import Data.Void (Void)
+import Data.Serialize
+import Data.Typeable (Typeable)
 import GHC.Generics
 
 -- See SafeCopy issue #78
@@ -32,3 +34,7 @@ class Member t set where follow :: Prism' set t
 instance Member t (Either t a) where follow = _Left
 instance {-# OVERLAPS #-} Member t b => Member t (Either a b) where follow = _Right . follow
 instance Member t () where follow = error "Type Set Error"
+instance Member t (OneOf set) where follow = iso OneOf unOneOf . follow
+
+newtype OneOf (set :: *) = OneOf {unOneOf :: set} deriving (Show, Eq, Ord, Generic, Serialize, Typeable)
+instance (SafeCopy set, Typeable set) => SafeCopy (OneOf set)
