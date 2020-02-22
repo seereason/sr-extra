@@ -36,7 +36,7 @@ import Data.Functor.Identity (Identity(Identity))
 import Data.Proxy (Proxy(Proxy))
 import Generic.Data (gconIndex)
 import GHC.Generics as G
-import GHC.TypeLits
+--import GHC.TypeLits
 import Text.Show.Combinators (PrecShowS, {-ShowFields,-} noFields, showField, showListWith, showInfix, showApp, showCon, showRecord)
 import qualified Text.Show.Combinators as Show (appendFields)
 
@@ -77,7 +77,7 @@ instance (Show1 f, DoS1 p g) =>             DoS1 p (f :.: g)       where doS1 p 
 
 class                                       DoFields p f           where doFields :: forall a. p (Rd a) -> TypeTuple -> ConstrTuple -> f a -> [S1Result]
 instance (DoFields p f, DoFields p g) =>    DoFields p (f :*: g)   where doFields p ti ci (x :*: y) = doFields p ti ci x <> doFields p ti ci y
-instance (DoS1 p f, Selector s) =>          DoFields p (M1 S s f)  where doFields p ti ci (M1 x) = [doS1 p ti ci x]
+instance (DoS1 p f{-, Selector s-}) =>      DoFields p (M1 S s f)  where doFields p ti ci (M1 x) = [doS1 p ti ci x]
 instance                                    DoFields p U1          where doFields _ _ _ U1 = []
 
 class                                       DoNamed p f            where doNamed :: forall a. p (Rd a) -> TypeTuple -> ConstrTuple -> f a -> [(String, S1Result)]
@@ -88,15 +88,15 @@ instance                                    DoNamed p U1           where doNamed
 -- Its tempting to add the Constructor constraint here but it leads to
 -- a missing constraint on an unexported GHC.Generics class.
 class                                       DoConstructor p c f    where doConstructor :: forall a. p (Rd a) -> TypeTuple -> ConstrTuple -> M1 C c f a -> C1Result
-instance (DoFields p f, KnownSymbol s) =>   DoConstructor p ('MetaCons s y 'False) f
+instance (DoFields p f{-, KnownSymbol s-}) =>   DoConstructor p ('MetaCons s y 'False) f
                                                                    where doConstructor p ti ci (M1 x) = doNormal ti ci (zip [0..] (doFields p ti ci x))
 instance DoNamed p f =>   DoConstructor p ('MetaCons s y 'True) f  where doConstructor p ti ci (M1 x) = doRecord ti ci (zip [0..] (doNamed p ti ci x))
 
 class                                       DoDatatype p d f       where doDatatype :: forall a. p (Rd a) -> TypeTuple -> M1 D d f a -> D1Result
-instance (DoD1 p f, Datatype d) =>          DoDatatype p d f       where doDatatype p ti (M1 x) = doD1 p ti x
+instance (DoD1 p f{-, Datatype d-}) =>          DoDatatype p d f       where doDatatype p ti (M1 x) = doD1 p ti x
 
 class                                       DoD1 p f               where doD1 :: forall a. p (Rd a) -> TypeTuple -> f a -> D1Result
-instance (DoDatatype p d f, Datatype d) =>  DoD1 p (M1 D d f)      where doD1 p ti x@(M1 _) = doDatatype p ti x
+instance (DoDatatype p d f{-, Datatype d-}) =>  DoD1 p (M1 D d f)      where doD1 p ti x@(M1 _) = doDatatype p ti x
 instance (DoD1 p f, DoD1 p g) =>            DoD1 p (f :+: g)       where doD1 p ti (L1 x) = doD1 p ti x
                                                                          doD1 p ti (R1 y) = doD1 p ti y
 instance (Constructor c, DoConstructor p c f) => DoD1 p (M1 C c f) where doD1 p ti x = doConstructor p ti (gconIndex x, G.conName x, G.conFixity x) x
