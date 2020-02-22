@@ -8,7 +8,6 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
@@ -110,13 +109,13 @@ class Set e xs where
 instance Set e (e ': xs) where
   set e = Val e
 
-instance (IsMember e xs ~ 'True, Set e xs) => Set e (f ': xs) where
+instance {-# OVERLAPS #-} (IsMember e xs ~ 'True, Set e xs) => Set e (f ': xs) where
   set e = NoVal (set e)
 
 class Get e xs where
   get :: OneOf xs -> Maybe e
 
-instance Get e (e ': xs) where
+instance {-# OVERLAPS #-} Get e (e ': xs) where
   get (Val e) = Just e
   get (NoVal _) = Nothing
 
@@ -143,7 +142,7 @@ instance Delete e (e ': xs) where
   delete _ (NoVal o) = o
   delete _ Empty = Empty
 
-instance forall e f xs. (Delete e xs, DeleteList e (f:xs) ~ (f : DeleteList e xs)) => Delete e (f ': xs) where
+instance {-# OVERLAPS #-} forall e f xs. (Delete e xs, DeleteList e (f:xs) ~ (f : DeleteList e xs)) => Delete e (f ': xs) where
    delete p (Val v) = (Val v) -- :: OneOf (f ': (DeleteList e xs))
    delete p (NoVal o) = NoVal (delete p o)
    delete p Empty = Empty
