@@ -123,7 +123,7 @@ instance (IsMember e xs ~ 'True, Get e xs) => Get e (f ': xs) where
   get (NoVal o) = get o
   get (Val e) = Nothing
 
-follow :: (IsMember e xs ~ 'True, Get e xs, Set e xs) => Prism' (OneOf xs) e
+follow :: ({-IsMember e xs ~ 'True,-} Get e xs, Set e xs) => Prism' (OneOf xs) e
 follow = prism' set get
 
 type family DeleteList e xs where
@@ -162,7 +162,7 @@ handleBar err =
        (Just Bar) -> putStrLn "took care of Bar"
      pure (delete @ErrorBar Proxy err)
 
-handleFoo :: (IsMember ErrorFoo errors ~ 'True, Get ErrorFoo errors, Delete ErrorFoo errors) => OneOf errors -> IO (DeleteOneOf ErrorFoo (OneOf errors))
+handleFoo :: ({-IsMember ErrorFoo errors ~ 'True,-} Get ErrorFoo errors, Delete ErrorFoo errors) => OneOf errors -> IO (DeleteOneOf ErrorFoo (OneOf errors))
 handleFoo err =
   do case get err of
        Nothing -> putStrLn "no Bar error to handle"
