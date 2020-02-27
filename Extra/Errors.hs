@@ -26,22 +26,28 @@ module Extra.Errors
   , OneOf(Empty, Val, NoVal)
   , Set(set)
   , Get(get)
-  , follow
+  , oneOf
   , DeleteList
   , DeleteOneOf
   , Delete(delete)
   , Member
+  , throwMember
+  , liftMember
+  , catchMember
   , test
   ) where
 
-import Control.Lens (Prism', prism')
+import Control.Lens (Prism', prism', review)
+import Control.Monad.Except (MonadError, throwError)
+--import Extra.Except (mapError)
 import Data.Type.Bool
-import Data.Type.Equality
+--import Data.Type.Equality
 import Data.Word (Word8)
 import Data.SafeCopy
 import qualified Data.Serialize as S (Serialize(get, put), getWord8, Put, PutM, Get)
 import Data.Typeable (Typeable, typeOf)
 import Data.Proxy
+import Extra.Except (tryError)
 
 type family IsMember x ys where
   IsMember x '[] = 'False
@@ -76,14 +82,17 @@ instance S.Serialize (OneOf '[]) where
   get = return Empty
   put :: OneOf s -> S.PutM ()
   put Empty = return ()
+  put _ = error "fix warning"
 
 instance (S.Serialize e, S.Serialize (OneOf s)) => S.Serialize (OneOf (e ': s)) where
   put :: OneOf (e ': s) -> S.PutM ()
   put (NoVal o) = S.put (0 :: Word8) >> S.put o
   put (Val e) = S.put (1 :: Word8) >> S.put e
+  put _ = error "impossible"
   get :: S.Get (OneOf (e ': s))
   get = S.getWord8 >>= \case
     0 -> NoVal <$> S.get
+    _ -> error "impossible"
 
 instance SafeCopy (OneOf '[]) where
   version = 1
@@ -118,13 +127,15 @@ class Get e xs where
 instance {-# OVERLAPS #-} Get e (e ': xs) where
   get (Val e) = Just e
   get (NoVal _) = Nothing
+  get Empty = error "impossible"
 
 instance (IsMember e xs ~ 'True, Get e xs) => Get e (f ': xs) where
   get (NoVal o) = get o
-  get (Val e) = Nothing
+  get (Val _e) = Nothing
+  get Empty = error "impossible"
 
-follow :: ({-IsMember e xs ~ 'True,-} Get e xs, Set e xs) => Prism' (OneOf xs) e
-follow = prism' set get
+oneOf :: ({-IsMember e xs ~ 'True,-} Get e xs, Set e xs) => Prism' (OneOf xs) e
+oneOf = prism' set get
 
 type family DeleteList e xs where
   DeleteList x '[] = '[]
@@ -138,14 +149,33 @@ class Delete e xs where
   delete :: Proxy e -> OneOf xs -> DeleteOneOf e (OneOf xs)
 
 instance Delete e (e ': xs) where
-  delete _ (Val e) = Empty
+  delete _ (Val _e) = Empty
   delete _ (NoVal o) = o
   delete _ Empty = Empty
 
 instance {-# OVERLAPS #-} forall e f xs. (Delete e xs, DeleteList e (f:xs) ~ (f : DeleteList e xs)) => Delete e (f ': xs) where
-   delete p (Val v) = (Val v) -- :: OneOf (f ': (DeleteList e xs))
+   delete _p (Val v) = (Val v) -- :: OneOf (f ': (DeleteList e xs))
    delete p (NoVal o) = NoVal (delete p o)
-   delete p Empty = Empty
+   delete _p Empty = Empty
+
+throwMember :: (Member e es, MonadError (OneOf es) m) => e -> m a
+throwMember = throwError . review oneOf
+
+liftMember :: (Member e es, MonadError (OneOf es) m) => Either e a -> m a
+liftMember = either throwMember return
+
+catchMember ::
+  forall e es es' m n a.
+  (Member e es, es' ~ DeleteList e es,
+   MonadError (OneOf es) m, MonadError (OneOf es') n)
+  => (forall b. (OneOf es -> OneOf es') -> m b -> n b)
+  -> m a -> (e -> n a) -> n a
+catchMember helper ma f =
+  -- The idea here is that we use tryError to bring a copy of e into
+  -- the return value, then we can just delete e from error monad.
+  helper (delete @e Proxy) (tryError ma) >>= either handle return
+  where handle :: OneOf es -> n a
+        handle es = maybe (throwError (delete @e Proxy es)) f (get es :: Maybe e)
 
 -- ** Example
 
@@ -178,6 +208,7 @@ current error = Foo
 took care of Bar
 current error = {}
 -}
+test :: IO ()
 test =
   do let errAll = set Foo :: AppErrors
      putStrLn $ "current error = " ++ show errAll
