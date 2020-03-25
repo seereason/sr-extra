@@ -46,7 +46,9 @@ deriving instance Generic UTCTime
 #else
 #endif
 
+#if !MIN_VERSION_network_uri(2,6,2)
 deriving instance Generic URIAuth
+#endif
 
 -- $(deriveLift ''UserId)
 instance Lift UserId where lift (UserId x0) = [|UserId $(lift x0)|]
