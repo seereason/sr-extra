@@ -129,6 +129,6 @@ instance Arbitrary URI where
 instance SafeCopy URI where version = 0
 instance SafeCopy URIAuth where version = 0
 
-#if !MIN_VERSION_network_uri(2,7,0)
+#if !MIN_VERSION_network_uri(2,6,2)
 $(concat <$> sequence [ deriveLiftMany [''URI, ''URIAuth] ])
 #endif
