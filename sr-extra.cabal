@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.72.3
+Version:        1.73
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -36,6 +36,7 @@ Library
   GHC-Options: -Wall -Wredundant-constraints
   Build-Depends:
     base < 5,
+    base64-bytestring,
     bytestring,
     bzlib,
     Cabal,
@@ -96,6 +97,7 @@ Library
     Extra.IOThread
     Extra.List,
     Extra.HughesPJ,
+    Extra.LocalStorageEncode,
     Extra.Log,
     Extra.Misc,
     Extra.Monad.Supply,
