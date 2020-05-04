@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE CPP, TemplateHaskell #-}
 {-# OPTIONS -Wall #-}
 
@@ -10,21 +11,43 @@ module Extra.Log
 #endif
   ) where
 
+import Control.Lens(ix, preview, to)
 import Control.Monad.Except (MonadError(catchError, throwError))
 import Control.Monad.Trans (liftIO, MonadIO)
-import Data.Time (getCurrentTime)
-import Data.Time.Format (FormatTime(..), formatTime, defaultTimeLocale)
+import Data.Bool (bool)
+import Data.Maybe (fromMaybe)
+import Data.Time (getCurrentTime, UTCTime)
+import Data.Time.Format (formatTime, defaultTimeLocale)
+import GHC.Stack (CallStack, callStack, getCallStack, HasCallStack, SrcLoc(..))
 #if !__GHCJS__
 import Language.Haskell.TH (ExpQ, Exp, Loc(..), location, pprint, Q)
 import qualified Language.Haskell.TH.Lift as TH (Lift(lift))
 import Language.Haskell.TH.Instances ()
 #endif
-import System.Log.Logger (Priority(..), logM)
+import System.Log.Logger (Priority(..), logM, rootLoggerName)
 
-alog :: MonadIO m => String -> Priority -> String -> m ()
-alog modul priority msg = liftIO $ do
-  time <- getCurrentTime
-  logM modul priority $ unwords [formatTimeCombined time, msg]
+alog :: (MonadIO m, HasCallStack) => Priority -> String -> m ()
+alog priority msg = liftIO $ do
+  time <- liftIO getCurrentTime
+  liftIO $
+    logM rootLoggerName priority $
+      logString time priority msg
+
+logString  :: HasCallStack => UTCTime -> Priority -> String -> String
+logString time priority msg =
+    unwords $ [timestring, fromMaybe "???" (modul callStack 1), "-", msg] <> bool [] ["(" <> show priority <> ")"] (priority == DEBUG)
+    where timestring = formatTime defaultTimeLocale "%T%4Q" time
+
+-- | Format the location of the nth level up in a call stack
+modul :: CallStack -> Int -> Maybe String
+modul stack n =
+  preview (to getCallStack . ix n . to prettyLoc) stack
+  where
+    prettyLoc (_s, SrcLoc {..}) =
+      foldr (++) ""
+        [ srcLocModule, ":"
+        , show srcLocStartLine {-, ":"
+        , show srcLocStartCol-} ]
 
 -- | Format the time as describe in the Apache combined log format.
 --   http://httpd.apache.org/docs/2.2/logs.html#combined
@@ -40,8 +63,8 @@ alog modul priority msg = liftIO $ do
 --    zone = (`+' | `-') 4*digit
 --
 -- (Copied from happstack-server)
-formatTimeCombined :: FormatTime t => t -> String
-formatTimeCombined = formatTime defaultTimeLocale "%d/%b/%Y:%H:%M:%S %z"
+--formatTimeCombined :: FormatTime t => t -> String
+--formatTimeCombined = formatTime defaultTimeLocale "%d/%b/%Y:%H:%M:%S %z"
 
 #if !__GHCJS__
 -- | Create an expression of type (MonadIO m => Priority -> m a -> m
