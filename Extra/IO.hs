@@ -46,17 +46,17 @@ testAndWriteFile = testAndWriteDotNew
 testAndWrite :: (FilePath -> Text -> Text -> IO ()) -> FilePath -> Text -> IO ()
 testAndWrite changeAction dest new = do
   here <- getCurrentDirectory
-  alog "Extra.IO" DEBUG ("testAndWriteFile " <> show dest <> " " <> show (shorten 50 new) <> " (cwd=" <> show here <> ")")
+  alog DEBUG ("testAndWriteFile " <> show dest <> " " <> show (shorten 50 new) <> " (cwd=" <> show here <> ")")
   removeFileMaybe (dest <> ".new")
   try (Text.readFile dest >>= \old ->
        when (old /= new) (changeAction dest old new)) >>=
     either (\(e :: IOException) ->
               case isDoesNotExistError e of
                 True -> do
-                  alog "Extra.IO" DEBUG "testAndWriteFile - no existing version"
+                  alog DEBUG "testAndWriteFile - no existing version"
                   Text.writeFile dest new
                 False -> do
-                  alog "Extra.IO" ERROR ("testAndWriteFile " <> show dest <> " - IOException " ++ show e)
+                  alog ERROR ("testAndWriteFile " <> show dest <> " - IOException " ++ show e)
                   throw e)
            return
 
@@ -69,7 +69,7 @@ shorten _ t = t
 -- | If the new file does not match the old, write it to file.new and error.
 writeDotNew :: FilePath -> Text -> Text -> IO ()
 writeDotNew dest old new = do
-  alog "Extra.IO" DEBUG ("testAndWriteFile - mismatch, writing " <> show (dest <> ".new"))
+  alog DEBUG ("testAndWriteFile - mismatch, writing " <> show (dest <> ".new"))
   Text.writeFile (dest <> ".new") new
   error ("Generated " <> dest <> ".new does not match existing " <> dest <> ":\n" <>
          diffText (dest, old) (dest <> ".new", new) <>
