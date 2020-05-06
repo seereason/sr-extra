@@ -16,9 +16,6 @@
 
 module Extra.Serialize
     ( DecodeError(..)
-    , HasDecodeError(fromDecodeError)
-    -- , HasDecodeFailure
-    -- , decodeFailure, fromDecodeFailure
     , module Data.Serialize
     , decodePrism, deserializePrism
     , encodeGetter, serializeGetter
@@ -52,6 +49,7 @@ import Data.Typeable (Typeable, typeRep)
 import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
+import Extra.Errors (Member, OneOf, throwMember)
 import qualified Extra.Errors as Errors
 import Extra.Orphans ()
 import Extra.Time (Zulu(..))
@@ -60,26 +58,22 @@ import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
 import Network.URI (URI(..), URIAuth(..))
 import System.IO.Unsafe (unsafePerformIO)
 
+#if 0
+-- We can't make a Data instance for TypeRep because part of it is in
+-- Data.Typeable.Internal, a hidden module in base.
+instance SafeCopy TypeRep
+deriving instance Data TypeRep
+data DecodeError = DecodeError ByteString TypeRep String deriving (Generic, Eq, Ord, Typeable)
+#else
 newtype FakeTypeRep = FakeTypeRep String deriving (Generic, Eq, Ord, Serialize)
 instance SafeCopy FakeTypeRep
 fakeTypeRep :: forall a. Typeable a => Proxy a -> FakeTypeRep
 fakeTypeRep a = FakeTypeRep (show (typeRep a))
 
 data DecodeError = DecodeError ByteString FakeTypeRep String deriving (Generic, Eq, Ord, Typeable)
+#endif
 
 instance Serialize DecodeError where get = safeGet; put = safePut
-
-class HasDecodeError e where fromDecodeError :: DecodeError -> e
-instance HasDecodeError DecodeError where fromDecodeError = id
-
-#if 0
--- New name for backwards compatibility, especially in appraisalscribe-migrate.
-type HasDecodeFailure e = Errors.Member DecodeError e
-decodeFailure :: Errors.Member DecodeError e => Prism' (Errors.OneOf e) DecodeError
-decodeFailure = Errors.follow
-fromDecodeFailure :: Errors.Member DecodeError e => DecodeError -> Errors.OneOf e
-fromDecodeFailure = review decodeFailure
-#endif
 
 -- instance Member DecodeError DecodeError where follow = id
 
@@ -146,13 +140,12 @@ deriving instance Serialize URIAuth
 deriving instance Serialize Zulu
 
 -- | Monadic version of decode.
-decodeM ::
-  forall a e m. (Serialize a, Typeable a, HasDecodeError e, MonadError e m)
+decodeM :: forall a e m. (Serialize a, Typeable a, Member DecodeError e, MonadError (OneOf e) m)
   => ByteString
   -> m a
 decodeM bs =
   case decode bs of
-    Left s -> throwError (fromDecodeError (DecodeError bs (fakeTypeRep (Proxy @a)) s))
+    Left s -> throwMember (DecodeError bs (fakeTypeRep (Proxy @a)) s)
     Right a -> return a
 
 -- | Like 'decodeM', but also catches any ErrorCall thrown and lifts
@@ -161,16 +154,16 @@ decodeM bs =
 -- outside the serialize package, in which case this (and decode') are
 -- pointless.
 decodeM' ::
-  forall e m a. (Serialize a, Typeable a, HasDecodeError e, MonadError e m, MonadCatch m)
+  forall e m a. (Serialize a, Typeable a, Member DecodeError e, MonadError (OneOf e) m, MonadCatch m)
   => ByteString
   -> m a
 decodeM' bs = go `catch` handle
   where
     go = case decode bs of
-           Left s -> throwError (fromDecodeError (DecodeError bs (fakeTypeRep (Proxy @a)) s))
+           Left s -> throwMember (DecodeError bs (fakeTypeRep (Proxy @a)) s)
            Right a -> return a
     handle :: ErrorCall -> m a
-    handle (ErrorCall s) = throwError $ fromDecodeError $ DecodeError bs (fakeTypeRep (Proxy @a)) ("ErrorCall: " <> s)
+    handle (ErrorCall s) = throwMember $ DecodeError bs (fakeTypeRep (Proxy @a)) ("ErrorCall: " <> s)
 
 -- | Version of decode that catches any thrown ErrorCall and modifies
 -- its message.
