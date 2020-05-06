@@ -26,6 +26,7 @@ module Extra.Serialize
     , fakeTypeRep
     , decodePrism
     , encodeGetter
+    , HasDecodeError(fromDecodeError)
     ) where
 
 import Control.Exception (ErrorCall(..), evaluate, )
@@ -184,3 +185,9 @@ deriving instance Data DecodeError
 deriving instance Show FakeTypeRep
 deriving instance Show DecodeError
 #endif
+
+-- Required by appraisalscribe-migrate
+class HasDecodeError e where fromDecodeError :: DecodeError -> e
+{-# DEPRECATED HasDecodeError "use Member DecodeError" #-}
+{-# DEPRECATED fromDecodeError "use throwMember or review oneOf" #-}
+instance HasDecodeError DecodeError where fromDecodeError = id
