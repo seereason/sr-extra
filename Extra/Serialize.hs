@@ -17,29 +17,28 @@
 module Extra.Serialize
     ( DecodeError(..)
     , module Data.Serialize
-    , decodePrism, deserializePrism
-    , encodeGetter, serializeGetter
     , deriveSerializeViaSafeCopy
-    , decode
-    , Serialize.encode
+    , decodeAll
     , decode'
     , decodeM
     , decodeM'
-    , FakeTypeRep(..), fakeTypeRep
+    , FakeTypeRep(..)
+    , fakeTypeRep
+    , decodePrism
+    , encodeGetter
     ) where
 
 import Control.Exception (ErrorCall(..), evaluate, )
-import Control.Lens (Getter, Prism', prism, re, review)
+import Control.Lens (Getter, Prism', prism, re)
 import Control.Monad.Catch (catch, MonadCatch)
-import Control.Monad.Except (MonadError, throwError)
+import Control.Monad.Except (MonadError)
 import Data.ByteString as B (ByteString, null)
 #ifndef OMIT_DATA_INSTANCES
 import Data.Data (Data)
 #endif
 import Data.Data (Proxy(Proxy))
 import Data.SafeCopy (SafeCopy(..), safeGet, safePut)
-import Data.Serialize hiding (decode, encode)
-import qualified Data.Serialize as Serialize (encode)
+import Data.Serialize
 import Data.Text as T hiding (concat, intercalate)
 import Data.Text.Lazy as LT hiding (concat, intercalate)
 import Data.Text.Encoding as TE
@@ -50,7 +49,6 @@ import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
 import Extra.Errors (Member, OneOf, throwMember)
-import qualified Extra.Errors as Errors
 import Extra.Orphans ()
 import Extra.Time (Zulu(..))
 import GHC.Generics (Generic)
@@ -75,11 +73,6 @@ data DecodeError = DecodeError ByteString FakeTypeRep String deriving (Generic, 
 
 instance Serialize DecodeError where get = safeGet; put = safePut
 
--- instance Member DecodeError DecodeError where follow = id
-
-encode :: Serialize a => a -> ByteString
-encode = Serialize.encode
-
 -- | Decode a value from a strict ByteString, reconstructing the original
 -- structure.  Unlike Data.Serialize.decode, this function only succeeds
 -- if all the input is consumed.  Not sure if this is in use anywhere.
@@ -88,12 +81,12 @@ encode = Serialize.encode
 --   Left "decode \"xy\" failed to consume \"y\""
 --   > Data.Serialize.decode (encode 'x' <> encode 'y') :: Either String Char
 --   Right 'x'
-decode :: forall a. Serialize a => ByteString -> Either String a
-decode b =
+decodeAll :: forall a. Serialize a => ByteString -> Either String a
+decodeAll b =
   case runGetState get b 0 of
     Left s -> Left s
-    Right (a, remaining) | B.null remaining -> Right a
-    Right (a, remaining) -> Left ("decode " <> show b <> " failed to consume " <> show remaining)
+    Right (a, more) | B.null more -> Right a
+    Right (_, more) -> Left ("decode " <> show b <> " failed to consume " <> show more)
 
 -- | A Serialize instance based on safecopy.  This means that
 -- migrations will be performed upon deserialization, which is handy
@@ -174,22 +167,11 @@ decode' b =
     handle :: ErrorCall -> IO (Either String a)
     handle e = return $ Left (show e)
 
--- | Serialize/deserialize prism.
-deserializePrism :: forall a. (Serialize a) => Prism' ByteString a
-deserializePrism = decodePrism
-{-# DEPRECATED deserializePrism "dumb name - use decodePrism" #-}
-
--- | Serialize/deserialize prism.
 decodePrism :: forall a. (Serialize a) => Prism' ByteString a
 decodePrism = prism encode (\s -> either (\_ -> Left s) Right (decode s :: Either String a))
 
--- | Inverting a prism turns it into a getter.
-serializeGetter :: forall a. (Serialize a) => Getter a ByteString
-serializeGetter = re deserializePrism
-{-# DEPRECATED serializeGetter "dumb name - use encodeGetter" #-}
-
 encodeGetter :: forall a. (Serialize a) => Getter a ByteString
-encodeGetter = re deserializePrism
+encodeGetter = re decodePrism
 
 instance SafeCopy DecodeError where version = 1
 

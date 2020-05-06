@@ -15,11 +15,8 @@
 module Extra.Orphans3 where
 
 import Data.Data (Data, dataTypeOf, gunfold, mkNoRepType, toConstr, TypeRep)
-import Data.Foldable
---import Data.Function.Memoize (deriveMemoizable)
 import Data.Generics.Instances ()
 import Data.ListLike as LL hiding (concat, sequence, toList)
--- import Data.Order (Order, toPairs)
 import Data.Proxy (Proxy(Proxy))
 import Data.SafeCopy (SafeCopy(..))
 import Extra.Serialize (Serialize)

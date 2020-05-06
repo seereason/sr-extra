@@ -81,7 +81,7 @@ decodeM bs =
 -- outside the serialize package, in which case this (and decode') are
 -- pointless.
 decodeM' ::
-  forall e m a. (Serialize a, Debug a, HasDecodeError e, MonadError e m, MonadCatch m)
+  forall e m a. (Serialize a, Debug a, Member DecodeError e, MonadError (OneOf e) m, MonadCatch m)
   => ByteString
   -> m a
 decodeM' bs = go `catch` handle

@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.74
+Version:        1.75
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -78,7 +78,7 @@ Library
   Install-Includes:    gwinsz.h
   Extensions: ConstraintKinds, CPP, DataKinds, DeriveDataTypeable, DeriveFunctor, DeriveGeneric
   Extensions: FlexibleInstances, FlexibleContexts, MultiParamTypeClasses, RankNTypes
-  Extensions: ScopedTypeVariables, StandaloneDeriving, TypeApplications, TypeFamilies
+  Extensions: ScopedTypeVariables, StandaloneDeriving, TupleSections, TypeApplications, TypeFamilies
   Exposed-modules:
     Extra.Bool,
     Extra.Debug,
@@ -107,9 +107,7 @@ Library
     Extra.Orphans3,
     Extra.Pretty,
     Extra.SafeCopy,
-    Extra.SafeCopyDebug,
     Extra.Serialize,
-    Extra.SerializeDebug,
     Extra.Text,
     Extra.TH,
     Extra.Time,
