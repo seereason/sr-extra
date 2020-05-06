@@ -34,11 +34,13 @@ module Extra.Errors
   , throwMember
   , liftMember
   , catchMember
+  , runNullExceptT
+  , runNullExcept
   , test
   ) where
 
 import Control.Lens (Prism', prism', review)
-import Control.Monad.Except (MonadError, throwError)
+import Control.Monad.Except (Except, ExceptT, MonadError, runExcept, runExceptT, throwError)
 --import Extra.Except (mapError)
 import Data.Type.Bool
 --import Data.Type.Equality
@@ -176,6 +178,12 @@ catchMember helper ma f =
   helper (delete @e Proxy) (tryError ma) >>= either handle return
   where handle :: OneOf es -> n a
         handle es = maybe (throwError (delete @e Proxy es)) f (get es :: Maybe e)
+
+runNullExceptT :: Functor m => ExceptT (OneOf '[]) m a -> m a
+runNullExceptT m = (\(Right a) -> a) <$> runExceptT m
+
+runNullExcept :: Except (OneOf '[]) a -> a
+runNullExcept m = (\(Right a) -> a) (runExcept m)
 
 -- ** Example
 
