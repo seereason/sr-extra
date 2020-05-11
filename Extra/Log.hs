@@ -35,7 +35,7 @@ alog priority msg = liftIO $ do
 
 logString  :: HasCallStack => UTCTime -> Priority -> String -> String
 logString time priority msg =
-    unwords $ [timestring, fromMaybe "???" (modul callStack 1), "-", msg] <> bool [] ["(" <> show priority <> ")"] (priority == DEBUG)
+    unwords $ [timestring, fromMaybe "???" (modul callStack 1), "-", msg] <> bool ["(" <> show priority <> ")"] [] (priority == DEBUG)
     where timestring = formatTime defaultTimeLocale "%T%4Q" time
 
 -- | Format the location of the nth level up in a call stack
