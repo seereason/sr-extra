@@ -27,21 +27,24 @@ import Language.Haskell.TH.Instances ()
 import System.Log.Logger (Priority(..), logM, rootLoggerName)
 
 alog :: (MonadIO m, HasCallStack) => Priority -> String -> m ()
-alog priority msg = liftIO $ do
+alog priority msg = alog' 1 priority msg
+
+alog' :: (MonadIO m, HasCallStack) => Int -> Priority -> String -> m ()
+alog' pop priority msg = liftIO $ do
   time <- liftIO getCurrentTime
   liftIO $
     logM rootLoggerName priority $
-      logString time priority msg
+      logString pop time priority msg
 
-logString  :: HasCallStack => UTCTime -> Priority -> String -> String
-logString time priority msg =
-    unwords $ [timestring, fromMaybe "???" (modul callStack 1), "-", msg] <> bool ["(" <> show priority <> ")"] [] (priority == DEBUG)
+logString  :: HasCallStack => Int -> UTCTime -> Priority -> String -> String
+logString pop time priority msg =
+    unwords $ [timestring, fromMaybe "???" (modul callStack pop), "-", msg] <> bool ["(" <> show priority <> ")"] [] (priority == DEBUG)
     where timestring = formatTime defaultTimeLocale "%T%4Q" time
 
 -- | Format the location of the nth level up in a call stack
 modul :: CallStack -> Int -> Maybe String
-modul stack n =
-  preview (to getCallStack . ix n . to prettyLoc) stack
+modul stack pop =
+  preview (to getCallStack . ix pop . to prettyLoc) stack
   where
     prettyLoc (_s, SrcLoc {..}) =
       foldr (++) ""
