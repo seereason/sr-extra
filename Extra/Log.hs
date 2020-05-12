@@ -27,7 +27,7 @@ import Language.Haskell.TH.Instances ()
 import System.Log.Logger (Priority(..), logM, rootLoggerName)
 
 alog :: (MonadIO m, HasCallStack) => Priority -> String -> m ()
-alog priority msg = alog' 1 priority msg
+alog priority msg = alog' 2 priority msg
 
 alog' :: (MonadIO m, HasCallStack) => Int -> Priority -> String -> m ()
 alog' pop priority msg = liftIO $ do
