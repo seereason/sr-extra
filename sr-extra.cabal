@@ -54,6 +54,7 @@ Library
     mtl,
     pretty,
     pureMD5,
+    QuickCheck >= 2 && < 3,
     random,
     safecopy >= 0.9.5,
     show-combinators,
@@ -122,8 +123,7 @@ Library
       filemanip,
       HUnit,
       process,
-      process-extras,
-      QuickCheck >= 2 && < 3
+      process-extras
     Exposed-Modules:
       Extra.GPGSign,
       Extra.Lock,
