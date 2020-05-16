@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.76
+Version:        1.77
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -106,6 +106,8 @@ Library
     Extra.Orphans2,
     Extra.Orphans3,
     Extra.Pretty,
+    Extra.QuickCheck,
+    Extra.Rational,
     Extra.SafeCopy,
     Extra.Serialize,
     Extra.Text,
