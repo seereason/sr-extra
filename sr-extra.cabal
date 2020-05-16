@@ -107,7 +107,6 @@ Library
     Extra.Orphans3,
     Extra.Pretty,
     Extra.QuickCheck,
-    Extra.Rational,
     Extra.SafeCopy,
     Extra.Serialize,
     Extra.Text,
