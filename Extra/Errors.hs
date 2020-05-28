@@ -34,6 +34,7 @@ module Extra.Errors
   , throwMember
   , liftMember
   , catchMember
+  , mapMember
   , runNullExceptT
   , runNullExcept
   , test
@@ -178,6 +179,11 @@ catchMember helper ma f =
   helper (delete @e Proxy) (tryError ma) >>= either handle return
   where handle :: OneOf es -> n a
         handle es = maybe (throwError (delete @e Proxy es)) f (get es :: Maybe e)
+
+-- | Annotate a member error that has been thrown.
+mapMember :: forall e es m a. (Get e es, Member e es, MonadError (OneOf es) m) => (e -> m e) -> m a -> m a
+mapMember f ma =
+  tryError ma >>= either (\es -> maybe (throwError es) (\e -> f e >>= throwMember) (get es :: Maybe e)) return
 
 runNullExceptT :: Functor m => ExceptT (OneOf '[]) m a -> m a
 runNullExceptT m = (\(Right a) -> a) <$> runExceptT m
