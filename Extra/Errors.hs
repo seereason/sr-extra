@@ -34,6 +34,7 @@ module Extra.Errors
   , throwMember
   , liftMember
   , catchMember
+  , tryMember
   , mapMember
   , runNullExceptT
   , runNullExcept
@@ -167,6 +168,12 @@ throwMember = throwError . review oneOf
 liftMember :: (Member e es, MonadError (OneOf es) m) => Either e a -> m a
 liftMember = either throwMember return
 
+-- | Run an action with @e@ added to the current error set @es@.
+-- Typically this is used by forcing the action into ExceptT with
+-- the augmented error type:
+-- @@
+--   catchMember withExceptT (fileIO @(FileError ': e) (Right <$> query st (LookValue key))) (return . Left)
+-- @@
 catchMember ::
   forall e es es' m n a.
   (Member e es, es' ~ DeleteList e es,
@@ -179,6 +186,10 @@ catchMember helper ma f =
   helper (delete @e Proxy) (tryError ma) >>= either handle return
   where handle :: OneOf es -> n a
         handle es = maybe (throwError (delete @e Proxy es)) f (get es :: Maybe e)
+
+-- | Simplified catchMember where the monad doesn't change.
+tryMember :: forall e es m a. (Member e es, MonadError (OneOf es) m) => m a -> (e -> m a) -> m a
+tryMember ma f = tryError ma >>= either (\es -> maybe ma f (get es :: Maybe e)) return
 
 -- | Annotate a member error that has been thrown.
 mapMember :: forall e es m a. (Get e es, Member e es, MonadError (OneOf es) m) => (e -> m e) -> m a -> m a

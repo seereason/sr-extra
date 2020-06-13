@@ -50,23 +50,6 @@ modul stack =
     [(_alog, SrcLoc {..})] -> srcLocModule <> ":" <> show srcLocStartLine
     ((_, SrcLoc {..}) : (fn, _) : _) -> srcLocModule <> "." <> fn <> ":" <> show srcLocStartLine
 
--- | Format the time as describe in the Apache combined log format.
---   http://httpd.apache.org/docs/2.2/logs.html#combined
---
--- The format is:
---   [day/month/year:hour:minute:second zone]
---    day = 2*digit
---    month = 3*letter
---    year = 4*digit
---    hour = 2*digit
---    minute = 2*digit
---    second = 2*digit
---    zone = (`+' | `-') 4*digit
---
--- (Copied from happstack-server)
---formatTimeCombined :: FormatTime t => t -> String
---formatTimeCombined = formatTime defaultTimeLocale "%d/%b/%Y:%H:%M:%S %z"
-
 #if !__GHCJS__
 -- | Create an expression of type (MonadIO m => Priority -> m a -> m
 -- a) that we can apply to an expression so that it catches, logs, and
