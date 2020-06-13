@@ -192,7 +192,7 @@ tryMember :: forall e es m a. (Member e es, MonadError (OneOf es) m) => m a -> (
 tryMember ma f = tryError ma >>= either (\es -> maybe ma f (get es :: Maybe e)) return
 
 -- | Annotate a member error that has been thrown.
-mapMember :: forall e es m a. (Get e es, Member e es, MonadError (OneOf es) m) => (e -> m e) -> m a -> m a
+mapMember :: forall e es m a. (Member e es, MonadError (OneOf es) m) => (e -> m e) -> m a -> m a
 mapMember f ma =
   tryError ma >>= either (\es -> maybe (throwError es) (\e -> f e >>= throwMember) (get es :: Maybe e)) return
 
