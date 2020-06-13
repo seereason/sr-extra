@@ -21,10 +21,11 @@ module Extra.Except
     , mapError
     , handleError
     , HasIOException(ioException)
-    , HasSomeNonPseudoException(someNonPseudoException)
+    , NonIOException(NonIOException)
+    , HasNonIOException(nonIOException)
+    , splitException
     , HasErrorCall(..)
     , IOException'(..)
-    -- , HasSomeNonPseudoException(someNonPseudoException)
     , MonadUIO
     , lyftIO
 #if !__GHCJS__
@@ -154,42 +155,17 @@ instance Alternative UIO where
 
 type MonadUIO = Unexceptional
 
-lyftIO :: (Unexceptional m, MonadError e m, HasSomeNonPseudoException e) => IO a -> m a
-lyftIO io = runExceptT (fromIO io) >>= either (throwError . review someNonPseudoException) return
+lyftIO :: (Unexceptional m, MonadError e m, HasIOException e, HasNonIOException e) => IO a -> m a
+lyftIO io = runExceptT (fromIO io) >>= either (throwError . splitException) return
 
-class HasSomeNonPseudoException e where
-  someNonPseudoException :: Prism' e SomeNonPseudoException
-instance HasSomeNonPseudoException SomeNonPseudoException where
-  someNonPseudoException = id
+-- | If 'fromIO' throws a SomeNonPseudoException, 'splitException'
+-- decides whether it was an 'IOException' or something else, this
+-- wrapper indicates it was something else.
+newtype NonIOException = NonIOException SomeNonPseudoException deriving Show
+class HasNonIOException e where nonIOException :: Prism' e NonIOException
+instance HasNonIOException NonIOException where nonIOException = id
 
-#if 0
-  -- | Convert a SomeNonPseudoException into any error type with
--- both IOException and NonIOException instances.  This has a
--- problem when you try to use 'accept' to convert an e back into
--- a SomeNonPseudoException, so best not to use accept.
-instance (Monad m, HasSomeNonPseudoException e, {-Typeable e, Show e,-} Exception e)
-    => ErrorControl SomeNonPseudoException (ExceptT SomeNonPseudoException m) (ExceptT e m) where
-  controlError :: ExceptT SomeNonPseudoException m a -> (SomeNonPseudoException -> ExceptT e m a) -> ExceptT e m a
-  controlError ma f =
-    mapExceptT (\ma' -> ma' >>= either
-                                  (\e -> maybe
-                                           (runExceptT (f e))
-                                           (pure . Left . review ioException)
-                                           (fromException (toException e) :: Maybe IOException))
-                                  (pure . Right)) ma
-  accept :: ExceptT e m a -> ExceptT SomeNonPseudoException m a
-  accept = withExceptT convert
-    where convert :: e -> SomeNonPseudoException
-          convert e =
-            case preview ioException e of
-              Just ioe -> fromJust (fromException (toException ioe))
-              Nothing ->
-                case preview nonIOException e of
-                  Just e' -> e'
-                  -- If we can't use IOException or the NonIOException
-                  -- use the Exception instance.  I'm not fully certain
-                  -- what the implications of this happening are.
-                  Nothing -> fromJust (fromException (toException e))
-
-
-#endif
+splitException :: (HasIOException e, HasNonIOException e) => SomeNonPseudoException -> e
+splitException e =
+  maybe (review nonIOException (NonIOException e)) (review ioException)
+    (fromException (toException e) :: Maybe IOException)
