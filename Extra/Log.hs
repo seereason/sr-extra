@@ -15,7 +15,8 @@ import Control.Lens(ix, preview, to)
 import Control.Monad.Except (MonadError(catchError, throwError))
 import Control.Monad.Trans (liftIO, MonadIO)
 import Data.Bool (bool)
-import Data.Maybe (fromMaybe)
+import Data.List (intercalate)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Time (getCurrentTime, UTCTime)
 import Data.Time.Format (formatTime, defaultTimeLocale)
 import GHC.Stack (CallStack, callStack, getCallStack, HasCallStack, SrcLoc(..))
@@ -27,35 +28,27 @@ import Language.Haskell.TH.Instances ()
 import System.Log.Logger (Priority(..), logM, rootLoggerName)
 
 alog :: (MonadIO m, HasCallStack) => Priority -> String -> m ()
-alog priority msg = alog' 2 priority msg
+alog priority msg = liftIO $ do
+  time <- getCurrentTime
+  logM (modul callStack) priority $
+    logString time priority msg
 
-alog' :: (MonadIO m, HasCallStack) => Int -> Priority -> String -> m ()
-alog' pop priority msg = liftIO $ do
-  time <- liftIO getCurrentTime
-  liftIO $
-    logM rootLoggerName priority $
-      logString pop time priority msg
-
-logString  :: HasCallStack => Int -> UTCTime -> Priority -> String -> String
-logString pop time priority msg =
+logString  :: HasCallStack => UTCTime -> Priority -> String -> String
+logString time priority msg =
 #if defined(darwin_HOST_OS)
   take 2002 $
 #else
   take 60000 $
 #endif
-    unwords $ [timestring, fromMaybe "???" (modul callStack pop), "-", msg] <> bool ["(" <> show priority <> ")"] [] (priority == DEBUG)
-    where timestring = formatTime defaultTimeLocale "%T%4Q" time
+    msg
 
 -- | Format the location of the nth level up in a call stack
-modul :: CallStack -> Int -> Maybe String
-modul stack pop =
-  preview (to getCallStack . ix pop . to prettyLoc) stack
-  where
-    prettyLoc (_s, SrcLoc {..}) =
-      foldr (++) ""
-        [ srcLocModule, ":"
-        , show srcLocStartLine {-, ":"
-        , show srcLocStartCol-} ]
+modul :: CallStack -> String
+modul stack =
+  case dropWhile (\(_, SrcLoc {..}) -> srcLocModule == "Extra.Log") (getCallStack stack) of
+    [] -> "???"
+    [(_alog, SrcLoc {..})] -> srcLocModule <> ":" <> show srcLocStartLine
+    ((_, SrcLoc {..}) : (fn, _) : _) -> srcLocModule <> "." <> fn <> ":" <> show srcLocStartLine
 
 -- | Format the time as describe in the Apache combined log format.
 --   http://httpd.apache.org/docs/2.2/logs.html#combined
