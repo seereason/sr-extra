@@ -21,13 +21,13 @@ import Data.Monoid ((<>))
 import Data.Text as Text (length, take, Text)
 import Data.Text.IO as Text (readFile, writeFile)
 import Data.Time (getCurrentTime, diffUTCTime, getCurrentTime, NominalDiffTime)
-import Extra.Log (alog)
+--import Extra.Log (alog)
 import Extra.Text (diffText)
 import System.Directory (getCurrentDirectory, removeFile, renameFile)
 import System.FilePath.Find as Find
     ((==?), (&&?), always, extension, fileType, FileType(RegularFile), find)
 import System.IO.Error (isDoesNotExistError)
-import System.Log.Logger ({-logM,-} Priority(DEBUG, ERROR))
+import System.Log.Logger (logM, Priority(DEBUG, ERROR))
 
 testAndWriteDotNew :: FilePath -> Text -> IO ()
 testAndWriteDotNew dest new = testAndWrite writeDotNew dest new
@@ -46,17 +46,17 @@ testAndWriteFile = testAndWriteDotNew
 testAndWrite :: (FilePath -> Text -> Text -> IO ()) -> FilePath -> Text -> IO ()
 testAndWrite changeAction dest new = do
   here <- getCurrentDirectory
-  alog DEBUG ("testAndWriteFile " <> show dest <> " " <> show (shorten 50 new) <> " (cwd=" <> show here <> ")")
+  logM "Extra.IO" DEBUG ("testAndWriteFile " <> show dest <> " " <> show (shorten 50 new) <> " (cwd=" <> show here <> ")")
   removeFileMaybe (dest <> ".new")
   try (Text.readFile dest >>= \old ->
        when (old /= new) (changeAction dest old new)) >>=
     either (\(e :: IOException) ->
               case isDoesNotExistError e of
                 True -> do
-                  alog DEBUG "testAndWriteFile - no existing version"
+                  logM "Extra.IO" DEBUG "testAndWriteFile - no existing version"
                   Text.writeFile dest new
                 False -> do
-                  alog ERROR ("testAndWriteFile " <> show dest <> " - IOException " ++ show e)
+                  logM "Extra.IO" ERROR ("testAndWriteFile " <> show dest <> " - IOException " ++ show e)
                   throw e)
            return
 
@@ -69,7 +69,7 @@ shorten _ t = t
 -- | If the new file does not match the old, write it to file.new and error.
 writeDotNew :: FilePath -> Text -> Text -> IO ()
 writeDotNew dest old new = do
-  alog DEBUG ("testAndWriteFile - mismatch, writing " <> show (dest <> ".new"))
+  logM "Extra.IO" DEBUG ("testAndWriteFile - mismatch, writing " <> show (dest <> ".new"))
   Text.writeFile (dest <> ".new") new
   error ("Generated " <> dest <> ".new does not match existing " <> dest <> ":\n" <>
          diffText (dest, old) (dest <> ".new", new) <>

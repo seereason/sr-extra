@@ -100,7 +100,6 @@ Library
     Extra.List,
     Extra.HughesPJ,
     Extra.LocalStorageEncode,
-    Extra.Log,
     Extra.Misc,
     Extra.Monad.Supply,
     Extra.Net,

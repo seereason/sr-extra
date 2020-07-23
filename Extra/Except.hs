@@ -29,7 +29,7 @@ module Extra.Except
     , MonadUIO
     , lyftIO
 #if !__GHCJS__
-    , logIOError
+    -- , logIOError
 #endif
     , module Control.Monad.Except
     ) where
@@ -44,7 +44,7 @@ import Control.Monad.Except (ExceptT, runExceptT)
 import Data.Serialize
 import Data.Typeable (typeOf)
 #if !__GHCJS__
-import Extra.Log (logException, Priority(ERROR))
+--import Extra.Log (logException, Priority(ERROR))
 #endif
 import Foreign.C.Types (CInt(..))
 import GHC.Generics (Generic)
@@ -137,8 +137,8 @@ class HasErrorCall e where fromErrorCall :: ErrorCall -> e
 instance HasErrorCall ErrorCall where fromErrorCall = id
 
 #if !__GHCJS__
-logIOError :: (MonadIO m, MonadError e m) => m a -> m a
-logIOError = handleError (\e -> liftIO ($logException ERROR (pure e)) >> throwError e)
+--logIOError :: (MonadIO m, MonadError e m) => m a -> m a
+--logIOError = handleError (\e -> liftIO ($logException ERROR (pure e)) >> throwError e)
 #endif
 
 instance MonadCatch UIO where
