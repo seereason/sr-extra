@@ -106,6 +106,7 @@ instance (S.Serialize e, S.Serialize (OneOf s)) => S.Serialize (OneOf (e ': s)) 
   get :: S.Get (OneOf (e ': s))
   get = S.getWord8 >>= \case
     0 -> NoVal <$> S.get
+    1 -> Val <$> S.get
     _ -> error "impossible"
 
 instance SafeCopy (OneOf '[]) where
