@@ -42,6 +42,8 @@ module Extra.Errors
   , runOneOf -- I think this is the best one
   , runOneOf'
   , runOneOf''
+  , Errors
+  , Errors'
   , test
   , IOException
   , module Control.Monad.Except
@@ -61,6 +63,7 @@ import qualified Data.Serialize as S (Serialize(get, put), getWord8, Put, PutM, 
 import Data.Typeable (Typeable, typeOf)
 import Data.Proxy
 import Extra.Except (NonIOException(..), tryError)
+import GHC.Stack (HasCallStack)
 import UnexceptionalIO.Trans (fromIO, SomeNonPseudoException, Unexceptional)
 
 type family IsMember x ys where
@@ -82,6 +85,7 @@ data OneOf (n :: [k]) where
   Empty :: OneOf s
   Val   :: e -> OneOf (e ': s)
   NoVal :: OneOf s -> OneOf (e ': s)
+  deriving Typeable
 
 instance Show (OneOf '[]) where
   show Empty = "{}"
@@ -245,6 +249,9 @@ runOneOf ::
   => ExceptT (OneOf esplus) m a
   -> m (Either e a)
 runOneOf action = runOneOf' action return
+
+type Errors e = (Show (OneOf e), Typeable e)
+type Errors' e = (Errors e, HasCallStack)
 
 -- ** Example
 
