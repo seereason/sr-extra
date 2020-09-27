@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.83
+Version:        1.84
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -46,6 +46,7 @@ Library
     directory,
     exceptions,
     fgl,
+    filemanip,
     filepath,
     generic-data,
     hslogger,
@@ -99,6 +100,7 @@ Library
     Extra.IOThread
     Extra.List,
     Extra.HughesPJ,
+    Extra.IO,
     Extra.LocalStorageEncode,
     Extra.Misc,
     Extra.Monad.Supply,
@@ -120,14 +122,12 @@ Library
   if !impl(ghcjs)
     Build-Depends:
       show-please,
-      filemanip,
       HUnit,
       process,
       process-extras
     Exposed-Modules:
       Extra.GPGSign,
       Extra.Lock,
-      Extra.IO,
       Extra.Process,
       Extra.SSH,
       Test.QUnit,
