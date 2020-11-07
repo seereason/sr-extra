@@ -250,8 +250,8 @@ runOneOf ::
   -> m (Either e a)
 runOneOf action = runOneOf' action return
 
-type Errors e = (Show (OneOf e), Typeable e)
-type Errors' e = (Errors e, HasCallStack)
+type Errors e = (Show (OneOf e), Typeable e, HasCallStack)
+type Errors' e = (Show (OneOf e), Typeable e)
 
 -- ** Example
 
