@@ -16,8 +16,10 @@ module Extra.SafeCopy
     , DecodeError(..)
     , encodeSafe
     , decodeAllSafe
+#if 0
     , decodeMSafe
     , decodeMSafe'
+#endif
     , decodePrismSafe
     , encodeGetterSafe
     ) where
@@ -29,9 +31,10 @@ import Control.Monad.Except (MonadError)
 import Data.ByteString as B (ByteString, null)
 import Data.Data (Proxy(Proxy), Typeable)
 import Data.SafeCopy (base, SafeCopy, safeGet, safePut)
+import Data.Semigroup (Semigroup((<>)))
 import Data.Serialize hiding (decode, encode)
 import Data.UUID.Orphans ()
-import Extra.Errors (Member, OneOf, throwMember)
+--import Extra.Errors (Member, OneOf, throwMember)
 import Extra.Orphans ()
 import Extra.Serialize (DecodeError(..), fakeTypeRep)
 
@@ -46,6 +49,7 @@ decodeAllSafe b =
     Right (a, more) | B.null more -> Right a
     Right (_, more) -> Left ("decode " <> show b <> " failed to consume " <> show more)
 
+#if 0
 -- | Monadic version of decode.
 decodeMSafe ::
   forall a e m. (SafeCopy a, Typeable a, Member DecodeError e, MonadError (OneOf e) m)
@@ -72,6 +76,7 @@ decodeMSafe' bs = go `catch` handle
            Right a -> return a
     handle :: ErrorCall -> m a
     handle (ErrorCall s) = throwMember (DecodeError bs (fakeTypeRep (Proxy @a)) s)
+#endif
 
 -- | Serialize/deserialize prism.
 decodePrismSafe :: forall a. (SafeCopy a) => Prism' ByteString a

@@ -9,6 +9,7 @@ module Extra.Orphans where
 
 import Data.Graph.Inductive as G
 import Data.List (intercalate)
+import Data.Monoid ((<>))
 import Data.Proxy (Proxy(Proxy))
 import Data.SafeCopy (base, contain,
                       SafeCopy(errorTypeName, getCopy, kind, putCopy, version))
@@ -50,8 +51,7 @@ deriving instance Generic UTCTime
 deriving instance Generic URIAuth
 #endif
 
--- $(deriveLift ''UserId)
-instance Lift UserId where lift (UserId x0) = [|UserId $(lift x0)|]
+$(deriveLift ''UserId)
 
 $(deriveLift ''G.Gr)
 $(deriveLift ''G.NodeMap)

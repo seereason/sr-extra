@@ -36,6 +36,7 @@ import Data.Data (Data)
 #endif
 import Data.Data (Proxy(Proxy), Typeable, typeRep)
 import Data.SafeCopy (base, SafeCopy, safeGet, safePut)
+import Data.Semigroup (Semigroup((<>)))
 import Data.Serialize hiding (decode)
 import qualified Data.Serialize as Serialize (decode, encode)
 import Data.Text as T hiding (concat, intercalate)

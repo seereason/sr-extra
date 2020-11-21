@@ -7,6 +7,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -21,8 +22,12 @@ import Data.Proxy (Proxy(Proxy))
 import Data.SafeCopy (SafeCopy(..))
 import Extra.Serialize (Serialize)
 import Extra.Orphans ()
+#if MIN_VERSION_template_haskell(2,16,0)
+import GHC.Word
+#endif
 import Language.Haskell.TH
 import Language.Haskell.TH.Instances ()
+import Language.Haskell.TH.Lift
 import Language.Haskell.TH.PprLib (Doc, hcat, ptext)
 import Language.Haskell.TH.Syntax
 import Prelude hiding (foldl1)
@@ -52,7 +57,7 @@ instance Data TypeRep where
 deriving instance Serialize (Proxy a)
 
 #if !__GHCJS__
-instance Lift (Proxy a) where lift Proxy = [|Proxy|]
+$(deriveLift ''Proxy)
 
 instance Arbitrary NameSpace where
     arbitrary = elements [VarName, DataName, TcClsName]
@@ -103,6 +108,7 @@ arbitraryTypeVariableName = pure (mkName "aTyVarName")
 -- s = $(location >>= \Loc{loc_module=m, loc_start=(sl,sc), loc_end=(el,ec)} -> lift (m <> ":" <> show sl))
 #endif
 
+#if 0
 deriving instance Serialize AnnTarget
 deriving instance Serialize Bang
 deriving instance Serialize Body
@@ -243,8 +249,11 @@ instance SafeCopy TypeFamilyHead where version = 1
 instance SafeCopy TySynEqn where version = 1
 instance SafeCopy TyVarBndr where version = 1
 
-#if MIN_VERSION_template_haskell(2,15,0)
+#if MIN_VERSION_template_haskell(2,16,0)
 deriving instance Serialize Bytes
 instance SafeCopy Bytes where version = 1
+#if 0
 deriving instance NFData Bytes
+#endif
+#endif
 #endif

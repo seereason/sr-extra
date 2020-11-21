@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.84.1
+Version:        1.85
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -17,6 +17,7 @@ Maintainer:     David Fox <dsf@seereason.com>
 Homepage:       https://github.com/seereason/sr-extra
 Build-Type:     Simple
 Cabal-Version:  >= 1.10
+Tested-With: GHC==8.0.2, GHC==8.2.2, GHC==8.4.4, GHC==8.6.5, GHC==8.8.4, GHC==8.10.2
 
 flag network-uri
   Description: Get Network.URI from the network-uri package rather than the
@@ -89,7 +90,6 @@ Library
     Extra.Either,
     Extra.EnvPath,
     Extra.ErrorControl,
-    Extra.Errors,
     Extra.ErrorSet,
     Extra.Except,
     Extra.Exit,
@@ -119,6 +119,9 @@ Library
     Extra.URI,
     Extra.URIQuery,
     Extra.Verbosity
+  if impl (ghc >= 8.6)
+    Exposed-modules:
+      Extra.Errors
   if !impl(ghcjs)
     Build-Depends:
       show-please,

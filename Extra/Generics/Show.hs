@@ -33,6 +33,7 @@ module Extra.Generics.Show
 import Data.Foldable (foldl')
 import Data.Functor.Classes (Show1(..))
 import Data.Functor.Identity (Identity(Identity))
+import Data.Monoid ((<>))
 import Data.Proxy (Proxy(Proxy))
 import Generic.Data (gconIndex)
 import GHC.Generics as G

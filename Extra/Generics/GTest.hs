@@ -12,6 +12,7 @@
 
 import Data.Proxy
 import Data.Data (Typeable, typeOf, typeRep)
+import Data.Monoid ((<>))
 import GHC.Generics
 
 -- For debugging we want show instances

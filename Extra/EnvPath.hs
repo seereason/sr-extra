@@ -12,7 +12,11 @@ module Extra.EnvPath
 import Control.Lens (Lens', makeLenses, over)
 import Extra.Pretty (PP(PP))
 import Text.PrettyPrint.HughesPJClass (text)
+#if 0
 import Distribution.Pretty (Pretty(pretty))
+#else
+import Text.PrettyPrint.HughesPJClass (Pretty(pPrint))
+#endif
 
 -- |The root directory of an OS image.
 data EnvRoot = EnvRoot { _rootPath :: FilePath } deriving (Ord, Eq, Read, Show)
@@ -35,7 +39,7 @@ rootEnvPath :: FilePath -> EnvPath
 rootEnvPath s = EnvPath { _envRoot = EnvRoot "", _envPath = s }
 
 instance Pretty (PP EnvRoot) where
-    pretty (PP x) = text (_rootPath x)
+    pPrint (PP x) = text (_rootPath x)
 
 -- | Class used to access an EnvRoot in a value, typically in a reader
 -- monad.

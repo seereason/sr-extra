@@ -20,8 +20,10 @@ module Extra.Serialize
     , deriveSerializeViaSafeCopy
     , decodeAll
     , decode'
+#if 0
     , decodeM
     , decodeM'
+#endif
     , FakeTypeRep(..)
     , fakeTypeRep
     , decodePrism
@@ -39,6 +41,7 @@ import Data.Data (Data)
 #endif
 import Data.Data (Proxy(Proxy))
 import Data.SafeCopy (SafeCopy(..), safeGet, safePut)
+import Data.Semigroup (Semigroup((<>)))
 import Data.Serialize
 import Data.Text as T hiding (concat, intercalate)
 import Data.Text.Lazy as LT hiding (concat, intercalate)
@@ -49,11 +52,11 @@ import Data.Typeable (Typeable, typeRep)
 import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
-import Extra.Errors (Member, OneOf, throwMember)
+-- import Extra.Errors (Member, OneOf, throwMember)
 import Extra.Orphans ()
 import Extra.Time (Zulu(..))
 import GHC.Generics (Generic)
-import Language.Haskell.TH (Dec, Loc, TypeQ, Q)
+import Language.Haskell.TH (Dec, Loc(..), TypeQ, Q)
 import Network.URI (URI(..), URIAuth(..))
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -133,6 +136,7 @@ deriving instance Serialize URI
 deriving instance Serialize URIAuth
 deriving instance Serialize Zulu
 
+#if 0
 -- | Monadic version of decode.
 decodeM :: forall a e m. (Serialize a, Typeable a, Member DecodeError e, MonadError (OneOf e) m)
   => ByteString
@@ -158,6 +162,7 @@ decodeM' bs = go `catch` handle
            Right a -> return a
     handle :: ErrorCall -> m a
     handle (ErrorCall s) = throwMember $ DecodeError bs (fakeTypeRep (Proxy @a)) ("ErrorCall: " <> s)
+#endif
 
 -- | Version of decode that catches any thrown ErrorCall and modifies
 -- its message.

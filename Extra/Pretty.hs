@@ -28,7 +28,11 @@ import Data.Data (Data)
 import Data.Generics (everywhere, mkT)
 import Data.Set as Set (Set, toList)
 import Data.Text (Text, unpack, pack)
+#if 0
 import Distribution.Pretty (Pretty(pretty), prettyShow)
+#else
+import Text.PrettyPrint.HughesPJClass (Pretty(pPrint), prettyShow)
+#endif
 import Language.Haskell.TH
 import Language.Haskell.TH.PprLib as TH (Doc, hcat, hsep, ptext, to_HPJ_Doc)
 import Language.Haskell.TH.Syntax
@@ -42,19 +46,19 @@ import Text.PrettyPrint.HughesPJClass as HPJ (Doc, text, empty)
 newtype PP a = PP {unPP :: a} deriving (Functor)
 
 instance Pretty (PP Text) where
-    pretty = text . unpack . unPP
+    pPrint = text . unpack . unPP
 
 instance Pretty (PP String) where
-    pretty = text . unPP
+    pPrint = text . unPP
 
 instance Pretty (PP a) => Pretty (PP (Maybe a)) where
-    pretty = maybe empty ppPrint . unPP
+    pPrint = maybe empty ppPrint . unPP
 
 prettyText :: Pretty a => a -> Text
 prettyText = pack . prettyShow
 
 ppPrint :: Pretty (PP a) => a -> HPJ.Doc
-ppPrint = pretty . PP
+ppPrint = pPrint . PP
 
 ppShow :: Pretty (PP a) => a -> String
 ppShow = prettyShow . PP

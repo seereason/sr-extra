@@ -41,6 +41,7 @@ import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.Trans (MonadTrans(lift), liftIO)
 import Control.Monad.Except (ExceptT, runExceptT)
+import Data.Monoid ((<>))
 import Data.Serialize
 import Data.Typeable (typeOf)
 #if !__GHCJS__
