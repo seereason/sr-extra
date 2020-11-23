@@ -9,7 +9,9 @@ module Extra.Rational
 
 import Control.Lens
 import Data.Ratio ((%), approxRational, denominator, numerator)
+#if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup (Semigroup((<>)))
+#endif
 import Numeric ( fromRat, readSigned, readFloat, showSigned, showFFloat )
 import Web.Routes
 

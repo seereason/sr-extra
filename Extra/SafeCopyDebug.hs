@@ -33,7 +33,9 @@ import Data.Data (Data)
 #endif
 import Data.Data (Proxy(Proxy), Typeable, typeRep)
 import Data.SafeCopy (base, SafeCopy, safeGet, safePut)
+#if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup (Semigroup((<>)))
+#endif
 import Data.Serialize hiding (decode, encode)
 import qualified Data.Serialize as Serialize (decode, encode)
 import Data.Text as T hiding (concat, intercalate)

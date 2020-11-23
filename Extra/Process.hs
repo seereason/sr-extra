@@ -37,7 +37,9 @@ import Control.Monad.State (evalState, StateT, get, put)
 import Control.Monad.Trans (liftIO, MonadIO)
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.ListLike (break, head, hPutStr, null, singleton, tail)
+#if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup (Semigroup((<>)))
+#endif
 import Data.String (IsString(fromString))
 import Data.Text (unpack)
 import Data.Text.Encoding (decodeUtf8)
@@ -73,9 +75,9 @@ data RunOptions a m
     | RunOptions [RunOptions a m]
 
 instance Semigroup (RunOptions a m) where
-    RunOptions a <> RunOptions b = RunOptions (a <> b)
-    RunOptions a <> b = RunOptions (a <> [b])
-    a <> RunOptions b = RunOptions ([a] <> b)
+    RunOptions a <> RunOptions b = RunOptions (a ++ b)
+    RunOptions a <> b = RunOptions (a ++ [b])
+    a <> RunOptions b = RunOptions ([a] ++ b)
     a <> b = RunOptions [a, b]
 
 showCommand :: MonadIO m => String -> CreateProcess -> m ()
@@ -85,7 +87,7 @@ showCommandAndResult :: MonadIO m => [Char] -> CreateProcess -> (ExitCode, a, a)
 showCommandAndResult prefix p (code, _, _) =
     liftIO $ ePutStrLn (prefix ++ showCreateProcessForUser p ++ " -> " ++ show code)
 
-putIndented :: forall a c m. (Eq c, ListLikeProcessIO a c, IsString a, MonadIO m) => [Chunk a] -> m [Chunk a]
+putIndented :: forall a c m. (Eq c, ListLikeProcessIO a c, IsString a, MonadIO m, Semigroup a) => [Chunk a] -> m [Chunk a]
 putIndented chunks =
     liftIO $ mapM_ echo (indentChunks "     1> " "     2> " chunks) >> return chunks
     where
@@ -120,12 +122,12 @@ run opts p input = do
 --runVE p input = try $ runV p input
 
 runV ::
-    (Eq c, IsString a, ListLikeProcessIO a c, HasLoc e, MonadIO m, MonadError e m)
+    (Eq c, IsString a, ListLikeProcessIO a c, HasLoc e, MonadIO m, MonadError e m, Semigroup a)
     => CreateProcess -> a -> m (ExitCode, a, a)
 runV p input = run (StartMessage showCommand <> OverOutput putIndented <> FinishMessage showCommandAndResult) p input
 
 runVE ::
-    (Eq c, IsString a, ListLikeProcessIO a c, MonadCatch m, HasLoc e, Exception e, MonadError e m, MonadIO m)
+    (Eq c, IsString a, ListLikeProcessIO a c, MonadCatch m, HasLoc e, Exception e, MonadError e m, MonadIO m, Semigroup a)
     => CreateProcess -> a -> m (Either e (ExitCode, a, a))
 runVE p i = try $ runV p i
 
@@ -154,7 +156,7 @@ runIO cp = do
                                        , " stdout: " ++ unpack (decodeUtf8 (L.toStrict out)) ]
 
 -- | Pure function to indent the text of a chunk list.
-indentChunks :: forall a c. (ListLikeProcessIO a c, Eq c, IsString a) => String -> String -> [Chunk a] -> [Chunk a]
+indentChunks :: forall a c. (ListLikeProcessIO a c, Eq c, IsString a, Semigroup a) => String -> String -> [Chunk a] -> [Chunk a]
 indentChunks outp errp chunks =
     evalState (Prelude.concat <$> mapM (indentChunk nl (fromString outp) (fromString errp)) chunks) BOL
     where
@@ -168,7 +170,7 @@ data BOL = BOL | MOL deriving (Eq)
 -- stderr.  The state monad keeps track of whether we are at the
 -- beginning of a line - when we are and more text comes we insert one
 -- of the prefixes.
-indentChunk :: forall a c m. (Monad m, ListLikeProcessIO a c, Eq c) => c -> a -> a -> Chunk a -> StateT BOL m [Chunk a]
+indentChunk :: forall a c m. (Monad m, ListLikeProcessIO a c, Eq c, Semigroup a) => c -> a -> a -> Chunk a -> StateT BOL m [Chunk a]
 indentChunk nl outp errp chunk =
     case chunk of
       Stdout x -> doText Stdout outp x
@@ -237,13 +239,13 @@ modifyProcessEnv pairs p = do
   return $ p {env = Just env'}
 
 runV2 ::
-    (MonadIO m, MonadCatch m, Eq c, IsString a, ListLikeProcessIO a c)
+    (MonadIO m, MonadCatch m, Eq c, IsString a, ListLikeProcessIO a c, Semigroup a)
     => [Loc] -> CreateProcess -> a -> m (ExitCode, a, a)
 runV2 locs p input =
     run2 locs (StartMessage (showCommand' locs) <> OverOutput putIndented <> FinishMessage showCommandAndResult) p input
 
 runVE2 ::
-    forall a c e m. (Eq c, IsString a, ListLikeProcessIO a c, MonadIO m, MonadCatch m, Exception e)
+    forall a c e m. (Eq c, IsString a, ListLikeProcessIO a c, MonadIO m, MonadCatch m, Exception e, Semigroup a)
     => [Loc] -> CreateProcess -> a -> m (Either e (ExitCode, a, a))
 runVE2 locs p input = do
     try (runV2 locs p input)
@@ -292,7 +294,7 @@ run2 locs opts p input = do
 -- stray copies of the stuff above that I moved here, with MonadApt constraints
 
 runV3 ::
-    (Eq c, IsString a, ListLikeProcessIO a c, HasEnvRoot r, MonadReader r m, MonadIO m, MonadCatch m)
+    (Eq c, IsString a, ListLikeProcessIO a c, HasEnvRoot r, MonadReader r m, MonadIO m, MonadCatch m, Semigroup a)
     => [Loc] -> CreateProcess -> a -> m (ExitCode, a, a)
 runV3 locs p input =
     run2 locs (StartMessage showCommand3' <> OverOutput putIndented <> FinishMessage showCommandAndResult) p input

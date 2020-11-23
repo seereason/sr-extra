@@ -41,7 +41,9 @@ import Data.Data (Data)
 #endif
 import Data.Data (Proxy(Proxy))
 import Data.SafeCopy (SafeCopy(..), safeGet, safePut)
+#if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup (Semigroup((<>)))
+#endif
 import Data.Serialize
 import Data.Text as T hiding (concat, intercalate)
 import Data.Text.Lazy as LT hiding (concat, intercalate)
