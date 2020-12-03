@@ -2,6 +2,7 @@
 module Extra.Time
     ( formatDebianDate
     -- , myTimeDiffToString
+    , prettyUTCTime
     , Zulu(..), utcTime
     ) where
 
@@ -82,3 +83,10 @@ instance Arbitrary Zulu where arbitrary = Zulu <$> arbitrary
 
 instance Show Zulu where
   showsPrec d (Zulu t) = showParen (d > 10) $ showString ("Zulu (read " ++ show (show t) ++ ")")
+
+prettyUTCTime :: TimeZone -> UTCTime -> String
+prettyUTCTime = (\tz -> fmt . (utcToLocalTime tz))
+  where fmt :: FormatTime t => t -> String
+        fmt = formatTime defaultTimeLocale prettyTimeFormat
+        prettyTimeFormat :: String
+        prettyTimeFormat = "%Y-%m-%d %H:%M"
