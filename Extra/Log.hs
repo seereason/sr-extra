@@ -4,6 +4,9 @@
 
 module Extra.Log
   ( alog
+  , printLoc
+  , putLoc
+  , loc
   , Priority(..)
 #if !__GHCJS__
   , logException
@@ -33,7 +36,7 @@ import System.Log.Logger (Priority(..), logM, rootLoggerName)
 alog :: (MonadIO m, HasCallStack) => Priority -> String -> m ()
 alog priority msg = liftIO $ do
   time <- getCurrentTime
-  logM (modul callStack) priority $
+  logM loc priority $
     logString time priority msg
 
 logString  :: HasCallStack => UTCTime -> Priority -> String -> String
@@ -45,11 +48,17 @@ logString time priority msg =
 #endif
     msg
 
+printLoc :: (Show a, HasCallStack) => a -> IO ()
+printLoc x = putLoc >> print x
+
+putLoc :: HasCallStack => IO ()
+putLoc = putStr (loc <> " - ")
+
 -- | Format the location of the nth level up in a call stack
-modul :: CallStack -> String
-modul stack =
-  case dropWhile (\(_, SrcLoc {..}) -> srcLocModule == "Extra.Log") (getCallStack stack) of
-    [] -> "???"
+loc :: HasCallStack => String
+loc =
+  case dropWhile (\(_, SrcLoc {..}) -> srcLocModule == "Extra.Log") (getCallStack callStack) of
+    [] -> "(no CallStack)"
     [(_alog, SrcLoc {..})] -> srcLocModule <> ":" <> show srcLocStartLine
     ((_, SrcLoc {..}) : (fn, _) : _) -> srcLocModule <> "." <> fn <> ":" <> show srcLocStartLine
 
