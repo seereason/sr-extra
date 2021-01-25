@@ -48,11 +48,11 @@ logString time priority msg =
 #endif
     msg
 
-printLoc :: (Show a, HasCallStack) => a -> IO ()
-printLoc x = putLoc >> print x
+printLoc :: (Show a, HasCallStack, MonadIO m) => a -> m ()
+printLoc x = putLoc >> liftIO (print x)
 
-putLoc :: HasCallStack => IO ()
-putLoc = putStr (loc <> " - ")
+putLoc :: (HasCallStack, MonadIO m) => m ()
+putLoc = liftIO (putStr (loc <> " - "))
 
 -- | Format the location of the nth level up in a call stack
 loc :: HasCallStack => String
