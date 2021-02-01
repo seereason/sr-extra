@@ -3,35 +3,41 @@
 {-# OPTIONS -Wall #-}
 
 module Extra.Log
-  ( alog
+  ( -- * Logging
+    alog
+  , alogs
   , printLoc
   , putLoc
   , loc
+  , loc'
+  , logString
+    -- * Elapsed time
+  , HasSavedTime(..)
+  , alog'
+  , logString'
+    -- * Re-exports
   , Priority(..)
-#if !__GHCJS__
-  , logException
-  , logQ
-#endif
   ) where
 
-import Control.Lens(ix, preview, to)
-import Control.Monad.Except (MonadError(catchError, throwError))
+import Control.Lens((.=), ix, Lens', preview, to, use)
+import Control.Monad.Except (when)
+import Control.Monad.State (MonadState)
 import Control.Monad.Trans (liftIO, MonadIO)
 import Data.Bool (bool)
-import Data.List (intercalate)
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Maybe (fromMaybe)
 #if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup (Semigroup((<>)))
 #endif
-import Data.Time (getCurrentTime, UTCTime)
+import Data.Time (diffUTCTime, getCurrentTime, UTCTime)
+#if MIN_VERSION_time(1,9,0)
 import Data.Time.Format (formatTime, defaultTimeLocale)
+#endif
 import GHC.Stack (CallStack, callStack, getCallStack, HasCallStack, SrcLoc(..))
 #if !__GHCJS__
-import Language.Haskell.TH (ExpQ, Exp, Loc(..), location, pprint, Q)
-import qualified Language.Haskell.TH.Lift as TH (Lift(lift))
 import Language.Haskell.TH.Instances ()
 #endif
-import System.Log.Logger (Priority(..), logM, rootLoggerName)
+import System.Log.Logger (getLevel, getLogger, getRootLogger, logL, Priority(..), logM)
+import Text.Printf (printf)
 
 alog :: (MonadIO m, HasCallStack) => Priority -> String -> m ()
 alog priority msg = liftIO $ do
@@ -39,8 +45,11 @@ alog priority msg = liftIO $ do
   logM loc priority $
     logString time priority msg
 
-logString  :: HasCallStack => UTCTime -> Priority -> String -> String
-logString time priority msg =
+alogs :: forall m. (MonadIO m, HasCallStack) => Priority -> [String] -> m ()
+alogs priority msgs = alog priority (unwords msgs)
+
+logString  :: UTCTime -> Priority -> String -> String
+logString _time _priority msg =
 #if defined(darwin_HOST_OS)
   take 2002 $
 #else
@@ -62,26 +71,43 @@ loc =
     [(_alog, SrcLoc {..})] -> srcLocModule <> ":" <> show srcLocStartLine
     ((_, SrcLoc {..}) : (fn, _) : _) -> srcLocModule <> "." <> fn <> ":" <> show srcLocStartLine
 
-#if !__GHCJS__
--- | Create an expression of type (MonadIO m => Priority -> m a -> m
--- a) that we can apply to an expression so that it catches, logs, and
--- rethrows any exception.
-logException :: ExpQ
-logException =
-    [| \priority action ->
-         action `catchError` (\e -> do
-                                liftIO (logM (loc_module $__LOC__)
-                                             priority
-                                             ("Logging exception: " <> (pprint $__LOC__) <> " -> " ++ show e))
-                                throwError e) |]
+-- | Format the location of the nth level up in a call stack
+loc' :: CallStack -> Int -> Maybe String
+loc' stack n =
+  preview (to getCallStack . ix n . to prettyLoc) stack
+  where
+    prettyLoc (_s, SrcLoc {..}) =
+      foldr (++) ""
+        [ srcLocModule, ":"
+        , show srcLocStartLine {-, ":"
+        , show srcLocStartCol-} ]
 
-__LOC__ :: Q Exp
-__LOC__ = TH.lift =<< location
+class HasSavedTime s where savedTime :: Lens' s UTCTime
+instance HasSavedTime UTCTime where savedTime = id
 
-logQ :: ExpQ
-logQ = do
-  loc <- location
-  [|\priority message ->
-       alog $(TH.lift (show (loc_module loc))) priority
-         ($(TH.lift (show (loc_module loc) <> ":" <> show (fst (loc_start loc)))) <> " - " <> message)|]
+alog' :: forall s m. (MonadIO m, HasSavedTime s, HasCallStack, MonadState s m) => Priority -> String -> m ()
+alog' priority msg = do
+  level <- getLevel <$> liftIO (maybe getRootLogger getLogger (loc' callStack 1))
+  prev <- use savedTime
+  time <- liftIO getCurrentTime
+  logger <- liftIO getRootLogger
+  when (level <= Just priority) (savedTime .= time)
+  liftIO $
+    logL logger priority $
+      logString' prev time priority msg
+
+logString'  :: UTCTime -> UTCTime -> Priority -> String -> String
+logString' prev time priority msg =
+#if defined(darwin_HOST_OS)
+  take 2002 $
+#else
+  take 60000 $
 #endif
+    unwords $ [timestring, fromMaybe "???" (loc' callStack 1), "-", msg] <> bool [] ["(" <> show priority <> ")"] (priority == DEBUG)
+    where timestring =
+#if MIN_VERSION_time(1,9,0)
+            formatTime defaultTimeLocale "%T%4Q"
+#else
+            (("elapsed: " <>) . (printf "%.04f" :: Double -> String) . fromRational . toRational)
+#endif
+              (diffUTCTime time prev)

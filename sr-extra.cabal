@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.86
+Version:        1.87
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -102,6 +102,7 @@ Library
     Extra.HughesPJ,
     Extra.IO,
     Extra.LocalStorageEncode,
+    Extra.Log,
     Extra.Misc,
     Extra.Monad.Supply,
     Extra.Net,
