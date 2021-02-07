@@ -34,8 +34,18 @@ module Extra.Errors
   , throwMember
   , liftMember
   , catchMember
+  , liftExceptT
   , tryMember
   , mapMember
+
+  , catchMember'
+#if 0
+  , IsSubset
+  , throwMembers
+  , liftMembers
+  , liftExceptTs
+#endif
+
   , runNullExceptT
   , runNullExcept
   , liftUIO
@@ -52,8 +62,8 @@ module Extra.Errors
   ) where
 
 import Control.Exception (fromException, IOException, toException)
-import Control.Lens (Prism', prism', review)
-import Control.Monad.Except (Except, ExceptT, MonadError, runExcept, runExceptT, throwError, withExceptT)
+import Control.Lens (Prism', preview, prism', review)
+import Control.Monad.Except (Except, ExceptT, lift, MonadError, runExcept, runExceptT, throwError, withExceptT)
 --import Extra.Except (mapError)
 import Data.Type.Bool
 --import Data.Type.Equality
@@ -183,6 +193,9 @@ throwMember = throwError . review oneOf
 liftMember :: forall e es m a. (Member e es, MonadError (OneOf es) m) => Either e a -> m a
 liftMember = either throwMember return
 
+liftExceptT :: (Member e es, MonadError (OneOf es) m) => ExceptT e m a -> m a
+liftExceptT action = liftMember =<< runExceptT action
+
 -- | Run an action with @e@ added to the current error set @es@.
 -- Typically this is used by forcing the action into ExceptT with
 -- the augmented error type:
@@ -201,6 +214,42 @@ catchMember helper ma f =
   helper (delete @e Proxy) (tryError ma) >>= either handle return
   where handle :: OneOf esplus -> n a
         handle es = maybe (throwError (delete @e Proxy es)) f (get es :: Maybe e)
+
+catchMember'' ::
+  forall e (es :: [*]) m a.
+  (Monad m)
+  => ExceptT (OneOf (e ': es)) m a
+  -> ExceptT (OneOf es) m (Either e a)
+catchMember'' m = do
+  lift (runExceptT m) >>= either (\es -> maybe (throwError (delete (Proxy @e) es :: OneOf es)) (pure . Left) (preview oneOf es)) (pure . Right)
+
+catchMember' ::
+  forall e (es :: [*]) m a.
+  (MonadError (OneOf es) m)
+  => ExceptT (OneOf (e ': es)) m a
+  -> (e -> m a)
+  -> m a
+catchMember' action handle =
+  either throwError (either handle pure) =<< runExceptT (catchMember'' @e action)
+
+#if 0
+type family IsSubset xs ys where
+  IsSubset '[] _ = 'True
+  IsSubset xs '[] = 'False
+  IsSubset (x ': xs) ys = (IsMember x ys) && (IsSubset xs ys)
+
+liftExceptTs :: (IsSubset es' es ~ 'True, MonadError (OneOf es) m) => ExceptT (OneOf es') m a -> m a
+liftExceptTs action = liftMembers =<< runExceptT action
+
+liftMembers :: forall es' es m a. (IsSubset es' es ~ 'True, MonadError (OneOf es) m) => Either (OneOf es') a -> m a
+liftMembers = either throwMembers return
+
+-- Special case of what we would really like.
+throwMembers :: forall e es' es m a. (IsSubset es' es ~ 'True, MonadError (OneOf es) m) => OneOf es' -> m a
+throwMembers Empty = error "throwMembers"
+throwMembers (Val e) = throwError (review oneOf e :: OneOf es)
+throwMembers (NoVal o) = throwMembers o
+#endif
 
 -- | Simplified catchMember where the monad doesn't change.
 tryMember :: forall e es m a. (Member e es, MonadError (OneOf es) m) => m a -> (e -> m a) -> m a
