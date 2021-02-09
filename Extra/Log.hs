@@ -36,26 +36,26 @@ import GHC.Stack (CallStack, callStack, getCallStack, HasCallStack, SrcLoc(..))
 #if !__GHCJS__
 import Language.Haskell.TH.Instances ()
 #endif
-import System.Log.Logger (getLevel, getLogger, getRootLogger, logL, Priority(..), logM)
+import System.Log.Logger (getLevel, getLogger, getRootLogger, logL, Priority(..))
 import Text.Printf (printf)
 
 alog :: (MonadIO m, HasCallStack) => Priority -> String -> m ()
 alog priority msg = liftIO $ do
-  time <- getCurrentTime
-  logM loc priority $
-    logString time priority msg
+  -- time <- getCurrentTime
+  logger <- getRootLogger
+  logL logger priority (logString msg)
 
 alogs :: forall m. (MonadIO m, HasCallStack) => Priority -> [String] -> m ()
 alogs priority msgs = alog priority (unwords msgs)
 
-logString  :: UTCTime -> Priority -> String -> String
-logString _time _priority msg =
+logString  :: HasCallStack => String -> String
+logString msg =
 #if defined(darwin_HOST_OS)
   take 2002 $
 #else
   take 60000 $
 #endif
-    msg
+  loc <> " - " <> msg
 
 printLoc :: (Show a, HasCallStack, MonadIO m) => a -> m ()
 printLoc x = putLoc >> liftIO (print x)
