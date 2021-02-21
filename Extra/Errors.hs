@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -95,7 +96,8 @@ data OneOf (n :: [k]) where
   Empty :: OneOf s
   Val   :: e -> OneOf (e ': s)
   NoVal :: OneOf s -> OneOf (e ': s)
-  deriving Typeable
+
+deriving instance Typeable k => Typeable (OneOf (n :: [k]))
 
 instance Show (OneOf '[]) where
   show Empty = "{}"
@@ -123,7 +125,7 @@ instance (S.Serialize e, S.Serialize (OneOf s)) => S.Serialize (OneOf (e ': s)) 
     1 -> Val <$> S.get
     _ -> error "impossible"
 
-instance SafeCopy (OneOf '[]) where
+instance Typeable k => SafeCopy (OneOf ('[] :: [k])) where
   version = 1
   kind = base
   getCopy :: S.Serialize (OneOf s) => Contained (S.Get (OneOf s))

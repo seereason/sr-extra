@@ -17,6 +17,7 @@ import Data.Serialize.Get (label)
 import Data.Text as T hiding (concat, intercalate)
 import Data.Text.Lazy as LT hiding (concat, intercalate)
 import Data.Time (UTCTime(..), Day(ModifiedJulianDay), TimeOfDay(..), timeOfDayToTime, DiffTime)
+import Data.Typeable (Typeable)
 import Data.UserId (UserId(..))
 import Data.UUID.Orphans ()
 import Data.UUID (UUID)
@@ -34,7 +35,7 @@ import System.IO.Unsafe (unsafePerformIO)
 import Test.QuickCheck (Arbitrary(arbitrary), choose, elements, Gen, listOf, listOf1, resize)
 #endif
 
-instance SafeCopy (Proxy t) where
+instance Typeable t => SafeCopy (Proxy t) where
       putCopy Proxy = contain (do { return () })
       getCopy = contain (label "Data.Proxy.Proxy:" (pure Proxy))
       version = 0
