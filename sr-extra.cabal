@@ -64,7 +64,6 @@ Library
     random,
     safecopy >= 0.9.5,
     SHA,
-    shelly,
     show-combinators,
     syb,
     template-haskell,
@@ -90,7 +89,6 @@ Library
   Default-Extensions: ScopedTypeVariables, StandaloneDeriving, TupleSections, TypeApplications, TypeFamilies
   Exposed-modules:
     Extra.Bool,
-    Extra.Build,
     Extra.Cabal,
     Extra.Debug,
     Extra.Debug2,
@@ -132,11 +130,13 @@ Library
       Extra.Errors
   if !impl(ghcjs)
     Build-Depends:
+      shelly,
       show-please,
       HUnit,
       process,
       process-extras
     Exposed-Modules:
+      Extra.Build,
       Extra.GPGSign,
       Extra.Lock,
       Extra.Process,
