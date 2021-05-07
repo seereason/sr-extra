@@ -89,7 +89,6 @@ Library
   Default-Extensions: ScopedTypeVariables, StandaloneDeriving, TupleSections, TypeApplications, TypeFamilies
   Exposed-modules:
     Extra.Bool,
-    Extra.Cabal,
     Extra.Debug,
     Extra.Debug2,
     Extra.Either,
@@ -137,6 +136,7 @@ Library
       process-extras
     Exposed-Modules:
       Extra.Build,
+      Extra.Cabal,
       Extra.GPGSign,
       Extra.Lock,
       Extra.Process,
