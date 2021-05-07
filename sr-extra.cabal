@@ -38,7 +38,6 @@ Library
   GHC-Options: -Wall -Wredundant-constraints
   Build-Depends:
     base >= 4.9 && < 5,
-    async,
     base64-bytestring,
     bytestring,
     bzlib,
@@ -46,7 +45,6 @@ Library
     containers,
     Diff,
     directory,
-    enclosed-exceptions,
     exceptions,
     fgl,
     filemanip,
@@ -57,13 +55,11 @@ Library
     ListLike,
     mmorph,
     mtl,
-    parsec,
     pretty,
     pureMD5,
     QuickCheck >= 2 && < 3,
     random,
     safecopy >= 0.9.5,
-    SHA,
     show-combinators,
     syb,
     template-haskell,
@@ -129,14 +125,11 @@ Library
       Extra.Errors
   if !impl(ghcjs)
     Build-Depends:
-      shelly,
       show-please,
       HUnit,
       process,
       process-extras
     Exposed-Modules:
-      Extra.Build,
-      Extra.Cabal,
       Extra.GPGSign,
       Extra.Lock,
       Extra.Process,
