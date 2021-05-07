@@ -26,7 +26,7 @@ import qualified Data.Text.IO as TIO
 import Extra.IO (testAndWriteBackup)
 import GHC.Exts (Item)
 import Prelude hiding (putStrLn, show)
-import Shelly (asyncSh)
+import Shelly (asyncSh, toTextIgnore)
 import Shelly.Lifted as Shelly hiding (command, run, run_, FilePath)
 import qualified Shelly.Lifted as Shelly (run, run_, FilePath)
 import System.Directory (getCurrentDirectory, doesFileExist)
@@ -164,7 +164,7 @@ sumpath = "client.sha256"
 
 writeClientBinDir :: Shelly.FilePath -> Text -> Sh ()
 writeClientBinDir dir path =
-  liftIO $ testAndWriteBackup (dir </> "ClientBinDir.hs")
+  liftIO $ testAndWriteBackup (unpack (toTextIgnore (dir </> "ClientBinDir.hs")))
     (Text.unlines
        ["-- This module is written by the build.hs script if it is absent.  If it is present its content",
         "-- is validated and if there is a change the script will fail.  In that case the new version must",
@@ -199,7 +199,7 @@ writeServerVersion dir = do
     liftIO $ putStrLn ("server diff sig: " <> sig)
   v <- (read . unpack) <$> run "git" ["log", "-1", "--pretty=format:ProgramVersion {_gitCommit=\"%H\", _gitAuthorDate=\"%ai\", _localChanges=\"\"}"]
   let v' = v {_localChanges = diff}
-  liftIO $ testAndWriteBackup (dir </> "ServerVersion.hs") $
+  liftIO $ testAndWriteBackup (unpack (toTextIgnore (dir </> "ServerVersion.hs"))) $
     (Text.unlines ["module ServerVersion where",
                 "import Base.ProgramVersion",
                 "serverVersion :: ProgramVersion",
@@ -213,7 +213,7 @@ writeClientVersion dir = do
     liftIO $ putStrLn ("client diff sig: " <> sig)
   v <- (read . unpack) <$> run "git" ["log", "-1", "--pretty=format:ProgramVersion {_gitCommit=\"%H\", _gitAuthorDate=\"%ai\", _localChanges=\"\"}"]
   let v' = v {_localChanges = diff}
-  liftIO $ testAndWriteBackup (dir </> "ClientVersion.hs") $
+  liftIO $ testAndWriteBackup (unpack (toTextIgnore (dir </> "ClientVersion.hs"))) $
     (Text.unlines ["module ClientVersion where",
                 "import Base.ProgramVersion",
                 "clientVersion :: ProgramVersion",
