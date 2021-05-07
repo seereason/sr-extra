@@ -38,6 +38,7 @@ Library
   GHC-Options: -Wall -Wredundant-constraints
   Build-Depends:
     base >= 4.9 && < 5,
+    async,
     base64-bytestring,
     bytestring,
     bzlib,
@@ -45,6 +46,7 @@ Library
     containers,
     Diff,
     directory,
+    enclosed-exceptions,
     exceptions,
     fgl,
     filemanip,
@@ -55,11 +57,14 @@ Library
     ListLike,
     mmorph,
     mtl,
+    parsec,
     pretty,
     pureMD5,
     QuickCheck >= 2 && < 3,
     random,
     safecopy >= 0.9.5,
+    SHA,
+    shelly >= 1.9.0,
     show-combinators,
     syb,
     template-haskell,
@@ -85,6 +90,8 @@ Library
   Default-Extensions: ScopedTypeVariables, StandaloneDeriving, TupleSections, TypeApplications, TypeFamilies
   Exposed-modules:
     Extra.Bool,
+    Extra.Build,
+    Extra.Cabal,
     Extra.Debug,
     Extra.Debug2,
     Extra.Either,
