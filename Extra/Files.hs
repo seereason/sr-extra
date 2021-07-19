@@ -16,6 +16,8 @@ module Extra.Files
     , backupFile
     , writeFileIfMissing
     , maybeWriteFile            -- writeFileUnlessSame
+    , maybeWriteFileWithBackup
+    , alterFileWithBackup
     , createSymbolicLinkIfMissing
     , prepareSymbolicLink
     , forceRemoveLink
@@ -212,6 +214,21 @@ maybeWriteFile path text =
           --hPutStrLn stderr ("New text: " ++ show text) >>
           replaceFile path text
 
+maybeWriteFileWithBackup :: FilePath -> String -> IO ()
+maybeWriteFileWithBackup path text =
+    try (readFile path) >>= maybeWrite
+    where
+      maybeWrite (Left (e :: IOException)) | isDoesNotExistError e = writeFile path text
+      maybeWrite (Left e) = error ("maybeWriteFile: " ++ show e)
+      maybeWrite (Right old) | old == text = return ()
+      maybeWrite (Right _old) =
+          --hPutStrLn stderr ("Old text: " ++ show old) >>
+          --hPutStrLn stderr ("New text: " ++ show text) >>
+          replaceFileWithBackup path text
+
+alterFileWithBackup :: FilePath -> String -> IO ()
+alterFileWithBackup = maybeWriteFileWithBackup
+
 -- |Add-on for System.Posix.Files
 createSymbolicLinkIfMissing :: String -> FilePath -> IO ()
 createSymbolicLinkIfMissing text path =
@@ -243,6 +260,10 @@ replaceFile path text =
     where
       f :: IO ()
       f = removeFile path `Control.Exception.catch` (\ e -> if isDoesNotExistError e then return () else ioError e) >> writeFile path text
+
+replaceFileWithBackup :: FilePath -> String -> IO ()
+replaceFileWithBackup path text =
+  backupFile path >> writeFile path text
 
 -- Try something n times, returning the first Right or the last Left
 -- if it never succeeds.  Sleep between tries.
