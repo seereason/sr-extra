@@ -31,9 +31,7 @@ import Language.Haskell.TH.Lift -- (deriveLift, deriveLiftMany)
 import Language.Haskell.TH.PprLib (ptext)
 import Network.URI (URI(..), URIAuth(..), uriToString)
 import System.IO.Unsafe (unsafePerformIO)
-#if !__GHCJS__
 import Test.QuickCheck (Arbitrary(arbitrary), choose, elements, Gen, listOf, listOf1, resize)
-#endif
 
 instance Typeable t => SafeCopy (Proxy t) where
       putCopy Proxy = contain (do { return () })
@@ -59,7 +57,6 @@ $(deriveLift ''G.NodeMap)
 
 instance Ppr UserId where ppr (UserId n) = ptext ("U" <> show n)
 
-#if !__GHCJS__
 instance Arbitrary T.Text where
     arbitrary = T.pack <$> arbitrary
 
@@ -125,7 +122,6 @@ instance Arbitrary URIPair where
 
 instance Arbitrary URI where
     arbitrary = genCanonicalURI >>= genNormalURI
-#endif
 
 instance SafeCopy URI where version = 0
 instance SafeCopy URIAuth where version = 0
