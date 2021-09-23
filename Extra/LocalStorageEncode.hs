@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE CPP, RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Extra.LocalStorageEncode (encode, decode, encodeS, decodeS, urlEncode, urlDecode) where

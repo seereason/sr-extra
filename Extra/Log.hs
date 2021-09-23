@@ -1,8 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE CPP, TemplateHaskell #-}
+{-# LANGUAGE CPP, RankNTypes, TemplateHaskell #-}
 {-# OPTIONS -Wall #-}
 
-module Extra.Log
+module Extra.Log {-# DEPRECATED "Use SeeReason.Log in sr-log" #-}
   ( -- * Logging
     alog
   , alogs

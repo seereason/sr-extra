@@ -3,6 +3,7 @@
 -- alternative decode function that puts the decode type in the error
 -- message.  It also re-exports all other Data.Serialize symbols
 
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}

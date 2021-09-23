@@ -10,7 +10,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Extra.ErrorControl
+module Extra.ErrorControl {-# DEPRECATED "Use package sr-errors" #-}
   ( MonadError(throwError) -- re-export
   , ErrorControl(controlError, accept)
   , intercept

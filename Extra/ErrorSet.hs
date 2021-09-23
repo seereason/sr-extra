@@ -2,7 +2,7 @@
 
 -- | Type level "sets" as a cons list constructed of Eithers.
 
-module Extra.ErrorSet
+module Extra.ErrorSet {-# DEPRECATED "Use SeeReason.Errors in sr-errors" #-}
   ( Insert
   , Delete
   , Member(follow)

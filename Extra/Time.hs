@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, DeriveAnyClass, DeriveDataTypeable, DeriveGeneric, TemplateHaskell #-}
+{-# LANGUAGE CPP, DeriveAnyClass, DeriveDataTypeable, DeriveGeneric, StandaloneDeriving, TemplateHaskell #-}
 module Extra.Time
     ( formatDebianDate
     -- , myTimeDiffToString

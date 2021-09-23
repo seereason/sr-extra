@@ -6,7 +6,7 @@
 --  * ppDisplay is now ppShow
 --  * ppDisplay' is now ppText
 
-{-# LANGUAGE DeriveFunctor, FlexibleContexts, FlexibleInstances, OverloadedStrings, TypeSynonymInstances #-}
+{-# LANGUAGE CPP, DeriveFunctor, FlexibleContexts, FlexibleInstances, OverloadedStrings, TypeSynonymInstances #-}
 
 module Extra.Pretty
     ( PP(PP, unPP)

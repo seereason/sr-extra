@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, RankNTypes #-}
+{-# LANGUAGE CPP, FlexibleInstances, RankNTypes, TypeSynonymInstances #-}
 
 module Extra.Text
     ( Texty(textyString, textyText, textyLazy)

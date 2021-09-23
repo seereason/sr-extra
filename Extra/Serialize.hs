@@ -3,11 +3,12 @@
 -- alternative decode function that puts the decode type in the error
 -- message.  It also re-exports all other Data.Serialize symbols
 
-{-# LANGUAGE ConstraintKinds #-}
+-- {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -19,11 +20,7 @@ module Extra.Serialize
     , module Data.Serialize
     , deriveSerializeViaSafeCopy
     , decodeAll
-    , decode'
-#if 0
-    , decodeM
-    , decodeM'
-#endif
+    -- , decode'
     , FakeTypeRep(..)
     , fakeTypeRep
     , decodePrism
@@ -31,10 +28,10 @@ module Extra.Serialize
     , HasDecodeError(fromDecodeError)
     ) where
 
-import Control.Exception (ErrorCall(..), evaluate, )
-import Control.Lens (Getter, Prism', prism, re)
-import Control.Monad.Catch (catch, MonadCatch)
-import Control.Monad.Except (MonadError)
+--import Control.Exception (ErrorCall(..), evaluate, )
+import Control.Lens (Getter, _Left, over, Prism', prism, re)
+--import Control.Monad.Catch (catch, MonadCatch)
+import Control.Monad.Except (liftEither, MonadError)
 import Data.ByteString as B (ByteString, null)
 #ifndef OMIT_DATA_INSTANCES
 import Data.Data (Data)
@@ -54,13 +51,12 @@ import Data.Typeable (Typeable, typeRep)
 import Data.UUID.Orphans ()
 import Data.UUID (UUID)
 import Data.UUID.Orphans ()
--- import Extra.Errors (Member, OneOf, throwMember)
 import Extra.Orphans ()
 import Extra.Time (Zulu(..))
 import GHC.Generics (Generic)
 import Language.Haskell.TH (Dec, Loc(..), TypeQ, Q)
 import Network.URI (URI(..), URIAuth(..))
-import System.IO.Unsafe (unsafePerformIO)
+--import System.IO.Unsafe (unsafePerformIO)
 
 #if 0
 -- We can't make a Data instance for TypeRep because part of it is in
@@ -83,10 +79,10 @@ instance Serialize DecodeError where get = safeGet; put = safePut
 -- structure.  Unlike Data.Serialize.decode, this function only succeeds
 -- if all the input is consumed.  Not sure if this is in use anywhere.
 --
---   > Extra.Serialize.decode (encode 'x' <> encode 'y') :: Either String Char
---   Left "decode \"xy\" failed to consume \"y\""
 --   > Data.Serialize.decode (encode 'x' <> encode 'y') :: Either String Char
 --   Right 'x'
+--   > Extra.Serialize.decodeAll (encode 'x' <> encode 'y') :: Either String Char
+--   Left "decode \"xy\" failed to consume \"y\""
 decodeAll :: forall a. Serialize a => ByteString -> Either String a
 decodeAll b =
   case runGetState get b 0 of
@@ -100,7 +96,7 @@ decodeAll b =
 -- downtime upgrades!
 deriveSerializeViaSafeCopy :: TypeQ -> Q [Dec]
 deriveSerializeViaSafeCopy typ =
-    [d|instance {-SafeCopy $typ =>-} Serialize $typ where
+    [d|instance Serialize $typ where
           get = safeGet
           put = safePut|]
 
@@ -138,34 +134,11 @@ deriving instance Serialize URI
 deriving instance Serialize URIAuth
 deriving instance Serialize Zulu
 
+-- | Lift 'decode' into a monad and improve its error type
+decodeM :: forall a m. (MonadError DecodeError m, Serialize a, Typeable a) => ByteString -> m a
+decodeM bs = liftEither $ over _Left (DecodeError bs (fakeTypeRep (Proxy @a))) $ decode bs
+
 #if 0
--- | Monadic version of decode.
-decodeM :: forall a e m. (Serialize a, Typeable a, Member DecodeError e, MonadError (OneOf e) m)
-  => ByteString
-  -> m a
-decodeM bs =
-  case decode bs of
-    Left s -> throwMember (DecodeError bs (fakeTypeRep (Proxy @a)) s)
-    Right a -> return a
-
--- | Like 'decodeM', but also catches any ErrorCall thrown and lifts
--- it into the MonadError instance.  I'm not sure whether this can
--- actually happen.  What I'm seeing is probably an error call from
--- outside the serialize package, in which case this (and decode') are
--- pointless.
-decodeM' ::
-  forall e m a. (Serialize a, Typeable a, Member DecodeError e, MonadError (OneOf e) m, MonadCatch m)
-  => ByteString
-  -> m a
-decodeM' bs = go `catch` handle
-  where
-    go = case decode bs of
-           Left s -> throwMember (DecodeError bs (fakeTypeRep (Proxy @a)) s)
-           Right a -> return a
-    handle :: ErrorCall -> m a
-    handle (ErrorCall s) = throwMember $ DecodeError bs (fakeTypeRep (Proxy @a)) ("ErrorCall: " <> s)
-#endif
-
 -- | Version of decode that catches any thrown ErrorCall and modifies
 -- its message.
 decode' :: forall a. (Serialize a) => ByteString -> Either String a
@@ -174,6 +147,7 @@ decode' b =
   where
     handle :: ErrorCall -> IO (Either String a)
     handle e = return $ Left (show e)
+#endif
 
 decodePrism :: forall a. (Serialize a) => Prism' ByteString a
 decodePrism = prism encode (\s -> either (\_ -> Left s) Right (decode s :: Either String a))
