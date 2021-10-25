@@ -31,10 +31,10 @@ import System.FilePath (takeDirectory)
 import qualified Text.PrettyPrint as HPJ
 import Text.Regex.TDFA ((=~), MatchResult(MR))
 
-spliceModule :: [Dec] -> Q [Dec]
-spliceModule decs = do
+spliceModule :: Text -> [Dec] -> Q [Dec]
+spliceModule header decs = do
   splicesPath <- (\Loc{..} -> dropSuffix ".hs" loc_filename <> "Splices.hs") <$> location
-  testAndWriteSplicesWithHeader (pack "") splicesPath decs
+  testAndWriteSplicesWithHeader header splicesPath decs
 
 dropSuffix :: Eq a => [a] -> [a] -> [a]
 dropSuffix a b = fromMaybe b $ stripSuffix a b
