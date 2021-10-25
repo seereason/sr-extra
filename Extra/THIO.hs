@@ -2,7 +2,7 @@
 -- could then be #included by ghcjs.  Compile error if the file
 -- already exists and is different from the generated text.
 
-{-# LANGUAGE NoOverloadedStrings #-}
+{-# LANGUAGE NoOverloadedStrings, RecordWildCards #-}
 
 module Extra.THIO
     ( testAndWriteSplices
@@ -12,13 +12,17 @@ module Extra.THIO
     , pprintW'
     , pprintStyle
     , safeName
+    , spliceModule
     ) where
 
 import Data.Generics (Data, everywhere, mkT)
+import Data.List (stripPrefix)
+-- import Data.List.Extra (dropSuffix)
+import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Data.Text (pack, Text)
 import Extra.IO (testAndWriteFile, writeFileWithBackup)
-import Language.Haskell.TH (Ppr, ppr, Q, runIO)
+import Language.Haskell.TH (Dec, Loc(..), location, Ppr, ppr, Q, runIO)
 import Language.Haskell.TH.Instances ()
 import Language.Haskell.TH.PprLib (Doc, to_HPJ_Doc)
 import Language.Haskell.TH.Syntax (Name(..), OccName(..), NameFlavour(..))
@@ -26,6 +30,26 @@ import System.Directory (doesDirectoryExist)
 import System.FilePath (takeDirectory)
 import qualified Text.PrettyPrint as HPJ
 import Text.Regex.TDFA ((=~), MatchResult(MR))
+
+spliceModule :: [Dec] -> Q [Dec]
+spliceModule decs = do
+  splicesPath <- (\Loc{..} -> dropSuffix ".hs" loc_filename <> "Splices.hs") <$> location
+  testAndWriteSplicesWithHeader (pack "") splicesPath decs
+
+dropSuffix :: Eq a => [a] -> [a] -> [a]
+dropSuffix a b = fromMaybe b $ stripSuffix a b
+
+stripSuffix :: Eq a => [a] -> [a] -> Maybe [a]
+stripSuffix a b = reverse <$> stripPrefix (reverse a) (reverse b)
+
+testAndWriteSplicesWithHeader ::
+  (Data a, Ppr a)
+  => Text
+  -> FilePath
+  -> a
+  -> Q a
+testAndWriteSplicesWithHeader header =
+  writeSplicesWith (\path text -> testAndWriteFile path (header <> text)) ppr
 
 -- | Write some template haskell splices to a file so they can be
 -- re-read by ghcjs.
