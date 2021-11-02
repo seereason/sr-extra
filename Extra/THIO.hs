@@ -13,11 +13,10 @@ module Extra.THIO
     , pprintStyle
     , safeName
     , spliceModule
-    , spliceModuleTo
     ) where
 
 import Data.Generics (Data, everywhere, mkT)
-import Data.List (stripPrefix)
+-- import Data.List (stripPrefix)
 -- import Data.List.Extra (dropSuffix)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
@@ -28,24 +27,22 @@ import Language.Haskell.TH.Instances ()
 import Language.Haskell.TH.PprLib (Doc, to_HPJ_Doc)
 import Language.Haskell.TH.Syntax (Name(..), OccName(..), NameFlavour(..))
 import System.Directory (doesDirectoryExist)
-import System.FilePath (takeDirectory)
+import System.FilePath (splitFileName, takeDirectory)
 import qualified Text.PrettyPrint as HPJ
 import Text.Regex.TDFA ((=~), MatchResult(MR))
 
 spliceModule :: Text -> [Dec] -> Q [Dec]
-spliceModule header decs =
-  spliceModuleTo (\path -> dropSuffix ".hs" path <> "Splices.hs")
-
-spliceModuleTo :: (FilePath -> FilePath) -> Text -> [Dec] -> Q [Dec]
-spliceModuleTo makepath header decs = do
-  splicesPath <- (\Loc{..} -> makepath loc_filename) <$> location
+spliceModule header decs = do
+  splicesPath <- (\Loc{..} -> let (dir, file) = splitFileName loc_filename in dir <> "SplicesFor" <> file) <$> location
   testAndWriteSplicesWithHeader header splicesPath decs
 
+#if 0
 dropSuffix :: Eq a => [a] -> [a] -> [a]
 dropSuffix a b = fromMaybe b $ stripSuffix a b
 
 stripSuffix :: Eq a => [a] -> [a] -> Maybe [a]
 stripSuffix a b = reverse <$> stripPrefix (reverse a) (reverse b)
+#endif
 
 testAndWriteSplicesWithHeader ::
   (Data a, Ppr a)
