@@ -20,7 +20,7 @@ import Data.Generics (Data, everywhere, mkT)
 -- import Data.List.Extra (dropSuffix)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
-import Data.Text (pack, Text)
+import Data.Text (pack, stripSuffix, Text)
 import Extra.IO (testAndWriteDotNew, writeFileWithBackup)
 import Language.Haskell.TH (Dec, Loc(..), location, Ppr, ppr, Q, runIO)
 import Language.Haskell.TH.Instances ()
@@ -51,7 +51,10 @@ testAndWriteSplicesWithHeader ::
   -> a
   -> Q a
 testAndWriteSplicesWithHeader header =
-  writeSplicesWith (\path text -> testAndWriteDotNew path (header <> text)) ppr
+  writeSplicesWith (\path text -> testAndWriteDotNew path (ensureFinalNewline (header <> text))) ppr
+
+ensureFinalNewline :: Text -> Text
+ensureFinalNewline t = fromMaybe t (stripSuffix (pack "\n") t) <> pack "\n"
 
 -- | Write some template haskell splices to a file so they can be
 -- re-read by ghcjs.
