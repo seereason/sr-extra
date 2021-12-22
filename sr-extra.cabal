@@ -1,5 +1,5 @@
 Name:           sr-extra
-Version:        1.92
+Version:        1.92.1
 License:        BSD3
 License-File:   COPYING
 Author:         David Fox
@@ -88,6 +88,7 @@ Library
   Default-Extensions: ScopedTypeVariables, StandaloneDeriving, TupleSections, TypeApplications, TypeFamilies
   Exposed-modules:
     Extra.Bool,
+    Extra.Cache,
     Extra.Debug,
     Extra.Debug2,
     Extra.Either,
