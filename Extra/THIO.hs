@@ -13,6 +13,7 @@ module Extra.THIO
     , pprintStyle
     , safeName
     , spliceModule
+    , spliceModuleNew
     ) where
 
 import Data.Generics (Data, everywhere, mkT)
@@ -34,6 +35,12 @@ import Text.Regex.TDFA ((=~), MatchResult(MR))
 spliceModule :: Text -> [Dec] -> Q [Dec]
 spliceModule header decs = do
   splicesPath <- (\Loc{..} -> let (dir, file) = splitFileName loc_filename in dir <> "SplicesFor" <> file) <$> location
+  testAndWriteSplicesWithHeader header splicesPath decs
+
+spliceModuleNew :: Text -> [Dec] -> Q [Dec]
+spliceModuleNew header decs = do
+  splicesPath <- (\Loc{..} -> let (dir, file) = splitFileName loc_filename in dir <> "SplicesFor" <> file) <$> location
+  addDependentFile splicesPath
   testAndWriteSplicesWithHeader header splicesPath decs
 
 #if 0
