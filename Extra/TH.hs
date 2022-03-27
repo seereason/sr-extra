@@ -11,6 +11,7 @@ module Extra.TH
     , addConstraints
     , addConstraint
     , removeConstraints
+    , lit
     ) where
 
 import Control.Lens (_1, over)
@@ -91,3 +92,9 @@ removeConstraints cs (InstanceD mo cxt typ decs) = do
           not (elem tname (Map.findWithDefault [] (nameBase vname) mp))
       testPred _ _ = True -- keep anything else
 removeConstraints _ d = return d
+
+-- | Changing large literals such as lists from @[a, b, c ...]@ to
+-- @read [lit| [a, b, c ...] |]@ using this quasi quoter can greatly
+-- reduce object file size and speed up compilation.
+lit :: QuasiQuoter
+lit = QuasiQuoter { quoteExp = litE . StringL }
