@@ -24,9 +24,10 @@ import Data.Monoid ((<>))
 #endif
 import Data.Tuple (swap)
 import Extra.Generics (gFind)
-import Language.Haskell.TH (appT, conT, Dec(InstanceD), ExpQ, Loc(..), location, Name, nameBase, newName, Q, Type(..), TypeQ, varT)
+import Language.Haskell.TH (appT, conT, Dec(InstanceD), ExpQ, Lit(StringL), litE, Loc(..), location, Name, nameBase, newName, Q, Type(..), TypeQ, varT)
 import Language.Haskell.TH.Instances ()
 import Language.Haskell.TH.Lift (lift)
+import Language.Haskell.TH.Quote (QuasiQuoter(..), quoteExp)
 import Text.PrettyPrint.HughesPJClass (Doc, hcat, Pretty(..), text)
 
 here :: ExpQ
@@ -97,4 +98,4 @@ removeConstraints _ d = return d
 -- @read [lit| [a, b, c ...] |]@ using this quasi quoter can greatly
 -- reduce object file size and speed up compilation.
 lit :: QuasiQuoter
-lit = QuasiQuoter { quoteExp = litE . StringL }
+lit = QuasiQuoter { quoteExp = litE . StringL, quotePat = error "quotePat", quoteType = error "quoteType", quoteDec = error "quoteDec" }

@@ -26,7 +26,7 @@ import Extra.IO (testAndWriteDotNew, writeFileWithBackup)
 import Language.Haskell.TH (Dec, Loc(..), location, Ppr, ppr, Q, runIO)
 import Language.Haskell.TH.Instances ()
 import Language.Haskell.TH.PprLib (Doc, to_HPJ_Doc)
-import Language.Haskell.TH.Syntax (Name(..), OccName(..), NameFlavour(..))
+import Language.Haskell.TH.Syntax (addDependentFile, Name(..), OccName(..), NameFlavour(..))
 import System.Directory (doesDirectoryExist)
 import System.FilePath (splitFileName, takeDirectory)
 import qualified Text.PrettyPrint as HPJ
