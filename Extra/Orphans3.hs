@@ -84,7 +84,10 @@ instance Arbitrary Type where
 instance Arbitrary (Proxy a) where arbitrary = elements [Proxy]
 instance Arbitrary Name where arbitrary = pure (mkName "aName")
 instance Arbitrary TyLit where arbitrary = oneof [NumTyLit <$> arbitrary, StrTyLit <$> arbitraryConstructorName]
+#if MIN_VERSION_template_haskell(2,17,0)
+#else
 instance Arbitrary TyVarBndr where arbitrary = oneof [PlainTV <$> arbitraryTypeVariableName, KindedTV <$> arbitraryTypeVariableName <*> arbitraryKind]
+#endif
 
 instance Arbitrary URIAuth where
     arbitrary =
@@ -153,7 +156,10 @@ deriving instance Serialize TyLit
 deriving instance Serialize Type
 deriving instance Serialize TypeFamilyHead
 deriving instance Serialize TySynEqn
+#if MIN_VERSION_template_haskell(2,17,0)
+#else
 deriving instance Serialize TyVarBndr
+#endif
 
 #if 0
 deriving instance NFData AnnTarget
@@ -200,7 +206,10 @@ deriving instance NFData TyLit
 deriving instance NFData Type
 deriving instance NFData TypeFamilyHead
 deriving instance NFData TySynEqn
+#if MIN_VERSION_template_haskell(2,17,0)
+#else
 deriving instance NFData TyVarBndr
+#endif
 #endif
 
 instance SafeCopy AnnTarget where version = 1
@@ -247,7 +256,11 @@ instance SafeCopy TyLit where version = 1
 instance SafeCopy Type where version = 1
 instance SafeCopy TypeFamilyHead where version = 1
 instance SafeCopy TySynEqn where version = 1
+#if MIN_VERSION_template_haskell(2,17,0)
+instance SafeCopy (TyVarBndr flag) where version = 1
+#else
 instance SafeCopy TyVarBndr where version = 1
+#endif
 
 #if MIN_VERSION_template_haskell(2,16,0)
 deriving instance Serialize Bytes
