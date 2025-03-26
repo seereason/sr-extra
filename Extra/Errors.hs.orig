@@ -65,8 +65,7 @@ module Extra.Errors {-# DEPRECATED "Use SeeReason.Errors in sr-errors" #-}
 
 import Control.Exception (fromException, IOException, toException)
 import Control.Lens (Prism', preview, prism', review)
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Except (Except, ExceptT, MonadError, runExcept, runExceptT, throwError, withExceptT)
+import Control.Monad.Except (Except, ExceptT, lift, MonadError, runExcept, runExceptT, throwError, withExceptT)
 --import Extra.Except (mapError)
 import Data.Type.Bool
 --import Data.Type.Equality

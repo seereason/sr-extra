@@ -38,9 +38,9 @@ module Extra.Except
 import Control.Applicative
 import Control.Exception hiding (catch) -- ({-evaluate,-} Exception, IOException, SomeException(..))
 import Control.Lens (Prism', review)
+import Control.Monad (MonadPlus(mzero, mplus))
 import Control.Monad.Catch
-import Control.Monad.Except (catchError, ExceptT, liftEither, MonadError, MonadPlus(mzero, mplus), runExceptT, throwError, withExceptT)
-import Data.Monoid ((<>))
+import Control.Monad.Except (catchError, ExceptT, liftEither, MonadError, runExceptT, throwError, withExceptT)
 import Data.Serialize
 import Data.Typeable (typeOf)
 #if !__GHCJS__

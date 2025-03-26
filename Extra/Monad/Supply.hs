@@ -21,6 +21,7 @@ module Extra.Monad.Supply
 ) where
 
 import Control.Exception (throw)
+import Control.Monad (replicateM)
 import Control.Monad.Catch
 import Control.Monad.Fix
 import Control.Monad.Identity

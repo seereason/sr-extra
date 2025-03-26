@@ -1,0 +1,11 @@
+--- Extra/Orphans3.hs	2001-09-09 03:46:40.000000000 +0200
++++ Extra/Orphans3.hs	2025-03-07 12:12:21.844937136 +0100
+@@ -84,7 +84,7 @@
+ instance Arbitrary (Proxy a) where arbitrary = elements [Proxy]
+ instance Arbitrary Name where arbitrary = pure (mkName "aName")
+ instance Arbitrary TyLit where arbitrary = oneof [NumTyLit <$> arbitrary, StrTyLit <$> arbitraryConstructorName]
+-instance Arbitrary TyVarBndr where arbitrary = oneof [PlainTV <$> arbitraryTypeVariableName, KindedTV <$> arbitraryTypeVariableName <*> arbitraryKind]
++instance Arbitrary (TyVarBndr Specificity) where arbitrary = oneof [flip PlainTV SpecifiedSpec <$> arbitraryTypeVariableName, flip KindedTV SpecifiedSpec <$> arbitraryTypeVariableName <*> arbitraryKind]
+ 
+ instance Arbitrary URIAuth where
+     arbitrary =

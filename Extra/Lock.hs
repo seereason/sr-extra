@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP, ScopedTypeVariables #-}
 module Extra.Lock
     ( withLock
     , awaitLock
@@ -38,7 +38,11 @@ withLock path task =
           -- Try to create the lock file in exclusive mode, if this
           -- succeeds then we have a lock.  Then write the process ID
           -- into the lock and close.
+#if MIN_VERSION_unix(2,8,0)
+          openFd path ReadWrite (defaultFileFlags {exclusive = True, trunc = True}) >>=
+#else
           openFd path ReadWrite (Just 0o600) (defaultFileFlags {exclusive = True, trunc = True}) >>=
+#endif
           fdToHandle >>= \ h -> processID >>= hPutStrLn h >> hClose h
       dropLock = removeFile path `catch` checkDrop
       checkDrop (e :: IOException) | isDoesNotExistError e = return ()

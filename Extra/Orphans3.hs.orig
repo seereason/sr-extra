@@ -33,7 +33,7 @@ import Language.Haskell.TH.Syntax
 import Prelude hiding (foldl1)
 #if !__GHCJS__
 import Network.URI
-import Test.QuickCheck (Arbitrary(arbitrary), elements, Gen, oneof, choose)
+import Test.QuickCheck (Arbitrary(arbitrary), elements, Gen, oneof)
 #endif
 
 pprPair :: (Ppr a, Ppr b) => (a, b) -> Doc
@@ -85,7 +85,6 @@ instance Arbitrary (Proxy a) where arbitrary = elements [Proxy]
 instance Arbitrary Name where arbitrary = pure (mkName "aName")
 instance Arbitrary TyLit where arbitrary = oneof [NumTyLit <$> arbitrary, StrTyLit <$> arbitraryConstructorName]
 #if MIN_VERSION_template_haskell(2,17,0)
-instance Arbitrary (TyVarBndr Specificity) where arbitrary = oneof [flip PlainTV SpecifiedSpec <$> arbitraryTypeVariableName, flip KindedTV SpecifiedSpec <$> arbitraryTypeVariableName <*> arbitraryKind]
 #else
 instance Arbitrary TyVarBndr where arbitrary = oneof [PlainTV <$> arbitraryTypeVariableName, KindedTV <$> arbitraryTypeVariableName <*> arbitraryKind]
 #endif
