@@ -62,7 +62,7 @@ Library
     safecopy >= 0.9.5,
     show-combinators,
     syb,
-    template-haskell < 2.17,
+    template-haskell,
     text,
     th-lift,
     th-lift-instances,

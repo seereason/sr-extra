@@ -20,8 +20,9 @@ module Extra.ErrorControl {-# DEPRECATED "Use package sr-errors" #-}
   , assure
   ) where
 
+import Control.Monad.Trans.Class (lift)
 import Control.Monad.Except
-  (catchError, ExceptT(ExceptT), lift, MonadError, runExceptT, throwError, withExceptT)
+  (catchError, ExceptT(ExceptT), MonadError, runExceptT, throwError, withExceptT)
 import Control.Monad.Identity (Identity(Identity), runIdentity)
 import Control.Monad.Reader (mapReaderT, ReaderT(ReaderT), runReaderT)
 import Control.Monad.RWS (mapRWST, runRWST, RWST(RWST))

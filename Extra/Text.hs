@@ -14,7 +14,11 @@ module Extra.Text
 #endif
     ) where
 
+#if MIN_VERSION_Diff(1,0,0)
+import Data.Algorithm.DiffContext (getContextDiff, prettyContextDiff, unnumber)
+#else
 import Data.Algorithm.DiffContext (getContextDiff, prettyContextDiff)
+#endif
 import Data.Char (isUpper, toUpper)
 import Data.ListLike (groupBy)
 import Data.String (IsString)
@@ -57,9 +61,13 @@ diffText (nameA, textA) (nameB, textB) =
     show (prettyContextDiff
           (HPJ.text nameA)
           (HPJ.text nameB)
-          (HPJ.text . unpack)
+#if MIN_VERSION_Diff(1,0,0)
+          (HPJ.text . unpack . unnumber )
+          (getContextDiff (Just 2) (split (== '\n') textA) (split (== '\n') textB)))
+#else
+          (HPJ.text . unpack )
           (getContextDiff 2 (split (== '\n') textA) (split (== '\n') textB)))
-
+#endif
 -- | Convert a camel case string (no whitespace) into a natural
 -- language looking phrase:
 --   camelWords "aCamelCaseFOObar123" -> "A Camel Case FOObar123"

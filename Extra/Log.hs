@@ -20,7 +20,7 @@ module Extra.Log {-# DEPRECATED "Use SeeReason.Log in sr-log" #-}
   ) where
 
 import Control.Lens((.=), ix, Lens', preview, to, use)
-import Control.Monad.Except (when)
+import Control.Monad (when)
 import Control.Monad.State (MonadState)
 import Control.Monad.Trans (liftIO, MonadIO)
 import Data.Bool (bool)
